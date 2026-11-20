@@ -1,0 +1,105 @@
+# disc_ribs.cam — bosses on a ROUND blank, two of them ON its edge (Phase
+# 47 slice 1; DECISIONS.md → "DRAFT: Phase 47 opens…", fork 2A, and "Phase
+# 47 slice 1…"). The shape of the first real part's upper half, self-authored
+# so it ships: a `Face` level whose loop is the part's SILHOUETTE, drawn two
+# chord tolerances past the round and chorded at the one tolerance exactly
+# as the recognizer writes it (`geometry.part`); two rim pads whose outer
+# arc is the round to three decimals; two L-shaped bosses facing each other
+# across a slot 1.1 tool diameters wide — one millimetre of room for a
+# tool standing beside either wall.
+#
+# What this pins. The containment lint is QUIET: a vertex drawn on the round
+# to three decimals is on it (the region's `ON_THE_BLANK`, not a 1e-6 guard
+# — the pads' corners land up to 0.0005 past the exact circle, as the real
+# part's ribs do), and a `Face` past the blank in plan is the pocket's case,
+# air the region clips. So the entry restriction READS every op instead of
+# declining on a feature the lint doubted, and `--rest-report` claims.
+#
+# The L-bosses are slice 2's subject: the wall facing the slot is the FIRST
+# edge of the loop each `Side` drives, so its lead reads the slot. (The
+# engine arm normalises a CW boss to CCW, so the loop it drives starts at
+# the authored LAST vertex and runs the list backwards: the slot wall is
+# listed last, and traversed up for LW, down for LE.) Slice 1's lead — one
+# diameter off the path along the ray from the loop's vertex-average
+# centroid — pointed past the bar's end into air; since slice 2 it is the
+# path's void-side normal at its first vertex, as far as the stock model
+# says there is room: 1.000mm, which the program says (`tests/lead_tests.rs`).
+# Rim pads: the same normal, a whole diameter of air, nothing said.
+units mm
+feed 800
+plunge 300
+rapid_z 5
+clearance_z 25
+spindle 3000
+
+stock Cylinder(dia=120, h=30, x=0, y=0, z=0)
+
+tool T5 Endmill(dia=10.0)
+
+# The level: `Level` in geometry.part (the silhouette, 173 points).
+
+# Rim pads, CW: the outer arc at r 60, every 5°, the inner at r 48.
+feature RimN ProfileBoss(extent=10.0
+    -20.521 56.382
+    -15.529 57.956
+    -10.419 59.088
+    -5.229 59.772
+    0.000 60.000
+    5.229 59.772
+    10.419 59.088
+    15.529 57.956
+    20.521 56.382
+    16.417 45.105
+    12.423 46.364
+    8.335 47.271
+    4.183 47.817
+    0.000 48.000
+    -4.183 47.817
+    -8.335 47.271
+    -12.423 46.364
+    -16.417 45.105
+)
+feature RimS ProfileBoss(extent=10.0
+    20.521 -56.382
+    15.529 -57.956
+    10.419 -59.088
+    5.229 -59.772
+    0.000 -60.000
+    -5.229 -59.772
+    -10.419 -59.088
+    -15.529 -57.956
+    -20.521 -56.382
+    -16.417 -45.105
+    -12.423 -46.364
+    -8.335 -47.271
+    -4.183 -47.817
+    0.000 -48.000
+    4.183 -47.817
+    8.335 -47.271
+    12.423 -46.364
+    16.417 -45.105
+)
+
+# The L-bosses, CW, the slot-facing wall first.
+feature LW ProfileBoss(extent=10.0
+    -38.000 -20.000
+    -38.000 -8.000
+    -20.500 -8.000
+    -20.500 20.000
+    -5.500 20.000
+    -5.500 -20.000
+)
+feature LE ProfileBoss(extent=10.0
+    20.500 20.000
+    20.500 -8.000
+    38.000 -8.000
+    38.000 -20.000
+    5.500 -20.000
+    5.500 20.000
+)
+
+run End(tool=T5, surface=Level, stepover=4.0)
+run Side(tool=T5, surface=RimN)
+run Side(tool=T5, surface=RimS)
+run Side(tool=T5, surface=LW)
+run Side(tool=T5, surface=LE)

@@ -1,0 +1,32 @@
+# walled_rails_offset.cam — the walled rail plate (Phase 32; DECISIONS.md → "Phase 32
+# slice 2: the concession…"). Staged by the user as a drawing with an answer
+# key: 3, 6 and 8mm rails beside walls on the outer and the inner side of an
+# arc, a wall that ends mid-rail, a comb of SLOT FLOORS 12 / 10.5 / 8 / 3mm
+# wide between raised fins, a post standing through the land, a disc filling a
+# bay, a collar round a boss. Designed for a 10mm tool.
+#
+# Three stretches of this floor no 10mm tool can enter — the 8mm and 3mm
+# slots and the 6mm arc rail walled on both sides — so the Floor below
+# refuses, naming all three, unless its run line CONCEDES them. It does:
+# `cover=92.7` is the least share of the floor this op must reach, and it
+# fails the day less is reachable. The stretches it leaves are held back from
+# the stock model — standing, for whatever op comes next with a smaller tool.
+#
+# (It was `walled_rails.puzzle` for one slice: every shipped `.cam` emits, and
+# before the concession existed this one could not.)
+units mm
+feed 800
+plunge 300
+rapid_z 5
+clearance_z 25
+spindle 3000
+
+# The plate: the raised regions' tops ARE the stock top; the land is 8 below.
+# The drawing's "void below the land" is left undeclared and so is STOCK here
+# — scrap the face overhangs, as in every Phase 29 fixture. The derived kinds
+# are the same either way; only the report's "other stock" column sees it.
+stock Box(w=190, l=140, h=20, x=-5, y=-5, z=0)
+
+tool T5 Endmill(dia=10.0)
+
+run End(tool=T5, surface=Land, stepover=5.0, cover=92.7, pattern=offset)

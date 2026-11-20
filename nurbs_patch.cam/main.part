@@ -1,0 +1,32 @@
+# nurbs_patch.cam — the general NURBS patch fixture (DECISIONS.md "the general
+# NURBS patch…", slice 1). The ANALYTIC camp-3 path: the same raster drop-cutter
+# contract as mesh.cam — serpentine XY passes, ball centre on the upper envelope,
+# stepover as the one isotropic sample spacing — but the envelope is computed
+# against the exact tensor-product b-spline surface, so the mesh's chord error
+# term is gone; only the raster's own sampling term remains (camp 3's charter).
+#
+# The surface is a hand-checkable bicubic Bézier cap (see cap.patch): a 24x24
+# sheet whose boundary lies at z=0 and whose apex sits at (12, 12, 9) exactly.
+# With the placement below and a dia-8 ball (r=4) the raster grid runs
+# (14..46)^2 at step 2 (17x17 samples), and the apex lands exactly on the sample
+# at (30,30): the normal is vertical there, so centre Z = 9 + 4 = 13.0. Grid
+# corners are beyond the ball's reach and clamp to the floor: Z = 0 + 4 = 4.0.
+units mm
+feed 600
+plunge 200
+rapid_z 5
+clearance_z 30
+spindle 4000
+
+stock Box(w=60, l=60, h=15, x=0, y=0, z=0)
+
+tool T9 Ballmill(dia=8.0)
+
+# Patch control points are mm by definition (DECISIONS.md); x/y/z place the
+# sheet in stock coords — the net spans (18..42)^2, apex at (30,30,9).
+feature Dome NurbsPatch(file="cap.patch", x=18, y=18, z=0)
+
+# stepover is both the Y row spacing and the X sample spacing — the same
+# isotropic error budget as the mesh raster (parse::derive_mesh_sample_step,
+# one home shared deliberately).
+run Copy(tool=T9, surface=Dome, stepover=2.0)

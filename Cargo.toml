@@ -1,0 +1,52 @@
+[package]
+name = "nacs"
+version = "0.1.0"
+edition = "2021"
+license = "MIT OR Apache-2.0"
+description = "Code-first CAM: a toolpath generator where a project is a folder of plain text"
+repository = "https://github.com/HarveyShmarvey/nacs"
+
+[lib]
+name = "nacs"
+path = "src/lib.rs"
+
+[[bin]]
+name = "nacs"
+path = "src/main.rs"
+
+[features]
+# The native window. Default-on so `cargo run -- --view` just works. `--no-default-features`
+# is the engine alone and must always build and test green.
+# The MCP serve loop (`--mcp`). Default-on; the lean build refuses the flag by name.
+default = ["frontend", "agent"]
+frontend = ["dep:eframe", "dep:serde_json", "dep:windows-sys"]
+agent = ["dep:serde_json"]
+# The headless shell tests (tests/shell_tests.rs). Off by default: Cargo has no optional
+# dev-dependency and the lean build must never link eframe. lock.sh runs them.
+shell-tests = ["frontend", "dep:egui_kittest", "egui_kittest/wgpu", "dep:image"]
+
+[dependencies]
+# The dependency ledger. One line of why per crate; a new crate is a DECISIONS.md entry first.
+cavalier_contours = "0.7.0" # why: 2D polyline offsetting with arcs, pure Rust; chosen over Clipper2's FFI
+eframe = { version = "0.36", optional = true } # why: the native window (egui on wgpu + winit), behind `frontend`
+egui_kittest = { version = "0.36.2", features = ["eframe"], optional = true } # why: egui's own headless test harness, drives the real window through AccessKit; test-only, behind `shell-tests`, where its `wgpu` feature also renders the frame to pixels on a CPU adapter
+image = { version = "0.25", default-features = false, features = ["png"], optional = true } # why: writes the rendered frame as a PNG under target/shots so the agent can look at the window it drives; test-only, behind `shell-tests`
+libm = "0.2.16" # why: pure-Rust sin/cos/atan2 and kin, so Windows and Linux compute the same bits and share one set of goldens (src/math.rs)
+serde_json = { version = "1", optional = true } # why: parses JSON-RPC for `--mcp` and the Zed-shaped theme files; responses are hand-rendered; the lean build stays JSON-free
+
+[target.'cfg(windows)'.dependencies]
+windows-sys = { version = "0.61", features = ["Win32_Foundation", "Win32_Graphics_Dwm", "Win32_UI_Controls_Dialogs"], optional = true } # why: one DWM call for the acrylic backdrop and one native open-file dialog; eframe already brings this crate on Windows
+
+# Out-of-manifest runtime: the STEP import sidecar is Python (CadQuery/OCP, ~1.5 GB venv),
+# pinned in sidecar/requirements.txt. Needed only for import and recognition; cargo test
+# skips the sidecar tests when it is absent.
+
+
+# The offsetter's own debug assertions are off in every profile: on curved_rails_offset.cam
+# a deep offset level trips an internal slice-stitching check by nine millionths of a
+# millimetre while the result is complete. Release never runs that check; debug must not
+# decide the fixture differently. Our own debug_assert!s are untouched.
+[profile.dev.package.cavalier_contours]
+debug-assertions = false
+[profile.test.package.cavalier_contours]
+debug-assertions = false

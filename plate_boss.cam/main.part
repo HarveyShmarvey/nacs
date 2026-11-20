@@ -1,0 +1,38 @@
+# plate_boss.cam — plate.cam's L plate as a BOSS on the plate's own 120 x 80
+# blank (Phase 60 slice 2, fork 6A): the noun is the part, not the notch.
+# Four of the L's six edges lie ON the blank's faces, so they are open and
+# the Side traces the two inner edges only — the same two stretches
+# plate.cam's Side traces on its Notch, in the same direction (pinned equal
+# in tests/wall_trace_tests.rs). The floor is the Plane the plate stands
+# through: the L touches the blank's boundary, so it is BITTEN OUT of the
+# floor (Phase 49, "a boss on the shore is the shore") and the Clear's region
+# is the notch (Phase 61: the Clear is the volume verb and a Plane takes it;
+# until then this floor was an End). The Clear is unpinned — the floor op is
+# incidental, the fixture's subject is the Side. (A Clear on the boss alone
+# would cut the moat, two diameters off the wall, and leave a 40 x 20 block standing in the
+# notch's corner, declared by nothing; the floor noun is the whole leftover.)
+units mm
+feed 800
+plunge 300
+rapid_z 5
+clearance_z 25
+spindle 3000
+
+stock Box(w=120, l=80, h=20, x=0, y=0, z=0)
+
+tool T5 Endmill(dia=10.0)
+
+# The blank's bottom is the floor: 2.5D work, the part cut through.
+feature Floor Plane(z=-20)
+# The L, CW (a boss's law): the part is inside the loop.
+feature Plate ProfileBoss(extent=20
+    0 0
+    0 40
+    60 40
+    60 80
+    120 80
+    120 0
+)
+
+run Clear(tool=T5, profile=Floor, stepover=4.0, stepdown=5)
+run Side(tool=T5, surface=Plate, comp=control)

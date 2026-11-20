@@ -1,0 +1,28 @@
+# step_bore.cam — a bore authored from a rim BELOW the stock top (Phase 45
+# slice 1; DECISIONS.md → "DRAFT: Phase 45 opens…", fork 1A). `z` on a
+# CylinderBore is its rim; omitted, the stock top. The step is faced first,
+# so the bore's material starts at z=-8 and every verb that reads a bore's
+# top reads the rim: the Clear's floor and the Side's last level land at
+# -14, the Hole's pecks count from -8 and not from 0. Without the End, the
+# Clear's plunge is refused at the plunge by name (the entry restriction) —
+# that program is a test, not a golden.
+units mm
+feed 800
+plunge 300
+rapid_z 5
+clearance_z 25
+spindle 3000
+
+stock Box(w=100, l=100, h=20, x=0, y=0, z=0)
+
+tool T5 Endmill(dia=10.0)
+tool T7 Drill(dia=8.0)
+
+feature Step Plane(z=-8.0)
+feature Bore CylinderBore(dia=30.0, extent=6.0, x=50.0, y=50.0, z=-8.0)
+feature Hole CylinderBore(dia=8.0, extent=8.0, x=20.0, y=20.0, z=-8.0)
+
+run End(tool=T5, surface=Step, stepover=4.0)
+run Clear(tool=T5, profile=Bore, stepover=4.0)
+run Side(tool=T5, surface=Bore, stepover=3.0)
+run Form(points=[Hole], tool=T7, cycle=Peck, peck_increment=3.0)

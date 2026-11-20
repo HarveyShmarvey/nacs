@@ -1,0 +1,322 @@
+{
+  "faces": [
+    {
+      "checklist_row": "2.2",
+      "feature": "F1_Profile",
+      "id": "F1",
+      "part": "feature F1_Profile ProfileBoss(z=15.0, extent=15.0\n    0.0 0.0\n    0.0 80.0\n    100.0 80.0\n    100.0 0.0\n)",
+      "status": "proposed",
+      "surface": "plane",
+      "why": "outer profile under top cap F3: vertical wall loop F1 F2 F6 F4, top at z=15.0, base at z=0.0, material inside the loop"
+    },
+    {
+      "checklist_row": "2.2",
+      "feature": "F1_Profile",
+      "id": "F2",
+      "part": "feature F1_Profile ProfileBoss(z=15.0, extent=15.0\n    0.0 0.0\n    0.0 80.0\n    100.0 80.0\n    100.0 0.0\n)",
+      "status": "proposed",
+      "surface": "plane",
+      "why": "vertical wall of recognized outer profile F1_Profile (top cap F3)"
+    },
+    {
+      "checklist_row": "1.1",
+      "id": "F3",
+      "part": "feature F3_Top Plane(z=15.0)",
+      "status": "proposed",
+      "surface": "plane",
+      "why": "planar, normal +Z, topmost planar face"
+    },
+    {
+      "checklist_row": "2.2",
+      "feature": "F1_Profile",
+      "id": "F4",
+      "part": "feature F1_Profile ProfileBoss(z=15.0, extent=15.0\n    0.0 0.0\n    0.0 80.0\n    100.0 80.0\n    100.0 0.0\n)",
+      "status": "proposed",
+      "surface": "plane",
+      "why": "vertical wall of recognized outer profile F1_Profile (top cap F3)"
+    },
+    {
+      "checklist_row": "no row",
+      "code": "plane_downward",
+      "id": "F5",
+      "reason": "downward-facing planar face -- unreachable from above (undercut relative to the tool axis)",
+      "status": "unsupported",
+      "surface": "plane"
+    },
+    {
+      "checklist_row": "2.2",
+      "feature": "F1_Profile",
+      "id": "F6",
+      "part": "feature F1_Profile ProfileBoss(z=15.0, extent=15.0\n    0.0 0.0\n    0.0 80.0\n    100.0 80.0\n    100.0 0.0\n)",
+      "status": "proposed",
+      "surface": "plane",
+      "why": "vertical wall of recognized outer profile F1_Profile (top cap F3)"
+    },
+    {
+      "checklist_row": "2.1",
+      "feature": "F27_Pocket",
+      "id": "F7",
+      "part": "feature F27_Pocket ProfilePocket(z=15.0, extent=6.0\n    10.0 10.0\n    40.0 10.0\n    40.0 30.0\n    10.0 30.0\n)",
+      "status": "proposed",
+      "surface": "plane",
+      "why": "vertical wall of recognized pocket F27_Pocket (floor F27)"
+    },
+    {
+      "checklist_row": "2.1",
+      "feature": "F27_Pocket",
+      "id": "F8",
+      "part": "feature F27_Pocket ProfilePocket(z=15.0, extent=6.0\n    10.0 10.0\n    40.0 10.0\n    40.0 30.0\n    10.0 30.0\n)",
+      "status": "proposed",
+      "surface": "plane",
+      "why": "vertical wall of recognized pocket F27_Pocket (floor F27)"
+    },
+    {
+      "checklist_row": "2.1",
+      "feature": "F27_Pocket",
+      "id": "F9",
+      "part": "feature F27_Pocket ProfilePocket(z=15.0, extent=6.0\n    10.0 10.0\n    40.0 10.0\n    40.0 30.0\n    10.0 30.0\n)",
+      "status": "proposed",
+      "surface": "plane",
+      "why": "vertical wall of recognized pocket F27_Pocket (floor F27)"
+    },
+    {
+      "checklist_row": "2.1",
+      "feature": "F27_Pocket",
+      "id": "F10",
+      "part": "feature F27_Pocket ProfilePocket(z=15.0, extent=6.0\n    10.0 10.0\n    40.0 10.0\n    40.0 30.0\n    10.0 30.0\n)",
+      "status": "proposed",
+      "surface": "plane",
+      "why": "vertical wall of recognized pocket F27_Pocket (floor F27)"
+    },
+    {
+      "checklist_row": "2.7",
+      "feature": "F28_Pocket",
+      "id": "F11",
+      "part": "feature F28_Pocket ProfilePocket(z=15.0, extent=5.0\n    55.0 16.0\n    55.038 15.328\n    55.15 14.665\n    55.337 14.018\n    55.594 13.397\n    55.92 12.808\n    56.309 12.259\n    56.757 11.757\n    57.259 11.309\n    57.808 10.92\n    58.397 10.594\n    59.018 10.337\n    59.665 10.15\n    60.328 10.038\n    61.0 10.0\n    84.0 10.0\n    84.672 10.038\n    85.335 10.15\n    85.982 10.337\n    86.603 10.594\n    87.192 10.92\n    87.741 11.309\n    88.243 11.757\n    88.691 12.259\n    89.08 12.808\n    89.406 13.397\n    89.663 14.018\n    89.85 14.665\n    89.962 15.328\n    90.0 16.0\n    90.0 29.0\n    89.962 29.672\n    89.85 30.335\n    89.663 30.982\n    89.406 31.603\n    89.08 32.192\n    88.691 32.741\n    88.243 33.243\n    87.741 33.691\n    87.192 34.08\n    86.603 34.406\n    85.982 34.663\n    85.335 34.85\n    84.672 34.962\n    84.0 35.0\n    61.0 35.0\n    60.328 34.962\n    59.665 34.85\n    59.018 34.663\n    58.397 34.406\n    57.808 34.08\n    57.259 33.691\n    56.757 33.243\n    56.309 32.741\n    55.92 32.192\n    55.594 31.603\n    55.337 30.982\n    55.15 30.335\n    55.038 29.672\n    55.0 29.0\n)",
+      "status": "proposed",
+      "surface": "plane",
+      "why": "vertical wall of recognized pocket F28_Pocket (floor F28)"
+    },
+    {
+      "checklist_row": "2.7",
+      "feature": "F28_Pocket",
+      "id": "F12",
+      "part": "feature F28_Pocket ProfilePocket(z=15.0, extent=5.0\n    55.0 16.0\n    55.038 15.328\n    55.15 14.665\n    55.337 14.018\n    55.594 13.397\n    55.92 12.808\n    56.309 12.259\n    56.757 11.757\n    57.259 11.309\n    57.808 10.92\n    58.397 10.594\n    59.018 10.337\n    59.665 10.15\n    60.328 10.038\n    61.0 10.0\n    84.0 10.0\n    84.672 10.038\n    85.335 10.15\n    85.982 10.337\n    86.603 10.594\n    87.192 10.92\n    87.741 11.309\n    88.243 11.757\n    88.691 12.259\n    89.08 12.808\n    89.406 13.397\n    89.663 14.018\n    89.85 14.665\n    89.962 15.328\n    90.0 16.0\n    90.0 29.0\n    89.962 29.672\n    89.85 30.335\n    89.663 30.982\n    89.406 31.603\n    89.08 32.192\n    88.691 32.741\n    88.243 33.243\n    87.741 33.691\n    87.192 34.08\n    86.603 34.406\n    85.982 34.663\n    85.335 34.85\n    84.672 34.962\n    84.0 35.0\n    61.0 35.0\n    60.328 34.962\n    59.665 34.85\n    59.018 34.663\n    58.397 34.406\n    57.808 34.08\n    57.259 33.691\n    56.757 33.243\n    56.309 32.741\n    55.92 32.192\n    55.594 31.603\n    55.337 30.982\n    55.15 30.335\n    55.038 29.672\n    55.0 29.0\n)",
+      "status": "proposed",
+      "surface": "cylinder",
+      "why": "vertical wall of recognized pocket F28_Pocket (floor F28)"
+    },
+    {
+      "checklist_row": "2.7",
+      "feature": "F28_Pocket",
+      "id": "F13",
+      "part": "feature F28_Pocket ProfilePocket(z=15.0, extent=5.0\n    55.0 16.0\n    55.038 15.328\n    55.15 14.665\n    55.337 14.018\n    55.594 13.397\n    55.92 12.808\n    56.309 12.259\n    56.757 11.757\n    57.259 11.309\n    57.808 10.92\n    58.397 10.594\n    59.018 10.337\n    59.665 10.15\n    60.328 10.038\n    61.0 10.0\n    84.0 10.0\n    84.672 10.038\n    85.335 10.15\n    85.982 10.337\n    86.603 10.594\n    87.192 10.92\n    87.741 11.309\n    88.243 11.757\n    88.691 12.259\n    89.08 12.808\n    89.406 13.397\n    89.663 14.018\n    89.85 14.665\n    89.962 15.328\n    90.0 16.0\n    90.0 29.0\n    89.962 29.672\n    89.85 30.335\n    89.663 30.982\n    89.406 31.603\n    89.08 32.192\n    88.691 32.741\n    88.243 33.243\n    87.741 33.691\n    87.192 34.08\n    86.603 34.406\n    85.982 34.663\n    85.335 34.85\n    84.672 34.962\n    84.0 35.0\n    61.0 35.0\n    60.328 34.962\n    59.665 34.85\n    59.018 34.663\n    58.397 34.406\n    57.808 34.08\n    57.259 33.691\n    56.757 33.243\n    56.309 32.741\n    55.92 32.192\n    55.594 31.603\n    55.337 30.982\n    55.15 30.335\n    55.038 29.672\n    55.0 29.0\n)",
+      "status": "proposed",
+      "surface": "cylinder",
+      "why": "vertical wall of recognized pocket F28_Pocket (floor F28)"
+    },
+    {
+      "checklist_row": "2.7",
+      "feature": "F28_Pocket",
+      "id": "F14",
+      "part": "feature F28_Pocket ProfilePocket(z=15.0, extent=5.0\n    55.0 16.0\n    55.038 15.328\n    55.15 14.665\n    55.337 14.018\n    55.594 13.397\n    55.92 12.808\n    56.309 12.259\n    56.757 11.757\n    57.259 11.309\n    57.808 10.92\n    58.397 10.594\n    59.018 10.337\n    59.665 10.15\n    60.328 10.038\n    61.0 10.0\n    84.0 10.0\n    84.672 10.038\n    85.335 10.15\n    85.982 10.337\n    86.603 10.594\n    87.192 10.92\n    87.741 11.309\n    88.243 11.757\n    88.691 12.259\n    89.08 12.808\n    89.406 13.397\n    89.663 14.018\n    89.85 14.665\n    89.962 15.328\n    90.0 16.0\n    90.0 29.0\n    89.962 29.672\n    89.85 30.335\n    89.663 30.982\n    89.406 31.603\n    89.08 32.192\n    88.691 32.741\n    88.243 33.243\n    87.741 33.691\n    87.192 34.08\n    86.603 34.406\n    85.982 34.663\n    85.335 34.85\n    84.672 34.962\n    84.0 35.0\n    61.0 35.0\n    60.328 34.962\n    59.665 34.85\n    59.018 34.663\n    58.397 34.406\n    57.808 34.08\n    57.259 33.691\n    56.757 33.243\n    56.309 32.741\n    55.92 32.192\n    55.594 31.603\n    55.337 30.982\n    55.15 30.335\n    55.038 29.672\n    55.0 29.0\n)",
+      "status": "proposed",
+      "surface": "plane",
+      "why": "vertical wall of recognized pocket F28_Pocket (floor F28)"
+    },
+    {
+      "checklist_row": "2.7",
+      "feature": "F28_Pocket",
+      "id": "F15",
+      "part": "feature F28_Pocket ProfilePocket(z=15.0, extent=5.0\n    55.0 16.0\n    55.038 15.328\n    55.15 14.665\n    55.337 14.018\n    55.594 13.397\n    55.92 12.808\n    56.309 12.259\n    56.757 11.757\n    57.259 11.309\n    57.808 10.92\n    58.397 10.594\n    59.018 10.337\n    59.665 10.15\n    60.328 10.038\n    61.0 10.0\n    84.0 10.0\n    84.672 10.038\n    85.335 10.15\n    85.982 10.337\n    86.603 10.594\n    87.192 10.92\n    87.741 11.309\n    88.243 11.757\n    88.691 12.259\n    89.08 12.808\n    89.406 13.397\n    89.663 14.018\n    89.85 14.665\n    89.962 15.328\n    90.0 16.0\n    90.0 29.0\n    89.962 29.672\n    89.85 30.335\n    89.663 30.982\n    89.406 31.603\n    89.08 32.192\n    88.691 32.741\n    88.243 33.243\n    87.741 33.691\n    87.192 34.08\n    86.603 34.406\n    85.982 34.663\n    85.335 34.85\n    84.672 34.962\n    84.0 35.0\n    61.0 35.0\n    60.328 34.962\n    59.665 34.85\n    59.018 34.663\n    58.397 34.406\n    57.808 34.08\n    57.259 33.691\n    56.757 33.243\n    56.309 32.741\n    55.92 32.192\n    55.594 31.603\n    55.337 30.982\n    55.15 30.335\n    55.038 29.672\n    55.0 29.0\n)",
+      "status": "proposed",
+      "surface": "plane",
+      "why": "vertical wall of recognized pocket F28_Pocket (floor F28)"
+    },
+    {
+      "checklist_row": "2.7",
+      "feature": "F28_Pocket",
+      "id": "F16",
+      "part": "feature F28_Pocket ProfilePocket(z=15.0, extent=5.0\n    55.0 16.0\n    55.038 15.328\n    55.15 14.665\n    55.337 14.018\n    55.594 13.397\n    55.92 12.808\n    56.309 12.259\n    56.757 11.757\n    57.259 11.309\n    57.808 10.92\n    58.397 10.594\n    59.018 10.337\n    59.665 10.15\n    60.328 10.038\n    61.0 10.0\n    84.0 10.0\n    84.672 10.038\n    85.335 10.15\n    85.982 10.337\n    86.603 10.594\n    87.192 10.92\n    87.741 11.309\n    88.243 11.757\n    88.691 12.259\n    89.08 12.808\n    89.406 13.397\n    89.663 14.018\n    89.85 14.665\n    89.962 15.328\n    90.0 16.0\n    90.0 29.0\n    89.962 29.672\n    89.85 30.335\n    89.663 30.982\n    89.406 31.603\n    89.08 32.192\n    88.691 32.741\n    88.243 33.243\n    87.741 33.691\n    87.192 34.08\n    86.603 34.406\n    85.982 34.663\n    85.335 34.85\n    84.672 34.962\n    84.0 35.0\n    61.0 35.0\n    60.328 34.962\n    59.665 34.85\n    59.018 34.663\n    58.397 34.406\n    57.808 34.08\n    57.259 33.691\n    56.757 33.243\n    56.309 32.741\n    55.92 32.192\n    55.594 31.603\n    55.337 30.982\n    55.15 30.335\n    55.038 29.672\n    55.0 29.0\n)",
+      "status": "proposed",
+      "surface": "cylinder",
+      "why": "vertical wall of recognized pocket F28_Pocket (floor F28)"
+    },
+    {
+      "checklist_row": "2.7",
+      "feature": "F28_Pocket",
+      "id": "F17",
+      "part": "feature F28_Pocket ProfilePocket(z=15.0, extent=5.0\n    55.0 16.0\n    55.038 15.328\n    55.15 14.665\n    55.337 14.018\n    55.594 13.397\n    55.92 12.808\n    56.309 12.259\n    56.757 11.757\n    57.259 11.309\n    57.808 10.92\n    58.397 10.594\n    59.018 10.337\n    59.665 10.15\n    60.328 10.038\n    61.0 10.0\n    84.0 10.0\n    84.672 10.038\n    85.335 10.15\n    85.982 10.337\n    86.603 10.594\n    87.192 10.92\n    87.741 11.309\n    88.243 11.757\n    88.691 12.259\n    89.08 12.808\n    89.406 13.397\n    89.663 14.018\n    89.85 14.665\n    89.962 15.328\n    90.0 16.0\n    90.0 29.0\n    89.962 29.672\n    89.85 30.335\n    89.663 30.982\n    89.406 31.603\n    89.08 32.192\n    88.691 32.741\n    88.243 33.243\n    87.741 33.691\n    87.192 34.08\n    86.603 34.406\n    85.982 34.663\n    85.335 34.85\n    84.672 34.962\n    84.0 35.0\n    61.0 35.0\n    60.328 34.962\n    59.665 34.85\n    59.018 34.663\n    58.397 34.406\n    57.808 34.08\n    57.259 33.691\n    56.757 33.243\n    56.309 32.741\n    55.92 32.192\n    55.594 31.603\n    55.337 30.982\n    55.15 30.335\n    55.038 29.672\n    55.0 29.0\n)",
+      "status": "proposed",
+      "surface": "cylinder",
+      "why": "vertical wall of recognized pocket F28_Pocket (floor F28)"
+    },
+    {
+      "checklist_row": "2.7",
+      "feature": "F28_Pocket",
+      "id": "F18",
+      "part": "feature F28_Pocket ProfilePocket(z=15.0, extent=5.0\n    55.0 16.0\n    55.038 15.328\n    55.15 14.665\n    55.337 14.018\n    55.594 13.397\n    55.92 12.808\n    56.309 12.259\n    56.757 11.757\n    57.259 11.309\n    57.808 10.92\n    58.397 10.594\n    59.018 10.337\n    59.665 10.15\n    60.328 10.038\n    61.0 10.0\n    84.0 10.0\n    84.672 10.038\n    85.335 10.15\n    85.982 10.337\n    86.603 10.594\n    87.192 10.92\n    87.741 11.309\n    88.243 11.757\n    88.691 12.259\n    89.08 12.808\n    89.406 13.397\n    89.663 14.018\n    89.85 14.665\n    89.962 15.328\n    90.0 16.0\n    90.0 29.0\n    89.962 29.672\n    89.85 30.335\n    89.663 30.982\n    89.406 31.603\n    89.08 32.192\n    88.691 32.741\n    88.243 33.243\n    87.741 33.691\n    87.192 34.08\n    86.603 34.406\n    85.982 34.663\n    85.335 34.85\n    84.672 34.962\n    84.0 35.0\n    61.0 35.0\n    60.328 34.962\n    59.665 34.85\n    59.018 34.663\n    58.397 34.406\n    57.808 34.08\n    57.259 33.691\n    56.757 33.243\n    56.309 32.741\n    55.92 32.192\n    55.594 31.603\n    55.337 30.982\n    55.15 30.335\n    55.038 29.672\n    55.0 29.0\n)",
+      "status": "proposed",
+      "surface": "plane",
+      "why": "vertical wall of recognized pocket F28_Pocket (floor F28)"
+    },
+    {
+      "checklist_row": "1.2",
+      "code": "plane_oblique",
+      "id": "F19",
+      "reason": "oblique planar face -- no tilted-plane primitive (CHECKLIST row 1.2 is todo)",
+      "status": "unsupported",
+      "surface": "plane"
+    },
+    {
+      "checklist_row": "1.2",
+      "code": "plane_oblique",
+      "id": "F20",
+      "reason": "oblique planar face -- no tilted-plane primitive (CHECKLIST row 1.2 is todo)",
+      "status": "unsupported",
+      "surface": "plane"
+    },
+    {
+      "checklist_row": "1.2",
+      "code": "plane_oblique",
+      "id": "F21",
+      "reason": "oblique planar face -- no tilted-plane primitive (CHECKLIST row 1.2 is todo)",
+      "status": "unsupported",
+      "surface": "plane"
+    },
+    {
+      "checklist_row": "1.2",
+      "code": "plane_oblique",
+      "id": "F22",
+      "reason": "oblique planar face -- no tilted-plane primitive (CHECKLIST row 1.2 is todo)",
+      "status": "unsupported",
+      "surface": "plane"
+    },
+    {
+      "checklist_row": "2.2",
+      "code": "plane_vertical_unanchored",
+      "id": "F23",
+      "reason": "vertical planar wall not bounding a recognized pocket floor or outer-profile cap loop -- a standalone wall with no proposable anchor",
+      "status": "unsupported",
+      "surface": "plane"
+    },
+    {
+      "checklist_row": "2.2",
+      "code": "plane_vertical_unanchored",
+      "id": "F24",
+      "reason": "vertical planar wall not bounding a recognized pocket floor or outer-profile cap loop -- a standalone wall with no proposable anchor",
+      "status": "unsupported",
+      "surface": "plane"
+    },
+    {
+      "checklist_row": "2.2",
+      "code": "plane_vertical_unanchored",
+      "id": "F25",
+      "reason": "vertical planar wall not bounding a recognized pocket floor or outer-profile cap loop -- a standalone wall with no proposable anchor",
+      "status": "unsupported",
+      "surface": "plane"
+    },
+    {
+      "checklist_row": "2.2",
+      "code": "plane_vertical_unanchored",
+      "id": "F26",
+      "reason": "vertical planar wall not bounding a recognized pocket floor or outer-profile cap loop -- a standalone wall with no proposable anchor",
+      "status": "unsupported",
+      "surface": "plane"
+    },
+    {
+      "checklist_row": "2.1",
+      "feature": "F27_Pocket",
+      "id": "F27",
+      "part": "feature F27_Pocket ProfilePocket(z=15.0, extent=6.0\n    10.0 10.0\n    40.0 10.0\n    40.0 30.0\n    10.0 30.0\n)",
+      "status": "proposed",
+      "surface": "plane",
+      "why": "pocket floor at z=9.0; vertical wall loop F7 F9 F10 F8, mouth at z=15.0, depth 6.0, opens upward"
+    },
+    {
+      "checklist_row": "2.7",
+      "feature": "F28_Pocket",
+      "id": "F28",
+      "part": "feature F28_Pocket ProfilePocket(z=15.0, extent=5.0\n    55.0 16.0\n    55.038 15.328\n    55.15 14.665\n    55.337 14.018\n    55.594 13.397\n    55.92 12.808\n    56.309 12.259\n    56.757 11.757\n    57.259 11.309\n    57.808 10.92\n    58.397 10.594\n    59.018 10.337\n    59.665 10.15\n    60.328 10.038\n    61.0 10.0\n    84.0 10.0\n    84.672 10.038\n    85.335 10.15\n    85.982 10.337\n    86.603 10.594\n    87.192 10.92\n    87.741 11.309\n    88.243 11.757\n    88.691 12.259\n    89.08 12.808\n    89.406 13.397\n    89.663 14.018\n    89.85 14.665\n    89.962 15.328\n    90.0 16.0\n    90.0 29.0\n    89.962 29.672\n    89.85 30.335\n    89.663 30.982\n    89.406 31.603\n    89.08 32.192\n    88.691 32.741\n    88.243 33.243\n    87.741 33.691\n    87.192 34.08\n    86.603 34.406\n    85.982 34.663\n    85.335 34.85\n    84.672 34.962\n    84.0 35.0\n    61.0 35.0\n    60.328 34.962\n    59.665 34.85\n    59.018 34.663\n    58.397 34.406\n    57.808 34.08\n    57.259 33.691\n    56.757 33.243\n    56.309 32.741\n    55.92 32.192\n    55.594 31.603\n    55.337 30.982\n    55.15 30.335\n    55.038 29.672\n    55.0 29.0\n)",
+      "status": "proposed",
+      "surface": "plane",
+      "why": "pocket floor at z=10.0; vertical wall loop F11 F13 F15 F17 F18 F16 F14 F12, mouth at z=15.0, depth 5.0, opens upward"
+    },
+    {
+      "checklist_row": "1.2",
+      "code": "chamfer_consumes_wall",
+      "id": "F29",
+      "reason": "F19 is a 40.0deg-included oblique face spanning 5.0mm from the floor to the surrounding plane with nothing vertical under it: a draft wall (CHECKLIST row 1.2, no tilted-plane primitive) or a bevel as deep as its wall (the engine's chamfer needs a flank below it)",
+      "refs": [
+        "F19"
+      ],
+      "status": "unsupported",
+      "surface": "plane"
+    },
+    {
+      "checklist_row": "no row",
+      "code": "plane_downward",
+      "id": "F30",
+      "reason": "downward-facing planar face -- unreachable from above (undercut relative to the tool axis)",
+      "status": "unsupported",
+      "surface": "plane"
+    },
+    {
+      "checklist_row": "no row",
+      "code": "other_setup",
+      "id": "F31",
+      "reason": "planar face: the part's own material lies straight above it -- planar F30 is 2.5 up -- so nothing on this setup's tool axis reaches it; see what the other side makes of it with --up z-",
+      "refs": [
+        "F30"
+      ],
+      "status": "unsupported",
+      "surface": "plane"
+    },
+    {
+      "checklist_row": "no row",
+      "code": "other_setup",
+      "id": "F32",
+      "reason": "planar face: the part's own material lies straight above it -- planar F30 is 2.5 up -- so nothing on this setup's tool axis reaches it; see what the other side makes of it with --up z-",
+      "refs": [
+        "F30"
+      ],
+      "status": "unsupported",
+      "surface": "plane"
+    },
+    {
+      "checklist_row": "no row",
+      "code": "other_setup",
+      "id": "F33",
+      "reason": "planar face: the part's own material lies straight above it -- planar F30 is 2.5 up -- so nothing on this setup's tool axis reaches it; see what the other side makes of it with --up z-",
+      "refs": [
+        "F30"
+      ],
+      "status": "unsupported",
+      "surface": "plane"
+    },
+    {
+      "checklist_row": "no row",
+      "code": "other_setup",
+      "id": "F34",
+      "reason": "planar face: the part's own material lies straight above it -- planar F30 is 2.5 up -- so nothing on this setup's tool axis reaches it; see what the other side makes of it with --up z-",
+      "refs": [
+        "F30"
+      ],
+      "status": "unsupported",
+      "surface": "plane"
+    },
+    {
+      "checklist_row": "no row",
+      "code": "pocket_mouth_lipped",
+      "id": "F35",
+      "reason": "pocket mouth rim is capped by an overhanging lip -- undercut relative to the tool axis",
+      "status": "unsupported",
+      "surface": "plane"
+    }
+  ],
+  "faces_total": 35,
+  "schema": "nacs-recognition-report",
+  "source": "pocket_plate.step",
+  "units": "mm",
+  "version": 1
+}

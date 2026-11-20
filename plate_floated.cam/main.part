@@ -1,0 +1,33 @@
+# plate_floated.cam — the same L FLOATED in a 140 x 100 blank (Phase 60
+# slice 2, fork 6A): every face of the plate needs machining, so the part is
+# an ISLAND standing through the Plane, the Clear goes around it, and the Side
+# traces all six walls. No edge is on the blank, so Phase 60's wall chains
+# leave this program alone — it is the CONTROL beside plate.cam and
+# plate_boss.cam, the three readings of one L: six walls when the plate
+# floats, two when the blank is the plate's own faces. The bottom is the
+# blank's bottom (2.5D work). The Clear is unpinned (until Phase 61 this floor op was an
+# End, a Plane's only verb); the fixture's subject is the Side.
+units mm
+feed 800
+plunge 300
+rapid_z 5
+clearance_z 25
+spindle 3000
+
+stock Box(w=140, l=100, h=20, x=0, y=0, z=0)
+
+tool T5 Endmill(dia=10.0)
+
+feature Floor Plane(z=-20)
+# plate_boss.cam's L moved 10 mm in from the blank's west and south faces.
+feature Plate ProfileBoss(extent=20
+    10 10
+    10 50
+    70 50
+    70 90
+    130 90
+    130 10
+)
+
+run Clear(tool=T5, profile=Floor, stepover=4.0, stepdown=5)
+run Side(tool=T5, surface=Plate, comp=control)

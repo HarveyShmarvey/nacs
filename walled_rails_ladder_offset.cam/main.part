@@ -1,0 +1,24 @@
+# walled_rails_ladder_offset.cam — the rest floor, twice (Phase 33 slice 3;
+# DECISIONS.md → "Phase 33 slice 3: the recursion…"). A ladder of tools down
+# the walled rail plate: the 10mm tool faces the land and concedes three
+# stretches; the 5mm tool takes the rest of them and concedes the one it
+# cannot enter either — the 3mm slot between Fin4 and Fin5 — by its own
+# `cover=`, a share of the REST floor, not of the land; the 3mm tool takes
+# what the 5mm one left, and only that. Each concession names the op after
+# it, and each rest op reads what the one before it held back.
+units mm
+feed 800
+plunge 300
+rapid_z 5
+clearance_z 25
+spindle 3000
+
+stock Box(w=190, l=140, h=20, x=-5, y=-5, z=0)
+
+tool T5 Endmill(dia=10.0)
+tool T7 Endmill(dia=5.0)
+tool T6 Endmill(dia=3.0)
+
+run End(tool=T5, surface=Land, stepover=5.0, cover=92.7, pattern=offset)
+run End(tool=T7, surface=Land, stepover=2.5, strategy=rest, cover=77.2, pattern=offset)
+run End(tool=T6, surface=Land, stepover=1.5, strategy=rest, pattern=offset)

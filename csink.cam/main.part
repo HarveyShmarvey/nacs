@@ -1,0 +1,40 @@
+# csink.cam — spot drilling and countersinking: the same ground cone on a
+# hole's mouth (DECISIONS.md → "spot drilling and countersinking…"). The
+# declaration lives on the hole — a seat is part geometry, dimensioned on the
+# print — and Drill cuts it, because the motion IS a drill cycle: position,
+# plunge on the axis, retract. No comp, no winding, no ring.
+#
+# The depth is the trap this fixture pins. On the shop floor the plunge is
+# habitually derived from the catalogue's sharp point — seat_r/tan(angle/2)
+# below the surface — with the tip flat forgotten. T3's flat is 0.5mm, so its
+# theoretical apex sits 0.25mm below the physical tip, and the engine derives
+# every seat through GroundCone::height_at_radius instead:
+#   Hole1's 11.0 seat:  Z = 0 − (−0.25 + 5.5/tan45) = −5.25   (naive: −5.5)
+#   Hole2's  3.0 spot:  Z = 0 − (−0.25 + 1.5/tan45) = −1.25   (naive: −1.5)
+#
+# Three runs, in the order a real program does the work: the spot goes in
+# FIRST (a dimple in solid stock, positioning the drill that follows), the
+# drill opens both holes, and the countersink comes LAST, its relieved flat
+# hanging in the hole's already-open void.
+units mm
+feed 800
+plunge 300
+rapid_z 5
+clearance_z 25
+spindle 3000
+
+stock Box(w=120, l=80, h=20, x=0, y=0, z=0)
+
+tool T7 Drill(dia=6.0)
+tool T3 ChamferMill(angle=90.0, gauge_dia=8.0, gauge_z=3.75, dia=12.0, tip_dia=0.5)
+
+# The print dimensions Hole1's seat at 11.0 across at 90 degrees — the stated
+# angle must match T3's nominal angle exactly (a form cutter cuts its own
+# angle or the wrong one). Hole2's spot states no angle: the tool's own cone
+# defines the dimple, the common callout.
+feature Hole1 CylinderBore(dia=6.0, extent=15.0, x=30.0, y=40.0, csink_dia=11.0, csink_angle=90.0)
+feature Hole2 CylinderBore(dia=6.0, extent=15.0, x=60.0, y=40.0, spot_dia=3.0)
+
+run Form(points=[Hole2], tool=T3, cycle=Simple)
+run Form(points=[Hole1,Hole2], tool=T7, cycle=Simple)
+run Form(points=[Hole1], tool=T3, cycle=Simple)

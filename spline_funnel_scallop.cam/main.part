@@ -1,0 +1,31 @@
+# spline_funnel_scallop.cam — constant-scallop over the spline funnel (the
+# inside orientation's twin of spline_cap_scallop.cam). Same cavity, same
+# meridian.spline (a verbatim copy — each .cam fixture stays self-contained),
+# but spaced by the family Newton march
+# (parse::derive_spline_revolve_funnel_step_u — the shared worker handed the
+# void-side pair of homes) instead of uniform arc length: the cusp triangle is
+# picked per march point from the meridian's exact signed curvature read
+# against the INTO-VOID normal (nurbs::curvature_toward_void_normal), so a
+# concave upper wall, the inflection, and the convex flare above the tip each
+# get their own chord and the cusp height stays at the requested scallop.
+#
+# scallop=0.05 with the 6mm ball gives a chord ≈ 2·sqrt(2·3·0.05 − 0.0025)
+# ≈ 1.09mm over the ~20mm meridian, ~19 rings. The mouth ring is scallop-
+# invariant (the march starts at u0 with the same end-tangent CL point as the
+# waterline: X60.154, Z0.949) — the hand-derived anchor the golden test pins.
+units mm
+feed 600
+plunge 200
+rapid_z 5
+clearance_z 40
+spindle 4000
+
+stock Box(w=100, l=80, h=40, x=0, y=0, z=0)
+
+tool T10 Ballmill(dia=6.0)
+
+# Mouth circle of radius 13 in the stock-top plane, funneling down the
+# freeform meridian to the radius-5 tip at depth 18.
+feature Vortex SplineRevolveFunnel(file="meridian.spline", x=50, y=40)
+
+run Copy(tool=T10, surface=Vortex, scallop=0.05)

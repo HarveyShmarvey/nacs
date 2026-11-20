@@ -1,0 +1,7 @@
+# Proposed stock from disc_step.step by sidecar/import_stock.py:
+# the smallest blank the model fits, not the model's own outline --
+# its topmost flat face (z 30.0) spans x -59.99..20.0, y
+# -59.995..59.995 of a solid spanning x -60.0..60.0, y -60.0..60.0,
+# so something stands on its top. Add the allowance you will cut
+# off.
+stock Cylinder(dia=120.0, h=30.0, x=0.0, y=0.0, z=30.0)

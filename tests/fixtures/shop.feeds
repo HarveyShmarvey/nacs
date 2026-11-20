@@ -1,0 +1,37 @@
+# shop.feeds — a small SHOP feeds table, the fixture for `nacs
+# --assembly-report ... feeds=<file>` (DECISIONS.md → "the shop table reaches
+# the report…").
+#
+# It exists to prove the precedence K3 was founded on: THE SHOP'S PROVEN
+# NUMBERS OUTRANK THE SHIPPED ONES. Two records, chosen to exercise both sides
+# of the resolution in one file:
+#
+#   * 6061 x Endmill SHADOWS the shipped record (150 m/min there, 260 here) —
+#     a shop that has actually run this alloy on this machine and knows it
+#     will take more. The report's rpm column moves because of it.
+#   * 7075 x Endmill is a row the SHIPPED table does not hold at all, so it is
+#     the other half: a shop can add a material we never vetted, which is the
+#     whole reason a miss refuses by name instead of guessing.
+#
+# Nothing here shadows 6061 x Drill, so that lookup still falls through to the
+# shipped table — the "shipped table behind it" the report header names.
+#
+# The numbers are this fixture's own and are documented as such in every
+# source line, per the grammar's requirement that a record say where its
+# numbers came from.
+
+units mm
+
+feeds 6061 Endmill
+surface_speed 260
+source fixture data for the shop-table precedence test — deliberately well above the shipped 150 m/min so the shadowing is visible in the rpm column
+chipload 1..3 0.015
+chipload 3..6 0.030
+chipload 6..13 0.055
+
+feeds 7075 Endmill
+surface_speed 180
+source fixture data — a material the shipped table does not hold at all, so this record is the only place the lookup can succeed
+chipload 1..3 0.012
+chipload 3..6 0.025
+chipload 6..13 0.045

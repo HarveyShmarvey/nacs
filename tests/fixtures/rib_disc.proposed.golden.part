@@ -1,0 +1,67 @@
+# Proposed features recognized from rib_disc.step by sidecar/import_step.py
+# (contract v1 -- see sidecar/CONTRACT.md). Review before use:
+# recognition proposes, it does not machine.
+
+# F1: cylindrical, axis +Z, full revolution, material inside (a standing boss), flat top cap F3, the base at z=27.0 is the head's own underside, and nothing from above reaches what is under the head -- F2 (the head's underside), F4 (a wall of the neck), F5 (the pad under the head), and the foot bevels F6 -- so the boss is proposed down to z=20.0, the floor F7 it stands over, and the program leaves the material under the head standing (CHECKLIST row 2.4)
+# finish the wall with: run Side(tool=..., surface=F1_Boss, stepover=...)  [stepover is the ring spacing up the wall]
+# the tool rides outside at R + r_tool (convex flank; finish_cylinder's mirror)
+# the walls end at z=27.0 on the head's own underside; the neck, the pad and the pad's
+# foot bevels under it are out of reach from above, so the boss runs down to z=20.0, the
+# floor it stands over, and the program leaves what is under the head standing
+# the foot bevels stand outside the outline below the head: clearing the floor to the outline
+# cuts them away, and the wall runs straight down to the floor where the model has a bevel
+feature F1_Boss CylinderBoss(dia=24.0, extent=15.0, x=-15.0, y=0.0, z=20.0)
+
+# F3: planar, normal +Z, topmost planar face (CHECKLIST row 1.1)
+feature F3_Top Plane(z=35.0)
+
+# F7: the level at z=20.0 the heads F17_Profile F1_Boss stand over: 1 face (F7) at one height, open along F9 (the blank's silhouette); nothing stands above it outside a proposed feature, so the whole blank clears to it around what stands, the islands and voids derived from containment (CHECKLIST row 1.1)
+# consume with: run Clear(tool=..., profile=F7_Floor, stepover=...)  [the whole blank down to z=20.0, around what stands]
+# then finish with: run End(tool=..., surface=F7_Floor, stepover=...)
+# the islands are derived from containment: every proposed boss standing to z=20.0 (the heads
+# named above), and every bore whose mouth opens in this floor is a void the paths bridge or go around
+# the pads' foot bevels under the heads (4 faces, each saying so in the report) stand outside the
+# heads' outlines and are cleared away: the walls run straight down to this floor
+feature F7_Floor Plane(z=20.0)
+
+# F12: cylindrical, axis +Z, full revolution, material outside (a bore), opens upward; bottom opens through -- a drillable through hole; rim at z=20.0, 15.0 below the stock top z=35.0, with open air straight above it to the top -- proposed from the top, where a drill through the blank starts, extent 35.0 the whole way down; what the model has above the rim is another feature's to cut (CHECKLIST row 2.3)
+# consume with: run Form(points=[F12_Hole], tool=..., cycle=Simple)  [the bore carries its own extent, measured down from the stock top]
+# through hole -- drill past extent=35.0 by the tip's point length for full-diameter breakthrough
+# or finish the wall with: run Side(tool=..., surface=F12_Hole, stepover=...)
+feature F12_Hole CylinderBore(dia=10.0, extent=35.0, x=-15.0, y=30.0)
+
+# F17: outer profile under top cap F18: vertical wall loop F22 F17 F9 F19, top at z=35.0, base at z=27.0, material inside the loop; stepped base: the profile stops at the highest base z=27.0, and F9 to z=0.0 run on below it; the base at z=27.0 is the head's own underside, and nothing from above reaches what is under the head -- F13 (the pad under the head), F15 (a wall of the neck), F16 (the head's underside), F20 (a wall of the neck), F21 (a wall of the neck), and the foot bevels F8 F10 F11 -- so the boss is proposed down to z=20.0, the floor F7 it stands over, and the program leaves the material under the head standing (CHECKLIST row 2.8)
+# consume with: run Side(tool=..., surface=F17_Profile, comp=control)  [the feature carries its own z + extent]
+# the loop is wound CW: material inside, tool outside (the winding convention,
+# DECISIONS.md -> "Row-2.4 side selector")
+# comp=control is required on Contour runs: recognized boundaries carry rounded
+# corners tessellated to chords, and engine comp hard-errors on rounded-corner
+# offsets (DECISIONS.md -> "recognized contours propose comp=control")
+# the base is stepped: this profile stops at z=27.0, the highest base; the walls F9 run on below it
+# and belong to whatever stands lower -- declare that by hand or accept its own proposal
+# the walls end at z=27.0 on the head's own underside; the neck, the pad and the pad's
+# foot bevels under it are out of reach from above, so the boss runs down to z=20.0, the
+# floor it stands over, and the program leaves what is under the head standing
+# the foot bevels stand outside the outline below the head: clearing the floor to the outline
+# cuts them away, and the wall runs straight down to the floor where the model has a bevel
+feature F17_Profile ProfileBoss(z=35.0, extent=15.0
+    30.0 -12.0
+    30.0 12.0
+    48.539 12.0
+    48.952 10.182
+    49.298 8.35
+    49.575 6.507
+    49.783 4.654
+    49.922 2.795
+    49.991 0.932
+    49.991 -0.932
+    49.922 -2.795
+    49.783 -4.654
+    49.575 -6.507
+    49.298 -8.35
+    48.952 -10.182
+    48.539 -12.0
+)
+
+# F18: planar, normal +Z, topmost planar face (CHECKLIST row 1.1)
+feature F18_Top Plane(z=35.0)

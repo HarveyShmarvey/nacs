@@ -1,0 +1,141 @@
+{
+  "faces": [
+    {
+      "checklist_row": "2.2",
+      "feature": "F1_Profile",
+      "id": "F1",
+      "part": "feature F1_Profile ProfileBoss(z=28.0, extent=28.0\n    0.0 0.0\n    0.0 80.0\n    100.0 80.0\n    100.0 0.0\n)",
+      "status": "proposed",
+      "surface": "plane",
+      "why": "outer profile under top cap F3: vertical wall loop F1 F2 F6 F4, top at z=20.0, base at z=0.0, material inside the loop"
+    },
+    {
+      "checklist_row": "2.2",
+      "feature": "F1_Profile",
+      "id": "F2",
+      "part": "feature F1_Profile ProfileBoss(z=28.0, extent=28.0\n    0.0 0.0\n    0.0 80.0\n    100.0 80.0\n    100.0 0.0\n)",
+      "status": "proposed",
+      "surface": "plane",
+      "why": "vertical wall of recognized outer profile F1_Profile (top cap F3)"
+    },
+    {
+      "checklist_row": "1.1",
+      "id": "F3",
+      "part": "feature F3_Face Face(z=20.0\n    loop\n        0.0 0.0\n        100.0 0.0\n        100.0 80.0\n        0.0 80.0\n    loop\n        10.0 10.0\n        10.0 30.0\n        40.0 30.0\n        40.0 10.0\n)",
+      "status": "proposed",
+      "surface": "plane",
+      "why": "planar, normal +Z, below the topmost height: a bounded face at z=20.0, 2 loops (outer + 1 inner); caps recognized outer profile F1_Profile"
+    },
+    {
+      "checklist_row": "2.2",
+      "feature": "F1_Profile",
+      "id": "F4",
+      "part": "feature F1_Profile ProfileBoss(z=28.0, extent=28.0\n    0.0 0.0\n    0.0 80.0\n    100.0 80.0\n    100.0 0.0\n)",
+      "status": "proposed",
+      "surface": "plane",
+      "why": "vertical wall of recognized outer profile F1_Profile (top cap F3)"
+    },
+    {
+      "checklist_row": "no row",
+      "code": "plane_downward",
+      "id": "F5",
+      "reason": "downward-facing planar face -- unreachable from above (undercut relative to the tool axis)",
+      "status": "unsupported",
+      "surface": "plane"
+    },
+    {
+      "checklist_row": "2.2",
+      "feature": "F1_Profile",
+      "id": "F6",
+      "part": "feature F1_Profile ProfileBoss(z=28.0, extent=28.0\n    0.0 0.0\n    0.0 80.0\n    100.0 80.0\n    100.0 0.0\n)",
+      "status": "proposed",
+      "surface": "plane",
+      "why": "vertical wall of recognized outer profile F1_Profile (top cap F3)"
+    },
+    {
+      "checklist_row": "2.2",
+      "feature": "F7_Profile",
+      "id": "F7",
+      "part": "feature F7_Profile ProfileBoss(z=28.0, extent=8.0, chamfer_depth=1.0, chamfer_angle=90.0\n    10.0 10.0 chamfer_depth=1.5\n    10.0 30.0 chamfer_depth=1.0\n    40.0 30.0 chamfer_depth=1.5\n    40.0 10.0 chamfer_depth=1.0\n)",
+      "status": "proposed",
+      "surface": "plane",
+      "why": "outer profile under top cap F15: vertical wall loop F8 F10 F9 F7, top at z=28.0, base at z=20.0, material inside the loop; top edge beveled at 90.0deg included with legs that differ edge to edge (F13 F12 F14 F11: 1.0, 1.5) -- the loop carries 1.0 as its chamfer_depth and its points restate the leg where it changes"
+    },
+    {
+      "checklist_row": "2.2",
+      "feature": "F7_Profile",
+      "id": "F8",
+      "part": "feature F7_Profile ProfileBoss(z=28.0, extent=8.0, chamfer_depth=1.0, chamfer_angle=90.0\n    10.0 10.0 chamfer_depth=1.5\n    10.0 30.0 chamfer_depth=1.0\n    40.0 30.0 chamfer_depth=1.5\n    40.0 10.0 chamfer_depth=1.0\n)",
+      "status": "proposed",
+      "surface": "plane",
+      "why": "vertical wall of recognized outer profile F7_Profile (top cap F15)"
+    },
+    {
+      "checklist_row": "2.2",
+      "feature": "F7_Profile",
+      "id": "F9",
+      "part": "feature F7_Profile ProfileBoss(z=28.0, extent=8.0, chamfer_depth=1.0, chamfer_angle=90.0\n    10.0 10.0 chamfer_depth=1.5\n    10.0 30.0 chamfer_depth=1.0\n    40.0 30.0 chamfer_depth=1.5\n    40.0 10.0 chamfer_depth=1.0\n)",
+      "status": "proposed",
+      "surface": "plane",
+      "why": "vertical wall of recognized outer profile F7_Profile (top cap F15)"
+    },
+    {
+      "checklist_row": "2.2",
+      "feature": "F7_Profile",
+      "id": "F10",
+      "part": "feature F7_Profile ProfileBoss(z=28.0, extent=8.0, chamfer_depth=1.0, chamfer_angle=90.0\n    10.0 10.0 chamfer_depth=1.5\n    10.0 30.0 chamfer_depth=1.0\n    40.0 30.0 chamfer_depth=1.5\n    40.0 10.0 chamfer_depth=1.0\n)",
+      "status": "proposed",
+      "surface": "plane",
+      "why": "vertical wall of recognized outer profile F7_Profile (top cap F15)"
+    },
+    {
+      "checklist_row": "2.2",
+      "feature": "F7_Profile",
+      "id": "F11",
+      "part": "feature F7_Profile ProfileBoss(z=28.0, extent=8.0, chamfer_depth=1.0, chamfer_angle=90.0\n    10.0 10.0 chamfer_depth=1.5\n    10.0 30.0 chamfer_depth=1.0\n    40.0 30.0 chamfer_depth=1.5\n    40.0 10.0 chamfer_depth=1.0\n)",
+      "status": "proposed",
+      "surface": "plane",
+      "why": "top-edge bevel of recognized outer profile F7_Profile (top cap F15): a strip between the cap and the walls, 1.5 deep -- proposed as the boss's chamfer_depth, restated on the loop's points where the leg changes"
+    },
+    {
+      "checklist_row": "2.2",
+      "feature": "F7_Profile",
+      "id": "F12",
+      "part": "feature F7_Profile ProfileBoss(z=28.0, extent=8.0, chamfer_depth=1.0, chamfer_angle=90.0\n    10.0 10.0 chamfer_depth=1.5\n    10.0 30.0 chamfer_depth=1.0\n    40.0 30.0 chamfer_depth=1.5\n    40.0 10.0 chamfer_depth=1.0\n)",
+      "status": "proposed",
+      "surface": "plane",
+      "why": "top-edge bevel of recognized outer profile F7_Profile (top cap F15): a strip between the cap and the walls, 1.5 deep -- proposed as the boss's chamfer_depth, restated on the loop's points where the leg changes"
+    },
+    {
+      "checklist_row": "2.2",
+      "feature": "F7_Profile",
+      "id": "F13",
+      "part": "feature F7_Profile ProfileBoss(z=28.0, extent=8.0, chamfer_depth=1.0, chamfer_angle=90.0\n    10.0 10.0 chamfer_depth=1.5\n    10.0 30.0 chamfer_depth=1.0\n    40.0 30.0 chamfer_depth=1.5\n    40.0 10.0 chamfer_depth=1.0\n)",
+      "status": "proposed",
+      "surface": "plane",
+      "why": "top-edge bevel of recognized outer profile F7_Profile (top cap F15): a strip between the cap and the walls, 1.0 deep -- proposed as the boss's chamfer_depth, restated on the loop's points where the leg changes"
+    },
+    {
+      "checklist_row": "2.2",
+      "feature": "F7_Profile",
+      "id": "F14",
+      "part": "feature F7_Profile ProfileBoss(z=28.0, extent=8.0, chamfer_depth=1.0, chamfer_angle=90.0\n    10.0 10.0 chamfer_depth=1.5\n    10.0 30.0 chamfer_depth=1.0\n    40.0 30.0 chamfer_depth=1.5\n    40.0 10.0 chamfer_depth=1.0\n)",
+      "status": "proposed",
+      "surface": "plane",
+      "why": "top-edge bevel of recognized outer profile F7_Profile (top cap F15): a strip between the cap and the walls, 1.0 deep -- proposed as the boss's chamfer_depth, restated on the loop's points where the leg changes"
+    },
+    {
+      "checklist_row": "1.1",
+      "id": "F15",
+      "part": "feature F15_Top Plane(z=28.0)",
+      "status": "proposed",
+      "surface": "plane",
+      "why": "planar, normal +Z, topmost planar face"
+    }
+  ],
+  "faces_total": 15,
+  "schema": "nacs-recognition-report",
+  "source": "uneven_bevels.step",
+  "units": "mm",
+  "version": 1
+}

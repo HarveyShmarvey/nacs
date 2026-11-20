@@ -1,0 +1,35 @@
+# spline_funnel_rough.cam — stepover-mode stock_to_leave roughing down the
+# spline funnel (DECISIONS.md "stock_to_leave inside funnels…"), closing the
+# LAST axisymmetric refusal: spline_funnel.cam's freeform vortex run as a
+# ROUGHING pass. The cap's scheme on the void side: the uniform-arc grid is
+# measured along the a'-INFLATED meridian through the same one home the cap
+# reads (parse::spline_uniform_arc_us, into_void = true), the budget is the
+# exact tip walk over that grid (parse::derive_spline_funnel_march_cusp —
+# the funnel-CL twin, same one-sided numeric projection) under
+# sweep-then-VERIFY, and the first TWO-principal-direction gouge scan reruns
+# in its _with_stock form at the emitted skin: whichever direction bound
+# tightest at nominal (here the hoop, ≈ 5.3mm at the tip) is what the
+# fatter roughing offset must clear.
+#
+# The 3.0mm stepover's worst verified pair prices 0.402mm of the 0.5mm
+# ceiling, leaving nominal skin a' = 0.098mm. Worked mouth anchor (the
+# spline_funnel.cam pin, inflated): the into-void normal at the mouth is
+# (−3, 1)/√10, so the mouth CL is (13 − 3.098·3/√10, 3.098/√10) =
+# (10.061, 0.980) — X60.061 / Z0.980 about x=50. Tip-relief assumption as
+# the plain fixture states it.
+units mm
+feed 600
+plunge 200
+rapid_z 5
+clearance_z 40
+spindle 4000
+
+stock Box(w=100, l=80, h=40, x=0, y=0, z=0)
+
+tool T10 Ballmill(dia=6.0)
+
+# Mouth circle of radius 13 in the stock-top plane, funneling down the
+# freeform meridian to the radius-5 tip at depth 18.
+feature Vortex SplineRevolveFunnel(file="meridian.spline", x=50, y=40)
+
+run Copy(tool=T10, surface=Vortex, stepover=3.0, stock_to_leave=0.5)

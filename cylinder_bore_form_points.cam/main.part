@@ -1,0 +1,17 @@
+# cylinder_bore_form_points.cam — a drill forms CylinderBore holes at points (Simple + Peck cycles)
+units mm
+feed 800
+plunge 300
+rapid_z 5
+clearance_z 25
+spindle 3000
+
+stock Box(w=120, l=80, h=20, x=0, y=0, z=0)
+
+tool T7 Drill(dia=8.0)
+
+feature Hole1 CylinderBore(dia=10.0, extent=15.0, x=30.0, y=40.0)
+feature Hole2 CylinderBore(dia=8.0, extent=15.0, x=50.0, y=40.0)
+
+run Form(points=[Hole1], tool=T7, cycle=Simple)
+run Form(points=[Hole1,Hole2], tool=T7, cycle=Peck, peck_increment=3.0)

@@ -1,0 +1,240 @@
+{
+  "faces": [
+    {
+      "checklist_row": "2.4",
+      "id": "F1",
+      "part": "feature F1_Boss CylinderBoss(dia=24.0, extent=15.0, x=-15.0, y=0.0, z=20.0)",
+      "status": "proposed",
+      "surface": "cylinder",
+      "why": "cylindrical, axis +Z, full revolution, material inside (a standing boss), flat top cap F3, the base at z=27.0 is the head's own underside, and nothing from above reaches what is under the head -- F2 (the head's underside), F4 (a wall of the neck), F5 (the pad under the head), and the foot bevels F6 -- so the boss is proposed down to z=20.0, the floor F7 it stands over, and the program leaves the material under the head standing"
+    },
+    {
+      "checklist_row": "no row",
+      "code": "under_overhang",
+      "id": "F2",
+      "reason": "the head's underside, under the overhang of F1_Boss (cap F3): nothing from above reaches it, and the boss is proposed down to z=20.0, the floor it stands over -- the program leaves this face standing as the material under the head",
+      "refs": [
+        "F1",
+        "F7"
+      ],
+      "status": "unsupported",
+      "surface": "plane"
+    },
+    {
+      "checklist_row": "1.1",
+      "id": "F3",
+      "part": "feature F3_Top Plane(z=35.0)",
+      "status": "proposed",
+      "surface": "plane",
+      "why": "planar, normal +Z, topmost planar face"
+    },
+    {
+      "checklist_row": "no row",
+      "code": "under_overhang",
+      "id": "F4",
+      "reason": "a wall of the neck, under the overhang of F1_Boss (cap F3): nothing from above reaches it, and the boss is proposed down to z=20.0, the floor it stands over -- the program leaves this face standing as the material under the head",
+      "refs": [
+        "F1",
+        "F7"
+      ],
+      "status": "unsupported",
+      "surface": "cylinder"
+    },
+    {
+      "checklist_row": "no row",
+      "code": "under_overhang",
+      "id": "F5",
+      "reason": "the pad under the head, under the overhang of F1_Boss (cap F3): nothing from above reaches it, and the boss is proposed down to z=20.0, the floor it stands over -- the program leaves this face standing as the material under the head",
+      "refs": [
+        "F1",
+        "F7"
+      ],
+      "status": "unsupported",
+      "surface": "plane"
+    },
+    {
+      "checklist_row": "no row",
+      "code": "under_overhang",
+      "id": "F6",
+      "reason": "the foot bevel of the pad under F1_Boss (cap F3): it stands outside the head's outline below the overhang, where only the floor's clearing reaches -- cleared away to the outline, so the wall runs straight down to z=20.0 where the model has this bevel",
+      "refs": [
+        "F1",
+        "F7"
+      ],
+      "status": "unsupported",
+      "surface": "cone"
+    },
+    {
+      "checklist_row": "1.1",
+      "id": "F7",
+      "part": "feature F7_Floor Plane(z=20.0)",
+      "status": "proposed",
+      "surface": "plane",
+      "why": "the level at z=20.0 the heads F17_Profile F1_Boss stand over: 1 face (F7) at one height, open along F9 (the blank's silhouette); nothing stands above it outside a proposed feature, so the whole blank clears to it around what stands, the islands and voids derived from containment"
+    },
+    {
+      "checklist_row": "no row",
+      "code": "under_overhang",
+      "id": "F8",
+      "reason": "the foot bevel of the pad under F17_Profile (cap F18): it stands outside the head's outline below the overhang, where only the floor's clearing reaches -- cleared away to the outline, so the wall runs straight down to z=20.0 where the model has this bevel",
+      "refs": [
+        "F17",
+        "F7"
+      ],
+      "status": "unsupported",
+      "surface": "plane"
+    },
+    {
+      "checklist_row": "no row",
+      "code": "trim_wire_candidate_wall/trim_wire_edge_not_line",
+      "id": "F9",
+      "reason": "wall of refused trim-wire candidate on part bottom F14: trim-wire top edge of wall F9 is not a straight line -- a curved trim edge cannot ride the wire grammar's straight x y z segments, and tessellating a 3D curve would be a guess; curved trim edges have not graduated",
+      "refs": [
+        "F14",
+        "F9"
+      ],
+      "status": "unsupported",
+      "surface": "cylinder"
+    },
+    {
+      "checklist_row": "no row",
+      "code": "under_overhang",
+      "id": "F10",
+      "reason": "the foot bevel of the pad under F17_Profile (cap F18): it stands outside the head's outline below the overhang, where only the floor's clearing reaches -- cleared away to the outline, so the wall runs straight down to z=20.0 where the model has this bevel",
+      "refs": [
+        "F17",
+        "F7"
+      ],
+      "status": "unsupported",
+      "surface": "plane"
+    },
+    {
+      "checklist_row": "no row",
+      "code": "under_overhang",
+      "id": "F11",
+      "reason": "the foot bevel of the pad under F17_Profile (cap F18): it stands outside the head's outline below the overhang, where only the floor's clearing reaches -- cleared away to the outline, so the wall runs straight down to z=20.0 where the model has this bevel",
+      "refs": [
+        "F17",
+        "F7"
+      ],
+      "status": "unsupported",
+      "surface": "plane"
+    },
+    {
+      "checklist_row": "2.3",
+      "id": "F12",
+      "part": "feature F12_Hole CylinderBore(dia=10.0, extent=35.0, x=-15.0, y=30.0)",
+      "status": "proposed",
+      "surface": "cylinder",
+      "why": "cylindrical, axis +Z, full revolution, material outside (a bore), opens upward; bottom opens through -- a drillable through hole; rim at z=20.0, 15.0 below the stock top z=35.0, with open air straight above it to the top -- proposed from the top, where a drill through the blank starts, extent 35.0 the whole way down; what the model has above the rim is another feature's to cut"
+    },
+    {
+      "checklist_row": "no row",
+      "code": "under_overhang",
+      "id": "F13",
+      "reason": "the pad under the head, under the overhang of F17_Profile (cap F18): nothing from above reaches it, and the boss is proposed down to z=20.0, the floor it stands over -- the program leaves this face standing as the material under the head",
+      "refs": [
+        "F17",
+        "F7"
+      ],
+      "status": "unsupported",
+      "surface": "plane"
+    },
+    {
+      "checklist_row": "no row",
+      "code": "plane_downward",
+      "id": "F14",
+      "reason": "downward-facing planar face -- unreachable from above (undercut relative to the tool axis)",
+      "status": "unsupported",
+      "surface": "plane"
+    },
+    {
+      "checklist_row": "no row",
+      "code": "under_overhang",
+      "id": "F15",
+      "reason": "a wall of the neck, under the overhang of F17_Profile (cap F18): nothing from above reaches it, and the boss is proposed down to z=20.0, the floor it stands over -- the program leaves this face standing as the material under the head",
+      "refs": [
+        "F17",
+        "F7"
+      ],
+      "status": "unsupported",
+      "surface": "plane"
+    },
+    {
+      "checklist_row": "no row",
+      "code": "under_overhang",
+      "id": "F16",
+      "reason": "the head's underside, under the overhang of F17_Profile (cap F18): nothing from above reaches it, and the boss is proposed down to z=20.0, the floor it stands over -- the program leaves this face standing as the material under the head",
+      "refs": [
+        "F17",
+        "F7"
+      ],
+      "status": "unsupported",
+      "surface": "plane"
+    },
+    {
+      "checklist_row": "2.8",
+      "feature": "F17_Profile",
+      "id": "F17",
+      "part": "feature F17_Profile ProfileBoss(z=35.0, extent=15.0\n    30.0 -12.0\n    30.0 12.0\n    48.539 12.0\n    48.952 10.182\n    49.298 8.35\n    49.575 6.507\n    49.783 4.654\n    49.922 2.795\n    49.991 0.932\n    49.991 -0.932\n    49.922 -2.795\n    49.783 -4.654\n    49.575 -6.507\n    49.298 -8.35\n    48.952 -10.182\n    48.539 -12.0\n)",
+      "status": "proposed",
+      "surface": "plane",
+      "why": "outer profile under top cap F18: vertical wall loop F22 F17 F9 F19, top at z=35.0, base at z=27.0, material inside the loop; stepped base: the profile stops at the highest base z=27.0, and F9 to z=0.0 run on below it; the base at z=27.0 is the head's own underside, and nothing from above reaches what is under the head -- F13 (the pad under the head), F15 (a wall of the neck), F16 (the head's underside), F20 (a wall of the neck), F21 (a wall of the neck), and the foot bevels F8 F10 F11 -- so the boss is proposed down to z=20.0, the floor F7 it stands over, and the program leaves the material under the head standing"
+    },
+    {
+      "checklist_row": "1.1",
+      "id": "F18",
+      "part": "feature F18_Top Plane(z=35.0)",
+      "status": "proposed",
+      "surface": "plane",
+      "why": "planar, normal +Z, topmost planar face"
+    },
+    {
+      "checklist_row": "2.8",
+      "feature": "F17_Profile",
+      "id": "F19",
+      "part": "feature F17_Profile ProfileBoss(z=35.0, extent=15.0\n    30.0 -12.0\n    30.0 12.0\n    48.539 12.0\n    48.952 10.182\n    49.298 8.35\n    49.575 6.507\n    49.783 4.654\n    49.922 2.795\n    49.991 0.932\n    49.991 -0.932\n    49.922 -2.795\n    49.783 -4.654\n    49.575 -6.507\n    49.298 -8.35\n    48.952 -10.182\n    48.539 -12.0\n)",
+      "status": "proposed",
+      "surface": "plane",
+      "why": "vertical wall of recognized outer profile F17_Profile (top cap F18)"
+    },
+    {
+      "checklist_row": "no row",
+      "code": "under_overhang",
+      "id": "F20",
+      "reason": "a wall of the neck, under the overhang of F17_Profile (cap F18): nothing from above reaches it, and the boss is proposed down to z=20.0, the floor it stands over -- the program leaves this face standing as the material under the head",
+      "refs": [
+        "F17",
+        "F7"
+      ],
+      "status": "unsupported",
+      "surface": "plane"
+    },
+    {
+      "checklist_row": "no row",
+      "code": "under_overhang",
+      "id": "F21",
+      "reason": "a wall of the neck, under the overhang of F17_Profile (cap F18): nothing from above reaches it, and the boss is proposed down to z=20.0, the floor it stands over -- the program leaves this face standing as the material under the head",
+      "refs": [
+        "F17",
+        "F7"
+      ],
+      "status": "unsupported",
+      "surface": "plane"
+    },
+    {
+      "checklist_row": "2.8",
+      "feature": "F17_Profile",
+      "id": "F22",
+      "part": "feature F17_Profile ProfileBoss(z=35.0, extent=15.0\n    30.0 -12.0\n    30.0 12.0\n    48.539 12.0\n    48.952 10.182\n    49.298 8.35\n    49.575 6.507\n    49.783 4.654\n    49.922 2.795\n    49.991 0.932\n    49.991 -0.932\n    49.922 -2.795\n    49.783 -4.654\n    49.575 -6.507\n    49.298 -8.35\n    48.952 -10.182\n    48.539 -12.0\n)",
+      "status": "proposed",
+      "surface": "plane",
+      "why": "vertical wall of recognized outer profile F17_Profile (top cap F18)"
+    }
+  ],
+  "faces_total": 22,
+  "schema": "nacs-recognition-report",
+  "source": "rib_disc.step",
+  "units": "mm",
+  "version": 1
+}

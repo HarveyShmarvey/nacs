@@ -1,0 +1,8 @@
+# fanuc_mist.machine — cylinder_bore_machine.cam's fanuc.machine plus one
+# coolant-menu line (DECISIONS.md "coolant as a modeled setting…", fork 3A):
+# this controller has a mist channel on M07, so the menu says so, and
+# `coolant=mist` becomes sayable on this machine — and only on a machine
+# that says so.
+name Fanuc-family VMC
+spindle_word integer   # S is an integer word on Fanuc-family controls; `decimal` is the undeclared default
+coolant_mist M07       # the mist channel's word; flood (M08) and off (M09) need no line — they are the undeclared dialect

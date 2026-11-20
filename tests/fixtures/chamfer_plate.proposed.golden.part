@@ -1,0 +1,145 @@
+# Proposed features recognized from chamfer_plate.step by sidecar/import_step.py
+# (contract v1 -- see sidecar/CONTRACT.md). Review before use:
+# recognition proposes, it does not machine.
+
+# F1: planar, normal +Z, below the topmost height: a bounded face at z=20.0, 5 loops (outer + 4 inner); caps recognized outer profile F3_Profile (CHECKLIST row 1.1)
+feature F1_Face Face(z=20.0
+    loop
+        0.0 0.0
+        100.0 0.0
+        100.0 80.0
+        0.0 80.0
+    loop
+        10.0 10.0
+        10.0 30.0
+        40.0 30.0
+        40.0 10.0
+    loop
+        10.0 50.0
+        10.0 70.0
+        30.0 70.0
+        30.0 50.0
+    loop
+        54.0 9.0
+        54.0 31.0
+        86.0 31.0
+        86.0 9.0
+    loop
+        63.01 59.627
+        63.01 60.373
+        63.089 61.113
+        63.247 61.842
+        63.481 62.549
+        63.789 63.228
+        64.167 63.87
+        64.611 64.468
+        65.117 65.015
+        65.677 65.506
+        66.287 65.934
+        66.939 66.295
+        67.625 66.585
+        68.339 66.8
+        69.071 66.938
+        69.814 66.998
+        70.559 66.978
+        71.297 66.879
+        72.021 66.702
+        72.722 66.449
+        73.392 66.123
+        74.024 65.728
+        74.61 65.268
+        75.143 64.748
+        75.619 64.175
+        76.031 63.554
+        76.374 62.892
+        76.646 62.199
+        76.842 61.48
+        76.96 60.744
+        77.0 60.0
+        76.96 59.256
+        76.842 58.52
+        76.646 57.801
+        76.374 57.108
+        76.031 56.446
+        75.619 55.825
+        75.143 55.252
+        74.61 54.732
+        74.024 54.272
+        73.392 53.877
+        72.722 53.551
+        72.021 53.298
+        71.297 53.121
+        70.559 53.022
+        69.814 53.002
+        69.071 53.062
+        68.339 53.2
+        67.625 53.415
+        66.939 53.705
+        66.287 54.066
+        65.677 54.494
+        65.117 54.985
+        64.611 55.532
+        64.167 56.13
+        63.789 56.772
+        63.481 57.451
+        63.247 58.158
+        63.089 58.887
+)
+
+# F3: outer profile under top cap F1: vertical wall loop F3 F5 F6 F4, top at z=20.0, base at z=0.0, material inside the loop (CHECKLIST row 2.2)
+# consume with: run Side(tool=..., surface=F3_Profile, comp=control)  [the feature carries its own z + extent]
+# the loop is wound CW: material inside, tool outside (the winding convention,
+# DECISIONS.md -> "Row-2.4 side selector")
+# comp=control is required on Contour runs: recognized boundaries carry rounded
+# corners tessellated to chords, and engine comp hard-errors on rounded-corner
+# offsets (DECISIONS.md -> "recognized contours propose comp=control")
+feature F3_Profile ProfileBoss(z=28.0, extent=28.0
+    0.0 0.0
+    0.0 80.0
+    100.0 80.0
+    100.0 0.0
+)
+
+# F7: outer profile under top cap F31: vertical wall loop F7 F9 F10 F8, top at z=28.0, base at z=20.0, material inside the loop; top edge beveled 1.0 deep at 90.0deg included (F21 F23 F24 F22) -- proposed as chamfer_depth, the loop read at the walls (CHECKLIST row 2.2)
+# consume with: run Side(tool=..., surface=F7_Profile, comp=control)  [the feature carries its own z + extent]
+# the loop is wound CW: material inside, tool outside (the winding convention,
+# DECISIONS.md -> "Row-2.4 side selector")
+# comp=control is required on Contour runs: recognized boundaries carry rounded
+# corners tessellated to chords, and engine comp hard-errors on rounded-corner
+# offsets (DECISIONS.md -> "recognized contours propose comp=control")
+# the top edge's 1.0mm bevel is the boss's chamfer_depth, at the included angle the
+# model measures; a print that says otherwise is typed here (the three chamfer words are
+# pick-two) -- break it with: run Form(tool=<ChamferMill>, surface=F7_Profile, comp=control, tip_clearance=...)
+feature F7_Profile ProfileBoss(z=28.0, extent=8.0, chamfer_depth=1.0, chamfer_angle=90.0
+    10.0 10.0
+    10.0 30.0
+    40.0 30.0
+    40.0 10.0
+)
+
+# F19: cylindrical, axis +Z, full revolution, material outside (a bore), opens upward; flat floor F30 -- a milled bore; mouth bevel F2 absorbed, 1.0 deep at 90.0deg included -- extent runs to the virtual sharp corner (10.0); rim at z=20.0, 8.0 below the stock top z=28.0 -- authored from its rim by z=, so the step above it is another feature's material (CHECKLIST row 2.3)
+# finish the wall with: run Side(tool=..., surface=F19_Bore, stepover=...)  [stepover is the ring spacing up the wall]
+# a flat floor is milled, not drilled -- a twist drill leaves a conical point, so no drill run is suggested
+# the mouth's 1.0mm bevel is the bore's chamfer_depth, at the included angle the
+# model measures; a print that says otherwise is typed here (the three chamfer words are
+# pick-two) -- break it with: run Form(tool=<ChamferMill>, surface=F19_Bore)
+feature F19_Bore CylinderBore(dia=12.0, extent=10.0, x=70.0, y=60.0, z=20.0, chamfer_depth=1.0, chamfer_angle=90.0)
+
+# F31: planar, normal +Z, topmost planar face (CHECKLIST row 1.1)
+feature F31_Top Plane(z=28.0)
+
+# F32: pocket floor at z=12.0; vertical wall loop F25 F26 F28 F27, mouth at z=20.0, depth 8.0, opens upward; mouth beveled 1.0 deep at 90.0deg included (F11 F12 F13 F14) -- proposed as chamfer_depth, the mouth at the bevel's top (CHECKLIST row 2.1)
+# consume with: run Clear(tool=..., profile=F32_Pocket, stepover=...)  [the feature carries its own z + extent]
+# or finish with: run Side(tool=..., surface=F32_Pocket, comp=control)
+# comp=control is required on recognized profile Side runs: recognized boundaries carry rounded
+# corners tessellated to chords, and engine comp hard-errors on rounded-corner
+# offsets (DECISIONS.md -> "recognized contours propose comp=control")
+# the mouth's 1.0mm bevel is the pocket's chamfer_depth, at the included angle the
+# model measures; a print that says otherwise is typed here (the three chamfer words are
+# pick-two) -- break it with: run Form(tool=<ChamferMill>, surface=F32_Pocket)
+feature F32_Pocket ProfilePocket(z=20.0, extent=8.0, chamfer_depth=1.0, chamfer_angle=90.0
+    55.0 10.0
+    85.0 10.0
+    85.0 30.0
+    55.0 30.0
+)

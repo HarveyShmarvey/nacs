@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="170mm" height="130mm" viewBox="-5 -5 170 130">
+<!-- ANSWER KEY for land.svg: the rail centreline graph the part was drawn from,
+  then thickened. Not part geometry — a GRAPH: it runs straight through each
+  boss's bolt hole, and the 14mm pad has no centreline at all.
+  46 edges, 1165.3 mm of centreline, 18 odd-degree nodes, 4 dead ends.
+  Units mm, y down. Read by tests/mow_tests.rs: the rail passes are scored
+  against it. -->
+<g id="centerlines" fill="none" stroke="#06c" stroke-width="0.4">
+  <path class="wall" d="M 20 6 L 40 6"/>
+  <path class="wall" d="M 40 6 L 90 6"/>
+  <path class="wall" d="M 90 6 L 117.5 6"/>
+  <path class="wall" d="M 117.5 6 L 124 6"/>
+  <path class="wall" d="M 124 6 L 140 6"/>
+  <path class="wall" d="M 140 6 A 14 14 0 0 1 154 20"/>
+  <path class="wall" d="M 154 20 L 154 36"/>
+  <path class="wall" d="M 154 36 L 154 42.5"/>
+  <path class="wall" d="M 154 42.5 L 154 70"/>
+  <path class="wall" d="M 154 70 L 154 100"/>
+  <path class="wall" d="M 154 100 A 14 14 0 0 1 140 114"/>
+  <path class="wall" d="M 140 114 L 120 114"/>
+  <path class="wall" d="M 120 114 L 60 114"/>
+  <path class="wall" d="M 60 114 L 20 114"/>
+  <path class="wall" d="M 20 114 A 14 14 0 0 1 6 100"/>
+  <path class="wall" d="M 6 100 L 6 62"/>
+  <path class="wall" d="M 6 62 L 6 40"/>
+  <path class="wall" d="M 6 40 L 6 20"/>
+  <path class="wall" d="M 6 20 A 14 14 0 0 1 20 6"/>
+  <path class="trunk" d="M 40 6 L 40 30"/>
+  <path class="trunk" d="M 40 30 A 20 20 0 0 0 60 50"/>
+  <path class="trunk" d="M 60 50 L 70 50"/>
+  <path class="trunk" d="M 70 50 L 100 50"/>
+  <path class="trunk" d="M 100 50 A 20 20 0 0 1 120 70"/>
+  <path class="trunk" d="M 120 70 L 120 80"/>
+  <path class="trunk" d="M 120 80 L 120 114"/>
+  <path class="branch" d="M 70 50 A 20 20 0 0 0 90 30"/>
+  <path class="branch" d="M 90 30 L 90 6"/>
+  <path class="twin30" d="M 124 6 A 30 30 0 0 0 154 36"/>
+  <path class="twin36.5" d="M 117.5 6 A 36.5 36.5 0 0 0 154 42.5"/>
+  <path class="wave" d="M 6 62 L 45 62"/>
+  <path class="wave" d="M 45 62 A 5 5 0 0 1 50 67"/>
+  <path class="wave" d="M 50 67 A 5 5 0 0 0 60 67"/>
+  <path class="wave" d="M 60 67 A 5 5 0 0 1 70 67"/>
+  <path class="wave" d="M 70 67 A 5 5 0 0 0 80 67"/>
+  <path class="wave" d="M 80 67 A 5 5 0 0 1 90 67"/>
+  <path class="wave" d="M 90 67 A 13 13 0 0 0 103 80"/>
+  <path class="wave" d="M 103 80 L 120 80"/>
+  <path class="curl" d="M 6 40 L 24 40"/>
+  <path class="curl" d="M 24 40 A 6 6 0 1 0 18 34"/>
+  <path class="hairpin" d="M 60 114 L 60 95"/>
+  <path class="hairpin" d="M 60 95 A 3 3 0 0 1 66 95"/>
+  <path class="hairpin" d="M 66 95 L 66 105"/>
+  <path class="ring" d="M 146 70 A 8 8 0 1 1 130 70 A 8 8 0 1 1 146 70"/>
+  <path class="ring" d="M 146 70 L 154 70"/>
+  <path class="island" d="M 38 81.6077 A 12 12 0 1 1 21.6077 86"/>
+</g>
+<g id="pad" fill="none" stroke="#c60" stroke-width="0.4" stroke-dasharray="1 0.6">
+  <path d="M 48.5893 54.4703 A 27 27 0 0 1 35.5297 41.4107 L 48.218 35.494 A 13 13 0 0 0 54.506 41.782 Z"/>
+</g>
+</svg>

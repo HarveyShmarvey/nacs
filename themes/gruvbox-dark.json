@@ -1,0 +1,61 @@
+{
+  "$schema": "https://zed.dev/schema/themes/v0.2.0.json",
+  "name": "Gruvbox Dark",
+  "author": "a port for nacs — every colour is a stock gruvbox tone",
+  "themes": [
+    {
+      "name": "Gruvbox Dark",
+      "appearance": "dark",
+      "style": {
+        "background": "#282828",
+        "panel.background": "#32302f",
+        "border": "#837871",
+        "border.focused": "#928374",
+        "text": "#a89984",
+        "element.background": "#3c3836",
+        "element.hover": "#504945",
+        "element.active": "#665c54",
+        "element.selected": "#458588",
+        "editor.background": "#2a2827",
+        "scrollbar.thumb.background": "#837871"
+      },
+      "nacs": {
+        "text.interactive": "#bdae93",
+        "text.hover": "#ebdbb2",
+        "text.active": "#fbf1c7",
+        "text.open": "#d5c4a1",
+        "element.open": "#32302f",
+
+        "role.roughing": "#fe8019",
+        "role.finishing": "#458588",
+        "role.untagged": "#bdae93",
+        "rapid": "#73685e",
+        "select": "#fbf1c7",
+        "wire": "#726863",
+        "stock": "#7c6f64",
+        "ground": "#1d2021",
+        "map.ground": "#282828",
+        "indicator": "#fbf1c7be",
+        "sim.base": "#a89984",
+        "removal": "#b8bb26",
+        "forgotten": "#d79921",
+        "violated": "#cd241d",
+        "refusal": "#fb4934",
+        "tool": "#ebdbb2",
+        "fixture": "#bd3f03",
+
+        "family.engagement": "#de600f",
+        "family.deviation": "#fabd2f",
+        "family.entry": "#d3869b",
+        "family.fixture": "#c26b93",
+        "family.reach": "#83a598",
+        "family.envelope": "#4b9195",
+        "family.containment": "#689d6a",
+        "family.body_foul": "#d5c4a1",
+        "family.field_body_foul": "#98971a",
+        "family.part_violation": "#8ec07c",
+        "family.decline": "#938475"
+      }
+    }
+  ]
+}

@@ -1,0 +1,40 @@
+# through_plate_back.cam — the BACK of the Phase 48 fixture pair
+# (DECISIONS.md → "Phase 48 slice 1…"): `through_plate.cam`'s plate turned
+# over, the mouths of its two through-bores chamfered from this side.
+#
+# `given from ../through_plate.cam up=z-` is the one line that makes this
+# program know what the first one did: the earlier project is loaded by path
+# and turned as the sidecar's `--up z-` turns a model — 180° about X through
+# the origin, (x, y, z) → (x, −y, −z) — and every closed-form removal its ops
+# declare is air before this program's first op. The stock here is the
+# earlier stock turned over, and must be: `given from` takes a turn, never a
+# translation, so the origin stays at the plan centre of what was the bottom
+# face and is now the top.
+#
+# The two bores are RESTATED in this frame and given, because a Form needs a
+# noun to dress and the chamfer is a key on that noun; the third bore, the
+# one the first program stopped a millimetre short, is not restated — its
+# web is steel to this program, read from the earlier program, and the stock
+# model says so (`nacs --rest-report`'s standing material is the part's, not
+# the blank's). Slice 2 certifies each restated void against the earlier
+# air; this fixture's two pass.
+units mm
+feed 800
+plunge 300
+rapid_z 5
+clearance_z 25
+spindle 3000
+
+given from ../through_plate.cam up=z-
+
+stock Box(w=90, l=50, h=12, x=-45, y=-25, z=0)
+
+tool T3 ChamferMill(angle=90.0, gauge_dia=8.0, gauge_z=3.75, dia=12.0, tip_dia=0.5)
+
+feature Left CylinderBore(dia=14.0, extent=12.0, x=-25.0, y=-6.0, chamfer_depth=1.0)
+given Left
+feature Mid CylinderBore(dia=14.0, extent=12.0, x=0.0, y=-6.0, chamfer_depth=1.0)
+given Mid
+
+run Form(tool=T3, surface=Left)
+run Form(tool=T3, surface=Mid)

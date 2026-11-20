@@ -1,0 +1,25 @@
+# stock_profile.cam — the PROFILE blank (Phase 54 slice 5a, fork 3A): a
+# stock whose plan outline is a loop of points, the noun a model-based stock
+# proposes. The L plate's own outline, as the blank: the End's region is the
+# L, so the rows cover the L and nothing else, and the voxel field is the L.
+units mm
+feed 800
+plunge 300
+rapid_z 5
+clearance_z 25
+spindle 3000
+
+stock Profile(h=20, z=0
+    0 0
+    120 0
+    120 80
+    60 80
+    60 40
+    0 40
+)
+
+tool T5 Endmill(dia=10.0)
+
+feature TopFace Plane(z=-0.5)
+
+run End(tool=T5, surface=TopFace, stepover=6.0, pattern=spine)

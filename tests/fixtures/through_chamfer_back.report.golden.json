@@ -1,0 +1,99 @@
+{
+  "faces": [
+    {
+      "checklist_row": "1.1",
+      "id": "F1",
+      "part": "feature F1_Top Plane(z=0.0)",
+      "status": "proposed",
+      "surface": "plane",
+      "why": "planar, normal +Z, topmost planar face"
+    },
+    {
+      "checklist_row": "2.3",
+      "feature": "F7_Hole",
+      "id": "F2",
+      "part": "feature F7_Hole CylinderBore(dia=12.0, extent=12.0, x=20.0, y=-20.0, chamfer_depth=1.0, chamfer_angle=90.0)",
+      "status": "proposed",
+      "surface": "cone",
+      "why": "mouth bevel of recognized bore F7_Hole (wall F7): a full-revolution cone between the wall's top and the surrounding plane -- proposed as chamfer_depth, not a standalone cavity"
+    },
+    {
+      "checklist_row": "2.2",
+      "feature": "F3_Profile",
+      "id": "F3",
+      "part": "feature F3_Profile ProfileBoss(z=0.0, extent=12.0\n    0.0 -40.0\n    0.0 0.0\n    60.0 0.0\n    60.0 -40.0\n)",
+      "status": "proposed",
+      "surface": "plane",
+      "why": "outer profile under top cap F1: vertical wall loop F3 F4 F6 F5, top at z=0.0, base at z=-12.0, material inside the loop"
+    },
+    {
+      "checklist_row": "2.2",
+      "feature": "F3_Profile",
+      "id": "F4",
+      "part": "feature F3_Profile ProfileBoss(z=0.0, extent=12.0\n    0.0 -40.0\n    0.0 0.0\n    60.0 0.0\n    60.0 -40.0\n)",
+      "status": "proposed",
+      "surface": "plane",
+      "why": "vertical wall of recognized outer profile F3_Profile (top cap F1)"
+    },
+    {
+      "checklist_row": "2.2",
+      "feature": "F3_Profile",
+      "id": "F5",
+      "part": "feature F3_Profile ProfileBoss(z=0.0, extent=12.0\n    0.0 -40.0\n    0.0 0.0\n    60.0 0.0\n    60.0 -40.0\n)",
+      "status": "proposed",
+      "surface": "plane",
+      "why": "vertical wall of recognized outer profile F3_Profile (top cap F1)"
+    },
+    {
+      "checklist_row": "2.2",
+      "feature": "F3_Profile",
+      "id": "F6",
+      "part": "feature F3_Profile ProfileBoss(z=0.0, extent=12.0\n    0.0 -40.0\n    0.0 0.0\n    60.0 0.0\n    60.0 -40.0\n)",
+      "status": "proposed",
+      "surface": "plane",
+      "why": "vertical wall of recognized outer profile F3_Profile (top cap F1)"
+    },
+    {
+      "checklist_row": "2.3",
+      "feature": "F7_Hole",
+      "id": "F7",
+      "part": "feature F7_Hole CylinderBore(dia=12.0, extent=12.0, x=20.0, y=-20.0, chamfer_depth=1.0, chamfer_angle=90.0)",
+      "status": "proposed",
+      "surface": "cylinder",
+      "why": "cylindrical, axis +Z, full revolution, material outside (a bore), opens upward; bottom opens through -- a drillable through hole; mouth bevel F2 absorbed, 1.0 deep at 90.0deg included -- extent runs to the virtual sharp corner (12.0)"
+    },
+    {
+      "checklist_row": "no row",
+      "code": "plane_downward",
+      "id": "F8",
+      "reason": "downward-facing planar face -- unreachable from above (undercut relative to the tool axis)",
+      "status": "unsupported",
+      "surface": "plane"
+    },
+    {
+      "checklist_row": "no row",
+      "code": "other_setup",
+      "id": "F9",
+      "reason": "cylindrical face: the part's own material lies straight above it -- planar F10 is 3.5 up -- so nothing on this setup's tool axis reaches it; see what the other side makes of it with --up z+",
+      "refs": [
+        "F10"
+      ],
+      "status": "unsupported",
+      "surface": "cylinder"
+    },
+    {
+      "checklist_row": "no row",
+      "code": "plane_downward",
+      "id": "F10",
+      "reason": "downward-facing planar face -- unreachable from above (undercut relative to the tool axis)",
+      "status": "unsupported",
+      "surface": "plane"
+    }
+  ],
+  "faces_total": 10,
+  "schema": "nacs-recognition-report",
+  "source": "through_chamfer.step",
+  "units": "mm",
+  "up": "z-",
+  "version": 1
+}

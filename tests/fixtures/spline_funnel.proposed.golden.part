@@ -1,0 +1,7 @@
+# spline_funnel.step -- 1 analytic spline-of-revolution face(s) read by import_step_nurbs.py (8 faces total).
+# Each meridian is an EXACT b-spline (no tessellation); Feature::SplineRevolve machines the surface of revolution through the pointwise
+# ball-offset R2 machinery. The .spline (r,z) control points are mm by definition; x/y/z place the axis in stock coords.
+feature Spline_funnel_Funnel SplineRevolveFunnel(file="meridian.spline", x=0.0, y=0.0)
+#   mouth circle at model z=16.0; SplineRevolveFunnel places the mouth in the stock-top plane -- set stock accordingly
+#   7-pole meridian (mouth-first); consume with a ball-nose Copy:
+#   run Copy(tool=T?, surface=Spline_funnel_Funnel, stepover=?)

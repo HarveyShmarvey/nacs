@@ -1,0 +1,35 @@
+# floor_traverse_offset.cam — the keep-out check's REAL subject: a traverse across
+# steel (DECISIONS.md → "V2, the fixture…": "the first check whose subject is
+# the rapid"; and "Phase 27 slice 3: the keep-out…", which is why this
+# fixture exists).
+#
+# floor_clamped_offset.cam used to be the corpus's one keep-out finding: a raster
+# that drove its cutting passes through a toe clamp. Since Phase 27 the face
+# goes AROUND a declared fixture, so that program is safe and the check is
+# silent on it — and the corpus had no program left that shows the check
+# speaking. This one does, and about the thing the check was written for.
+#
+# A riser block in the middle of the face, 40mm tall. Every cutting pass goes
+# around it — `(keep-outs: Riser)` — and every lift between loops goes to
+# the clearance plane, as it does wherever steel stands in a region. But the
+# clearance plane is 25mm, chosen for a 20mm stock, and says nothing about a
+# block 40mm proud of it: the lifts are high enough for the stock and not
+# for the steel, and a traverse from one loop to the next crosses it. No
+# emitter can fix that — the clearance plane is the author's number — so the
+# keep-out check says it, and `fixture gate` refuses the program.
+units mm
+feed 800
+plunge 300
+rapid_z 5
+clearance_z 25
+spindle 3000
+
+stock Box(w=60, l=60, h=20, x=0, y=0, z=0)
+
+fixture Riser Box(w=14, l=24, h=40, x=20, y=18, z=0)
+
+tool T1 Endmill(dia=10.0, flute_len=22.0, shank_dia=10.0, stickout=55.0)
+
+feature Top Plane(z=-0.5)
+
+run End(tool=T1, surface=Top, stepover=5.0, pattern=offset)

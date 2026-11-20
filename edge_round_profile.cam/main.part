@@ -1,0 +1,64 @@
+# edge_round_profile.cam — the corner rounder on a POLYLINE edge (TAXONOMY:
+# convex round, external edge blend). DECISIONS.md → "the corner rounder gets an
+# operation", slice 2. The circular pair's fixture is edge_round.cam.
+#
+# The declaration is the same one field the circular pair carries, and the
+# placement is the same two lines: the round is `edge_round` into the material
+# from the wall and `edge_round` below the top face, whatever shape the wall's
+# plan curve is. What is genuinely different is that the round is no longer
+# CONSTANT along the edge — and this fixture is shaped to show both halves of
+# that at once:
+#
+#   * the L-pocket's five sharp corners are TIGHTER than the tool. The axis
+#     pivots on its offset vertex and the arc never reaches them, so the round
+#     runs out 1.243mm short there and the deviation budget says so by name.
+#     That is a fact about every corner rounder ever run into a sharp pocket
+#     corner; what is new is that it is a number before the part is cut.
+#   * the pocket's ONE reflex corner (30,50) — where material pokes into the
+#     void — and every corner of the boss are OUTSIDE corners: the tool wraps
+#     them, the round is full, and nothing is reported.
+#
+# Five runs, in the order the work is actually done:
+#   1-3. the pocket cleared and both walls finished, by an endmill;
+#   4.   the pocket's lip, broken by the rounder, engine comp — the axis rides
+#        the offset path at effective_dia/2, one pass, no stepover;
+#   5.   the boss's lip, control comp — the emitted coordinates are the model's
+#        own edge polyline, which IS driving the virtual sharp corner along it,
+#        and D2 carries the effective diameter (see the header).
+units mm
+feed 800
+plunge 300
+rapid_z 5
+clearance_z 25
+spindle 3000
+
+stock Box(w=120, l=100, h=20, x=0, y=0, z=0)
+
+tool T5 Endmill(dia=10.0)
+tool T2 CornerRounder(radius=3.0, effective_dia=6.0, gauge_z=6.0, dia=12.0, pilot=5.94)
+
+# CCW: a pocket bounds a void. The reflex vertex at (30,50) is the one corner
+# whose MATERIAL side is convex.
+feature Cavity ProfilePocket(extent=12.0, edge_round=3.0
+    10 20
+    50 20
+    50 50
+    30 50
+    30 80
+    10 80
+)
+
+# CW: a boss bounds standing material, cut from outside.
+feature Pad ProfileBoss(extent=12.0, edge_round=3.0
+    70 30
+    70 70
+    110 70
+    110 30
+)
+
+run Clear(tool=T5, profile=Cavity, stepover=4.0)
+run Side(tool=T5, surface=Cavity)
+run Clear(tool=T5, profile=Pad, stepover=4.0, stepdown=4.0)
+run Side(tool=T5, surface=Pad)
+run Form(tool=T2, surface=Cavity)
+run Form(tool=T2, surface=Pad, comp=control)

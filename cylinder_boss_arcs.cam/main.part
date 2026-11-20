@@ -1,0 +1,22 @@
+# cylinder_boss_arcs.cam — the outside boss-wall finish of cylinder_boss.cam under
+# `compress=arcs` (DECISIONS.md "Per-op compress…"). The coaxial tool-centre
+# ring outside the wall is a true circle, so each Z level emits as one exact
+# G02 full-circle block (CW winding — the boss's blessed outside direction, the
+# opposite word from the bore's G03). Two runs pin both comp modes under arcs:
+# engine and control, exercising boss_engine and boss_control.
+units mm
+feed 800
+plunge 300
+rapid_z 5
+clearance_z 25
+spindle 3000
+
+stock Box(w=100, l=100, h=20, x=0, y=0, z=0)
+
+tool T5 Endmill(dia=10.0)
+
+feature Post CylinderBoss(dia=40.0, extent=12.0, x=50.0, y=50.0, z=-12.0)
+
+run Clear(tool=T5, profile=Post, stepover=4.0, stepdown=4.0)
+run Side(tool=T5, surface=Post, stepover=5.0, compress=arcs)
+run Side(tool=T5, surface=Post, stepover=5.0, comp=control, compress=arcs)

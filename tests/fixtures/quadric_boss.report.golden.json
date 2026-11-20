@@ -1,0 +1,101 @@
+{
+  "faces": [
+    {
+      "checklist_row": "2.2",
+      "feature": "F1_Profile",
+      "id": "F1",
+      "part": "feature F1_Profile ProfileBoss(z=15.0, extent=15.0\n    0.0 0.0\n    0.0 80.0\n    100.0 80.0\n    100.0 0.0\n)",
+      "status": "proposed",
+      "surface": "plane",
+      "why": "outer profile under top cap F3: vertical wall loop F1 F2 F6 F4, top at z=15.0, base at z=0.0, material inside the loop"
+    },
+    {
+      "checklist_row": "2.2",
+      "feature": "F1_Profile",
+      "id": "F2",
+      "part": "feature F1_Profile ProfileBoss(z=15.0, extent=15.0\n    0.0 0.0\n    0.0 80.0\n    100.0 80.0\n    100.0 0.0\n)",
+      "status": "proposed",
+      "surface": "plane",
+      "why": "vertical wall of recognized outer profile F1_Profile (top cap F3)"
+    },
+    {
+      "checklist_row": "1.1",
+      "id": "F3",
+      "part": "feature F3_Top Plane(z=15.0)",
+      "status": "proposed",
+      "surface": "plane",
+      "why": "planar, normal +Z, topmost planar face"
+    },
+    {
+      "checklist_row": "2.2",
+      "feature": "F1_Profile",
+      "id": "F4",
+      "part": "feature F1_Profile ProfileBoss(z=15.0, extent=15.0\n    0.0 0.0\n    0.0 80.0\n    100.0 80.0\n    100.0 0.0\n)",
+      "status": "proposed",
+      "surface": "plane",
+      "why": "vertical wall of recognized outer profile F1_Profile (top cap F3)"
+    },
+    {
+      "checklist_row": "no row",
+      "code": "plane_downward",
+      "id": "F5",
+      "reason": "downward-facing planar face -- unreachable from above (undercut relative to the tool axis)",
+      "status": "unsupported",
+      "surface": "plane"
+    },
+    {
+      "checklist_row": "2.2",
+      "feature": "F1_Profile",
+      "id": "F6",
+      "part": "feature F1_Profile ProfileBoss(z=15.0, extent=15.0\n    0.0 0.0\n    0.0 80.0\n    100.0 80.0\n    100.0 0.0\n)",
+      "status": "proposed",
+      "surface": "plane",
+      "why": "vertical wall of recognized outer profile F1_Profile (top cap F3)"
+    },
+    {
+      "checklist_row": "3.2",
+      "id": "F7",
+      "part": "feature F7_Dome Sphere(dia=24.0, x=30.0, y=25.0, z=15.0)",
+      "status": "proposed",
+      "surface": "sphere",
+      "why": "spherical, full revolution, material inside (a dome boss), entirely at/above its equator"
+    },
+    {
+      "checklist_row": "2.12",
+      "id": "F8",
+      "part": "feature F8_Boss Cone(dia=20.0, height=12.0, x=70.0, y=25.0, z=15.0)",
+      "status": "proposed",
+      "surface": "cone",
+      "why": "conical, axis +Z, full revolution, material inside (a boss), base down, apex up"
+    },
+    {
+      "checklist_row": "3.1",
+      "code": "sphere_concave",
+      "id": "F9",
+      "reason": "concave spherical face (a bowl cavity) -- bowl finishing is CHECKLIST row 3.1, todo; finish_sphere is dome-only by construction",
+      "status": "unsupported",
+      "surface": "sphere"
+    },
+    {
+      "checklist_row": "3.12",
+      "id": "F10",
+      "part": "feature F10_Ring Torus(major_dia=24.0, minor_dia=8.0, x=65.0, y=55.0, z=15.0)",
+      "status": "proposed",
+      "surface": "torus",
+      "why": "toroidal, axis +Z, full revolution, material inside the tube (a ring boss), entirely at/above its equator plane"
+    },
+    {
+      "checklist_row": "1.1",
+      "id": "F11",
+      "part": "feature F11_Top Plane(z=15.0)",
+      "status": "proposed",
+      "surface": "plane",
+      "why": "planar, normal +Z, topmost planar face"
+    }
+  ],
+  "faces_total": 11,
+  "schema": "nacs-recognition-report",
+  "source": "quadric_boss.step",
+  "units": "mm",
+  "version": 1
+}

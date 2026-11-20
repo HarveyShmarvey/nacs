@@ -1,0 +1,21 @@
+# cylinder_bore_arcs.cam — the bore-wall finish of cylinder_bore.cam under
+# `compress=arcs` (DECISIONS.md "Per-op compress…"). The coaxial tool-centre
+# ring at each Z level is a true circle, so it emits as one exact G03 full-circle
+# block instead of a chorded polyline. Two runs pin both comp modes under arcs:
+# engine (plain coordinates) and control (centerline = part edge + G41/D), so the
+# arc path is exercised for cylinder_engine and cylinder_control alike.
+units mm
+feed 800
+plunge 300
+rapid_z 5
+clearance_z 25
+spindle 3000
+
+stock Box(w=100, l=100, h=20, x=0, y=0, z=0)
+
+tool T5 Endmill(dia=10.0)
+
+feature Bore CylinderBore(dia=40.0, extent=12.0, x=50.0, y=50.0)
+
+run Side(tool=T5, surface=Bore, stepover=5.0, compress=arcs)
+run Side(tool=T5, surface=Bore, stepover=5.0, comp=control, compress=arcs)

@@ -1,0 +1,125 @@
+# face_boss_offset.cam — a face cut AROUND the bosses that stand through it (Phase 26
+# slice 3; DECISIONS.md → "Phase 26 slice 3: the face…").
+#
+# This is the program from the Phase 23 live run, as near as it can be
+# reconstructed: a boss declared under facing planes. Then, Floor rastered
+# the whole stock and swept the boss without a word from any voice but the
+# rest report. Now the declaration is read: a boss standing THROUGH a faced
+# Plane is an island of that face, derived from containment exactly as a post
+# in a pocket is, and the face is the pocket's own family with the BLANK as
+# its outer wall — entered from air outside the stock, walked outside-in, the
+# pass beside each boss last.
+#
+# Two planes, to show the height rule is about DECLARATIONS and not run order:
+# `Skim` meets the bosses' tops (z=-1) and is a plain raster, byte for byte the
+# facing every other fixture gets. `Deck` is 5mm lower; the bosses stand
+# through it, and they are its islands even though their tops are below the
+# stock's — because `Skim` declares the material above them removed. Move
+# `Skim` up to z=0 and the program refuses by name: a boss shorter than the
+# cut around it is a terrace, and nothing says who takes the millimetre on top.
+units mm
+feed 800
+plunge 300
+rapid_z 5
+clearance_z 25
+spindle 3000
+
+stock Box(w=100, l=80, h=20, x=0, y=0, z=0)
+
+tool T2 Endmill(dia=12.0)
+
+feature Skim Plane(z=-1)
+feature Deck Plane(z=-6)
+
+feature Post CylinderBoss(dia=20, extent=5, x=28, y=40, z=-6)
+# The Lobe is an elliptic boss (major 24, minor 14, turned 30 deg), drawn as the
+# chorded polyline the sidecar would propose for any non-circular wall: 80
+# points, sagitta under CHORD_TOL_MM. Its top is the Skim's face at z=-1 and it
+# stands 5 mm above the Deck, like the Post.
+feature Lobe ProfileBoss(extent=5, z=-1
+    86.3923 46.0000
+    86.6349 45.5059
+    86.8119 44.9778
+    86.9222 44.4190
+    86.9652 43.8330
+    86.9406 43.2234
+    86.8486 42.5939
+    86.6896 41.9484
+    86.4648 41.2908
+    86.1754 40.6254
+    85.8233 39.9560
+    85.4107 39.2870
+    84.9400 38.6223
+    84.4142 37.9661
+    83.8365 37.3225
+    83.2105 36.6954
+    82.5401 36.0886
+    81.8293 35.5060
+    81.0826 34.9511
+    80.3046 34.4273
+    79.5000 33.9378
+    78.6738 33.4858
+    77.8312 33.0739
+    76.9773 32.7046
+    76.1173 32.3804
+    75.2566 32.1032
+    74.4005 31.8746
+    73.5543 31.6962
+    72.7231 31.5689
+    71.9122 31.4936
+    71.1264 31.4708
+    70.3707 31.5005
+    69.6497 31.5826
+    68.9678 31.7167
+    68.3294 31.9018
+    67.7382 32.1368
+    67.1979 32.4203
+    66.7119 32.7506
+    66.2832 33.1255
+    65.9143 33.5429
+    65.6077 34.0000
+    65.3651 34.4941
+    65.1881 35.0222
+    65.0778 35.5810
+    65.0348 36.1670
+    65.0594 36.7766
+    65.1514 37.4061
+    65.3104 38.0516
+    65.5352 38.7092
+    65.8246 39.3746
+    66.1767 40.0440
+    66.5893 40.7130
+    67.0600 41.3777
+    67.5858 42.0339
+    68.1635 42.6775
+    68.7895 43.3046
+    69.4599 43.9114
+    70.1707 44.4940
+    70.9174 45.0489
+    71.6954 45.5727
+    72.5000 46.0622
+    73.3262 46.5142
+    74.1688 46.9261
+    75.0227 47.2954
+    75.8827 47.6196
+    76.7434 47.8968
+    77.5995 48.1254
+    78.4457 48.3038
+    79.2769 48.4311
+    80.0878 48.5064
+    80.8736 48.5292
+    81.6293 48.4995
+    82.3503 48.4174
+    83.0322 48.2833
+    83.6706 48.0982
+    84.2618 47.8632
+    84.8021 47.5797
+    85.2881 47.2494
+    85.7168 46.8745
+    86.0857 46.4571
+)
+
+run End(tool=T2, surface=Skim, stepover=8.0, pattern=raster)
+run End(tool=T2, surface=Deck, stepover=6.0, pattern=offset)
+run Side(tool=T2, surface=Post, stepover=5.0)
+run Side(tool=T2, surface=Lobe)

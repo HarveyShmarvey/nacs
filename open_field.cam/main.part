@@ -1,0 +1,25 @@
+# open_field.cam — a floor with no rails in it (Phase 34 slice 1; DECISIONS.md
+# → "Phase 34 slice 1…").
+#
+# Every region fixture before this one was 10mm-tool work on a floor under
+# five tool diameters wide, and most were drawn to find spine's teeth on narrow
+# lands. This is the other end: a 240 x 240 plate faced with a 6mm tool, a
+# mean width of 20 tool diameters, no wall anywhere, nothing standing. It is
+# the fixture a raster should win or tie, and `nacs --patterns` on it is the
+# measurement: the four patterns land within a tenth of each other.
+#
+# No `pattern=` — this is what a bare `Plane` cuts today.
+units mm
+feed 800
+plunge 300
+rapid_z 5
+clearance_z 25
+spindle 3000
+
+stock Box(w=240, l=240, h=20, x=0, y=0, z=0)
+
+tool T3 Endmill(dia=6.0)
+
+feature Field Plane(z=-0.5)
+
+run End(tool=T3, surface=Field, stepover=3.0)

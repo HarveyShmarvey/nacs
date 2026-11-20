@@ -1,0 +1,43 @@
+# profile_pocket_clear_rough.cam — the prismatic roughing fixture: profile_pocket_clear.cam plus a
+# stock_to_leave allowance (DECISIONS.md "stock_to_leave is a radial
+# allowance…"). The finishing sibling is profile_pocket_clear.cam; the two differ by exactly
+# the field, so the goldens diff as the skin and nothing else.
+#
+# The allowance is RADIAL. On a pocket the wall is the only surface defined by
+# geometry — the floor is the feature's own `extent`, an authored number the
+# allowance never moves — so the whole 0.5mm becomes radial offset and the cusp
+# budget is structurally 0.000: every loop sits at one Z, so no adjacent pair
+# leaves a cusp, and validate() requires a flat-bottomed tool, so there is no
+# floor scallop either.
+#
+# Hand-checked anchors (60mm square from 20 to 80, T5 dia 10 so r = 5,
+# stepover 4, skin 0.5):
+#   - the spiral starts at r + skin = 5.5 from the boundary, so the OUTERMOST
+#     loop (emitted last — pocket machines innermost-out) runs 25.5 .. 74.5,
+#     against profile_pocket_clear.cam's 25 .. 75. That 0.5 is the wall skin.
+#   - offsets run 5.5, 9.5, ... 29.5; 33.5 exceeds the 30mm inradius and prunes
+#     empty, so the INNERMOST loop (emitted first, with the ramp) is at 29.5:
+#     49.5 .. 50.5, against profile_pocket_clear.cam's 49 .. 51.
+#   - last pass reaches 29.5 + 5 = 34.5 >= the 30mm inradius, so no uncut
+#     island stands at the centre.
+#   - the floor is untouched at Z-5.000: `extent` is the depth, and a radial
+#     allowance has no business moving it.
+units mm
+feed 800
+plunge 300
+rapid_z 5
+clearance_z 25
+spindle 3000
+
+stock Box(w=100, l=100, h=20, x=0, y=0, z=0)
+
+tool T5 Endmill(dia=10.0)
+
+feature PocketProfile ProfilePocket(extent=5.0
+    20 20
+    80 20
+    80 80
+    20 80
+)
+
+run Clear(tool=T5, profile=PocketProfile, stepover=4.0, stock_to_leave=0.5)

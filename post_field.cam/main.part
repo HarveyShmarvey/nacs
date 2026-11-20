@@ -1,0 +1,45 @@
+# post_field.cam — a wide closed pocket with a dozen posts standing in it
+# (Phase 34 slice 1; DECISIONS.md → "Phase 34 slice 1…").
+#
+# The corner of the grid the corpus left empty: all wall, eleven tool
+# diameters of mean width, and many islands. Twelve 12mm posts on a 50mm
+# pitch in a 240 x 180 pocket, a 6mm tool. Nothing here is narrow — the
+# posts stand 38mm apart — so no pattern is out of its domain, and the
+# report's rows differ by what each pattern does AROUND things: the offset
+# family breaks into a loop per post and enters each one, the rows turn at
+# every post they meet.
+#
+# No `pattern=` — the offset family is what a `Clear` cuts today. The posts
+# are declared and never run: an island's roughing is its host's Clear.
+units mm
+feed 800
+plunge 300
+rapid_z 5
+clearance_z 25
+spindle 3000
+
+stock Box(w=260, l=200, h=20, x=0, y=0, z=0)
+
+tool T3 Endmill(dia=6.0)
+
+feature Yard ProfilePocket(extent=4.0
+    10 10
+    250 10
+    250 190
+    10 190
+)
+
+feature Post01 CylinderBoss(dia=12, extent=4, x=55, y=50, z=-4)
+feature Post02 CylinderBoss(dia=12, extent=4, x=105, y=50, z=-4)
+feature Post03 CylinderBoss(dia=12, extent=4, x=155, y=50, z=-4)
+feature Post04 CylinderBoss(dia=12, extent=4, x=205, y=50, z=-4)
+feature Post05 CylinderBoss(dia=12, extent=4, x=55, y=100, z=-4)
+feature Post06 CylinderBoss(dia=12, extent=4, x=105, y=100, z=-4)
+feature Post07 CylinderBoss(dia=12, extent=4, x=155, y=100, z=-4)
+feature Post08 CylinderBoss(dia=12, extent=4, x=205, y=100, z=-4)
+feature Post09 CylinderBoss(dia=12, extent=4, x=55, y=150, z=-4)
+feature Post10 CylinderBoss(dia=12, extent=4, x=105, y=150, z=-4)
+feature Post11 CylinderBoss(dia=12, extent=4, x=155, y=150, z=-4)
+feature Post12 CylinderBoss(dia=12, extent=4, x=205, y=150, z=-4)
+
+run Clear(tool=T3, profile=Yard, stepover=3.0)

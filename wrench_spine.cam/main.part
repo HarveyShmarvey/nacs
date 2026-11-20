@@ -1,0 +1,40 @@
+# wrench_spine.cam — wrench_offset.cam with one word added: `pattern=spine` (Phase 30;
+# DECISIONS.md → "Phase 30 slice 2: mow…", its name until Phase 35). Nothing stands beside this face, so
+# there is no shore and spine is PLANING — rows, each cut only where it owns
+# floor. The shank takes three passes, not six, and the rows that only the
+# heads need are not dragged down the shank's length.
+#
+# wrench_offset.cam — a plain 24mm combination wrench, seen from the side, and its top
+# face finished (Phase 28; DECISIONS.md → "Phase 28 opens: the patterns DRAFT…").
+#
+# The face is a noun of its own: `Face` — a height and a loop that can contain
+# loops — which is what STEP calls a face. There is no boss here and no pocket:
+# the bar the wrench will be cut from is the stock, the face is where the top of
+# the wrench is, and `Floor` cuts THAT, not the bar. Before Phase 28 the only
+# word for this was a `Plane`, which has no outline: the same job faced the whole
+# 262 x 60 bar, 3596mm of cutting with 56% of it over stock that is not the part.
+#
+# The sections are sized against the 10mm tool on purpose, to sit where the
+# question "one pass or two?" is a real one:
+#
+#     ring wall    8mm   0.8 tool diameters
+#     each jaw    13mm   1.3
+#     shank       14mm   1.4
+#     box opening 24mm   2.4     jaw gap 24mm   2.4
+#
+# No `pattern=` here: this is the default, the offset family on the wrench's own
+# outline. `wrench_zigzag.cam` is the same part pinned to the other answer, and
+# `nacs --patterns wrench_offset.cam` lays the two side by side.
+units mm
+feed 800
+plunge 300
+rapid_z 5
+clearance_z 25
+spindle 3000
+
+# The bar: 262 x 60, 9 thick, a 1mm skim over the wrench's top at z=0.
+stock Box(w=262, l=60, h=9, x=0, y=0, z=1)
+
+tool T5 Endmill(dia=10.0)
+
+run End(tool=T5, surface=Top, stepover=5.0, pattern=spine)

@@ -1,0 +1,28 @@
+# cylinder_bore_rest_flutes.cam — a declared flute_len declines rest selection
+# (DECISIONS.md "K2, the tool body", slice 2, fork 5A). The same two-op bore
+# program as the rest-selection demo family: the core bore is cleared first,
+# then the wide bore's Clear(strategy=rest) selects its concentric family
+# against the stock as it stands before it. With a bare rod that prefix
+# certifies the two innermost loops void and drops them; HERE the tool says
+# where its flutes end (12mm on a 14mm-deep core cut), so the prefix's sweep
+# is truncated, the field is no longer upward-closed, and the certifier
+# declines every loop — the audit line below reads "kept 7 of 7" and the op
+# honestly cuts the whole family as spring passes. Cutting air is the safe
+# direction; the 2mm of core rim standing above the flutes is exactly the
+# material the undeclared rod's stamp used to claim away.
+units mm
+feed 800
+plunge 300
+rapid_z 5
+clearance_z 25
+spindle 3000
+
+stock Box(w=100, l=100, h=20, x=0, y=0, z=0)
+
+tool T5 Endmill(dia=10.0, flute_len=12.0)
+
+feature Core CylinderBore(dia=30.0, extent=14.0, x=50.0, y=50.0)
+feature Bore CylinderBore(dia=60.0, extent=12.0, x=50.0, y=50.0)
+
+run Clear(tool=T5, profile=Core, stepover=4.0)
+run Clear(tool=T5, profile=Bore, stepover=4.0, strategy=rest, voxel_cell=1.0)

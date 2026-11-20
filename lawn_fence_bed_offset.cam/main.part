@@ -1,0 +1,67 @@
+# lawn_fence_bed_offset.cam — a curated lawn (Phase 29 slice 2; DECISIONS.md → "Phase
+# 29 slice 2…").
+#
+#   road (south) and driveway (east)   OPEN   — run off and reposition
+#   fence (north)                      WALL   — never violated
+#   flowerbed (west, half-round)       WALL   — bulges into the lawn
+#
+# The bed does NOT cover the whole west side: an open gap runs above it, between
+# the bed and the fence, and another below it, down to the road. So a WALL CHAIN
+# TERMINATES MID-SIDE, twice — the case where a wall-following pass must not
+# wrap round the end of the chain, because past its end the boundary is free.
+units mm
+feed 800
+plunge 300
+rapid_z 5
+clearance_z 25
+spindle 3000
+stock Box(w=140, l=100, h=20, x=0, y=0, z=0)
+tool T5 Endmill(dia=10.0)
+
+# The lawn: road to the south and driveway to the east are OPEN — the mower may
+# run off and reposition. The fence to the north is CLOSED. The flowerbed
+# bulges in from the west and does NOT cover that side: open gaps run above it
+# (bed to fence) and below it (bed to road), so a wall chain TERMINATES
+# MID-SIDE, twice.
+feature Lawn Face(z=-4
+    loop
+    10.000 10.000
+    130.000 10.000
+    130.000 90.000
+    10.000 90.000
+    10.000 65.000
+    13.882 64.489
+    17.500 62.990
+    20.607 60.607
+    22.990 57.500
+    24.489 53.882
+    25.000 50.000
+    24.489 46.118
+    22.990 42.500
+    20.607 39.393
+    17.500 37.010
+    13.882 35.511
+    10.000 35.000
+)
+feature Fence ProfileBoss(extent=4
+    10.000 100.000
+    130.000 100.000
+    130.000 90.000
+    10.000 90.000
+)
+feature Bed ProfileBoss(extent=4
+    10.000 65.000
+    13.882 64.489
+    17.500 62.990
+    20.607 60.607
+    22.990 57.500
+    24.489 53.882
+    25.000 50.000
+    24.489 46.118
+    22.990 42.500
+    20.607 39.393
+    17.500 37.010
+    13.882 35.511
+    10.000 35.000
+)
+run End(tool=T5, surface=Lawn, stepover=5.0, pattern=offset)

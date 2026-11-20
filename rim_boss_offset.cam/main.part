@@ -1,0 +1,27 @@
+# rim_boss_offset.cam — two bosses standing ON a round blank's silhouette
+# (Phase 49 slice 1; DECISIONS.md → "Phase 49 slice 1…"). A rim boss imported
+# from a STEP sits on the blank's edge to half a micron, and this fixture puts
+# two there on purpose: wedge ribs whose outer arc is nine chords at exactly
+# the blank's radius, on a level that is the silhouette drawn 0.02 past the
+# blank as the sidecar draws it (geometry.part; every .part in the directory
+# is read). Read as islands, each rib's loop a radius out and the pushed open
+# edge's loop a radius in landed on one circle, and the Clear's outermost
+# level came back as one stub per chord (28 stubs, 72 lifts on the four-rib
+# experiment). Read as what they are — bitten out of the boundary, "a boss on
+# the shore is the shore" — the level is one loop round both, and the Sides
+# finish the flanks. `pattern=offset` is pinned: the symptom is the offset
+# family's, and the name carries the pin.
+units mm
+feed 800
+plunge 300
+rapid_z 5
+clearance_z 25
+spindle 3000
+
+stock Cylinder(dia=100, h=20, x=0, y=0, z=0)
+
+tool T1 Endmill(dia=8.0)
+
+run Clear(tool=T1, profile=Level, stepover=4.0, pattern=offset)
+run Side(tool=T1, surface=RimE)
+run Side(tool=T1, surface=RimW)

@@ -1,0 +1,23 @@
+# torus_scallop.cam — camp-2 ball-nose finishing fixture for Torus.
+#
+# CONTAINED 2026-08-13 (DECISIONS.md "the torus's annulus island…", slice 2):
+# same authoring as torus.cam — stock 2mm proud of the crown, grown in y so the
+# moat lands on it, T1 roughing the moat and the hole before the finish, and
+# rapid_z clearing the stock top. The scallop pass itself is unchanged.
+units mm
+feed 600
+plunge 200
+rapid_z 9
+clearance_z 30
+spindle 4000
+
+stock Box(w=100, l=100, h=31, x=0, y=-10, z=6)
+
+tool T1 Endmill(dia=12.0)
+tool T9 Ballmill(dia=6.0)
+
+# Torus centre at z=0; major_dia=50, minor_dia=8.
+feature T Torus(major_dia=50, minor_dia=8, x=50, y=40, z=0)
+
+run Clear(tool=T1, profile=T, stepover=8.0, stepdown=2.0, stock_to_leave=0.5)
+run Copy(tool=T9, surface=T, scallop=0.5)

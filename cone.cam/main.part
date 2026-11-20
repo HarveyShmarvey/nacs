@@ -1,0 +1,26 @@
+# cone.cam — camp-2 ball-nose finishing fixture for Cone.
+#
+# CONTAINED 2026-08-13 (DECISIONS.md "rim-area accounting…", slice 2):
+# the stock used to stop AT this feature's base plane, so the whole
+# surface stood in air and the fixture only ran because there was
+# nothing to hit. The stock now stands 2mm proud of the feature's top
+# (z 22) and T1 roughs the moat before the finish;
+# numbers in the older comments describe the same toolpath, whose
+# motion is unchanged where it touches the surface.
+units mm
+feed 600
+plunge 200
+rapid_z 25
+clearance_z 40
+spindle 4000
+
+stock Box(w=100, l=80, h=47, x=0, y=0, z=22)
+
+tool T1 Endmill(dia=12.0)
+tool T9 Ballmill(dia=6.0)
+
+# Cone centre (base plane) at z=0; base dia=40, height=20.
+feature Point Cone(dia=40, height=20, x=50, y=40, z=0)
+
+run Clear(tool=T1, profile=Point, stepover=8.0, stepdown=5.0, stock_to_leave=0.5)
+run Copy(tool=T9, surface=Point, stepover=3.0)

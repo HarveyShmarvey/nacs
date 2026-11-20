@@ -1,0 +1,36 @@
+# cbore.cam — the counterbore: a flat-floored cylindrical seat on a hole's
+# mouth (DECISIONS.md → "the counterbore — a cylindrical seat, and the tool's
+# diameter becomes the pairing law"). The declaration lives on the hole — a
+# seat is part geometry, dimensioned on the print as a diameter and a depth —
+# and Drill cuts it with an Endmill, because the motion IS a drill cycle:
+# position, plunge on the axis, retract. No comp, no winding, no ring.
+#
+# Where the countersink derived its depth through the tool's cone, the
+# cylinder derives nothing: there is no angle to derive through, so
+# cbore_depth is DECLARED, and the trap moves to the TOOL — a seat cut by a
+# plunge is exactly as wide as the endmill, no wider and no narrower, so
+# cbore_dia must equal T4's own diameter (the drill law, made a declared
+# pairing; a mismatch rejects at validate).
+#
+# Hole1's seat is a cap-screw counterbore: 16.0 across, 6.0 deep. Hole2's is
+# a spotface — the same two fields at a smaller depth (0.8, a washer's seat);
+# the vocabulary already says it and no third field pair exists. The drill
+# opens both holes first, so each seat plunge lands around the void the drill
+# left — the shop order.
+units mm
+feed 800
+plunge 300
+rapid_z 5
+clearance_z 25
+spindle 3000
+
+stock Box(w=120, l=80, h=20, x=0, y=0, z=0)
+
+tool T7 Drill(dia=6.0)
+tool T4 Endmill(dia=16.0)
+
+feature Hole1 CylinderBore(dia=6.0, extent=15.0, x=30.0, y=40.0, cbore_dia=16.0, cbore_depth=6.0)
+feature Hole2 CylinderBore(dia=6.0, extent=15.0, x=60.0, y=40.0, cbore_dia=16.0, cbore_depth=0.8)
+
+run Form(points=[Hole1,Hole2], tool=T7, cycle=Simple)
+run End(points=[Hole1,Hole2], tool=T4, cycle=Simple)

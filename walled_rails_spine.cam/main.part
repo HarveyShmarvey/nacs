@@ -1,0 +1,18 @@
+# walled_rails_spine.cam — walled_rails_offset.cam with `pattern=spine` (Phase 32 slice
+# 4; DECISIONS.md → "Phase 32 slice 4: a SHORE is a pass…"). The staged
+# puzzle walked by spine: rail passes down the 3mm rails, one shore along each
+# raised region and only where there is floor beside it, rows for what is
+# left. It pins the phase's own headline — 268s before slice 4, 213s after —
+# which `walled_rails_offset.cam` cannot, that fixture being the offset family's.
+units mm
+feed 800
+plunge 300
+rapid_z 5
+clearance_z 25
+spindle 3000
+
+stock Box(w=190, l=140, h=20, x=-5, y=-5, z=0)
+
+tool T5 Endmill(dia=10.0)
+
+run End(tool=T5, surface=Land, stepover=5.0, cover=92.7, pattern=spine)

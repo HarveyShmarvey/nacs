@@ -1,0 +1,61 @@
+{
+  "$schema": "https://zed.dev/schema/themes/v0.2.0.json",
+  "name": "Solarized Dark",
+  "author": "a port for nacs — Ethan Schoonover's sixteen, plus lightened accents where the slot table outruns them",
+  "themes": [
+    {
+      "name": "Solarized Dark",
+      "appearance": "dark",
+      "style": {
+        "background": "#002b36",
+        "panel.background": "#073642",
+        "border": "#647e86",
+        "border.focused": "#839496",
+        "text": "#93a1a1",
+        "element.background": "#0d4150",
+        "element.hover": "#14505f",
+        "element.active": "#1c5f70",
+        "element.selected": "#268bd2",
+        "editor.background": "#002e3a",
+        "scrollbar.thumb.background": "#647e86"
+      },
+      "nacs": {
+        "text.interactive": "#93a1a1",
+        "text.hover": "#eee8d5",
+        "text.active": "#fdf6e3",
+        "text.open": "#8a9c9e",
+        "element.open": "#073642",
+
+        "role.roughing": "#cb4b16",
+        "role.finishing": "#268bd2",
+        "role.untagged": "#93a1a1",
+        "rapid": "#457882",
+        "select": "#fdf6e3",
+        "wire": "#5d747b",
+        "stock": "#657b83",
+        "ground": "#002b36",
+        "map.ground": "#073642",
+        "indicator": "#fdf6e3be",
+        "sim.base": "#839496",
+        "removal": "#859900",
+        "forgotten": "#b58900",
+        "violated": "#e8776e",
+        "refusal": "#ff4b48",
+        "tool": "#eee8d5",
+        "fixture": "#9fa0cf",
+
+        "family.engagement": "#dc875e",
+        "family.deviation": "#ceaf4f",
+        "family.entry": "#fb409a",
+        "family.fixture": "#7e84e5",
+        "family.reach": "#71b0d8",
+        "family.envelope": "#2893dd",
+        "family.containment": "#2aa198",
+        "family.body_foul": "#e279a4",
+        "family.field_body_foul": "#afba4f",
+        "family.part_violation": "#74bfb2",
+        "family.decline": "#809093"
+      }
+    }
+  ]
+}

@@ -1,0 +1,22 @@
+# cylinder_bore.cam — exact-flank finishing of a cylindrical bore wall (CHECKLIST 2.3,
+# ROADMAP Phase 3.5). The developable wall flank-cuts with zero error, so the
+# tool-centre rides a coaxial circle of radius R - r_tool; `stepover` is the
+# axial Z stepdown, not a scallop. A straight-sided Endmill (not a Ballmill) is
+# required. Two runs pin both comp modes in one golden: the first uses the
+# default engine comp (plain coordinates), the second control comp (centerline =
+# part edge + G41/D register).
+units mm
+feed 800
+plunge 300
+rapid_z 5
+clearance_z 25
+spindle 3000
+
+stock Box(w=100, l=100, h=20, x=0, y=0, z=0)
+
+tool T5 Endmill(dia=10.0)
+
+feature Bore CylinderBore(dia=40.0, extent=12.0, x=50.0, y=50.0)
+
+run Side(tool=T5, surface=Bore, stepover=5.0)
+run Side(tool=T5, surface=Bore, stepover=5.0, comp=control)

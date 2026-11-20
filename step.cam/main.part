@@ -1,0 +1,42 @@
+# step.cam — a shoulder: a pocket with OPEN edges (Phase 27 slice 2;
+# DECISIONS.md → "Phase 27 slice 2: open edges in the path…").
+#
+# Nothing here says "open". The step is drawn the obvious way — a pocket whose
+# outline runs past the blank on three sides — and the engine reads the rest
+# off the blank: an edge of the outline on or beyond the stock's boundary is
+# OPEN (air; the tool may run off), the one edge inside the stock is the
+# step's WALL. `nacs --outline` says so: "4 edges, 3 open".
+#
+# Before Phase 27 this exact program ramped into solid stock at (85, 13) with
+# air a tool's width away, was accused by the containment lint of "standing
+# outside the stock", and made check_moves decline on its only op. Now the
+# region is the outline CLIPPED to the blank and pushed out one tool diameter
+# across its open edges — so it does not matter whether the outline was drawn
+# 12mm past the stock or 100mm past it, the program is the same bytes — and
+# the op enters FROM AIR: a plunge outside the blank, a feed straight in to
+# the deepest level, no ramp.
+#
+# What it does NOT do yet: a machinist would cut this with passes parallel to
+# the step's wall, from the open side in. That is a raster clipped to the
+# region — Phase 28's second strategy, with this fixture as its first customer.
+# The loops below are parallel to EVERY edge, which is the pocket's family and
+# the wrong shape for a step; the wall still gets the last pass beside it.
+units mm
+feed 800
+plunge 300
+rapid_z 5
+clearance_z 25
+spindle 3000
+
+stock Box(w=100, l=80, h=20, x=0, y=0, z=0)
+
+tool T5 Endmill(dia=10.0)
+
+feature Step ProfilePocket(extent=5.0
+    60 -12
+    112 -12
+    112 92
+    60 92
+)
+
+run Clear(tool=T5, profile=Step, stepover=4.0)

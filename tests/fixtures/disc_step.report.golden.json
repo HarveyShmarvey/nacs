@@ -1,0 +1,126 @@
+{
+  "faces": [
+    {
+      "checklist_row": "no row",
+      "code": "trim_wire_candidate_wall/trim_wire_edge_not_line",
+      "id": "F1",
+      "reason": "wall of refused trim-wire candidate on part bottom F2: trim-wire top edge of wall F1 is not a straight line -- a curved trim edge cannot ride the wire grammar's straight x y z segments, and tessellating a 3D curve would be a guess; curved trim edges have not graduated",
+      "refs": [
+        "F2",
+        "F1"
+      ],
+      "status": "unsupported",
+      "surface": "cylinder"
+    },
+    {
+      "checklist_row": "no row",
+      "code": "plane_downward",
+      "id": "F2",
+      "reason": "downward-facing planar face -- unreachable from above (undercut relative to the tool axis)",
+      "status": "unsupported",
+      "surface": "plane"
+    },
+    {
+      "checklist_row": "2.7",
+      "feature": "F3_Pocket",
+      "id": "F3",
+      "part": "feature F3_Pocket ProfilePocket(z=30.0, extent=10.0\n    20.0 -56.569\n    22.042 -55.826\n    24.048 -54.992\n    26.023 -54.085\n    27.964 -53.108\n    29.868 -52.061\n    31.732 -50.946\n    33.556 -49.764\n    35.335 -48.516\n    37.068 -47.206\n    38.752 -45.833\n    40.386 -44.4\n    41.967 -42.909\n    43.492 -41.362\n    44.961 -39.761\n    46.371 -38.107\n    47.72 -36.404\n    49.006 -34.653\n    50.228 -32.856\n    51.385 -31.016\n    52.474 -29.136\n    53.494 -27.218\n    54.444 -25.263\n    55.323 -23.276\n    56.129 -21.258\n    56.862 -19.213\n    57.52 -17.142\n    58.103 -15.049\n    58.609 -12.936\n    59.039 -10.806\n    59.392 -8.662\n    59.666 -6.506\n    59.863 -4.342\n    59.981 -2.173\n    60.02 0.0\n    59.981 2.173\n    59.863 4.342\n    59.666 6.506\n    59.392 8.662\n    59.039 10.806\n    58.609 12.936\n    58.103 15.049\n    57.52 17.142\n    56.862 19.213\n    56.129 21.258\n    55.323 23.276\n    54.444 25.263\n    53.494 27.218\n    52.474 29.136\n    51.385 31.016\n    50.228 32.856\n    49.006 34.653\n    47.72 36.404\n    46.371 38.107\n    44.961 39.761\n    43.492 41.362\n    41.967 42.909\n    40.386 44.4\n    38.752 45.833\n    37.068 47.206\n    35.335 48.516\n    33.556 49.764\n    31.732 50.946\n    29.868 52.061\n    27.964 53.108\n    26.023 54.085\n    24.048 54.992\n    22.042 55.826\n    20.007 56.587\n    20.0 -29.0\n    20.672 -29.038\n    21.335 -29.15\n    21.982 -29.337\n    22.603 -29.594\n    23.192 -29.92\n    23.741 -30.309\n    24.243 -30.757\n    24.691 -31.259\n    25.08 -31.808\n    25.406 -32.397\n    25.663 -33.018\n    25.85 -33.665\n    25.962 -34.328\n    26.0 -35.0\n    25.962 -35.672\n    25.85 -36.335\n    25.663 -36.982\n    25.406 -37.603\n    25.08 -38.192\n    24.691 -38.741\n    24.243 -39.243\n    23.741 -39.691\n    23.192 -40.08\n    22.603 -40.406\n    21.982 -40.663\n    21.335 -40.85\n    20.672 -40.962\n    20.0 -41.0\n)",
+      "status": "proposed",
+      "surface": "plane",
+      "why": "pocket floor at z=20.0; vertical wall loop F4 F6, mouth at z=30.0, depth 10.0, opens upward; 1 inner wire -- standing material inside the pocket proposes beside it; open along F1 (the blank's silhouette, drawn 0.02 past it); the edge along the rim of F7 is a wall the Clear rides to (a void proposed beside it)"
+    },
+    {
+      "checklist_row": "2.7",
+      "feature": "F3_Pocket",
+      "id": "F4",
+      "part": "feature F3_Pocket ProfilePocket(z=30.0, extent=10.0\n    20.0 -56.569\n    22.042 -55.826\n    24.048 -54.992\n    26.023 -54.085\n    27.964 -53.108\n    29.868 -52.061\n    31.732 -50.946\n    33.556 -49.764\n    35.335 -48.516\n    37.068 -47.206\n    38.752 -45.833\n    40.386 -44.4\n    41.967 -42.909\n    43.492 -41.362\n    44.961 -39.761\n    46.371 -38.107\n    47.72 -36.404\n    49.006 -34.653\n    50.228 -32.856\n    51.385 -31.016\n    52.474 -29.136\n    53.494 -27.218\n    54.444 -25.263\n    55.323 -23.276\n    56.129 -21.258\n    56.862 -19.213\n    57.52 -17.142\n    58.103 -15.049\n    58.609 -12.936\n    59.039 -10.806\n    59.392 -8.662\n    59.666 -6.506\n    59.863 -4.342\n    59.981 -2.173\n    60.02 0.0\n    59.981 2.173\n    59.863 4.342\n    59.666 6.506\n    59.392 8.662\n    59.039 10.806\n    58.609 12.936\n    58.103 15.049\n    57.52 17.142\n    56.862 19.213\n    56.129 21.258\n    55.323 23.276\n    54.444 25.263\n    53.494 27.218\n    52.474 29.136\n    51.385 31.016\n    50.228 32.856\n    49.006 34.653\n    47.72 36.404\n    46.371 38.107\n    44.961 39.761\n    43.492 41.362\n    41.967 42.909\n    40.386 44.4\n    38.752 45.833\n    37.068 47.206\n    35.335 48.516\n    33.556 49.764\n    31.732 50.946\n    29.868 52.061\n    27.964 53.108\n    26.023 54.085\n    24.048 54.992\n    22.042 55.826\n    20.007 56.587\n    20.0 -29.0\n    20.672 -29.038\n    21.335 -29.15\n    21.982 -29.337\n    22.603 -29.594\n    23.192 -29.92\n    23.741 -30.309\n    24.243 -30.757\n    24.691 -31.259\n    25.08 -31.808\n    25.406 -32.397\n    25.663 -33.018\n    25.85 -33.665\n    25.962 -34.328\n    26.0 -35.0\n    25.962 -35.672\n    25.85 -36.335\n    25.663 -36.982\n    25.406 -37.603\n    25.08 -38.192\n    24.691 -38.741\n    24.243 -39.243\n    23.741 -39.691\n    23.192 -40.08\n    22.603 -40.406\n    21.982 -40.663\n    21.335 -40.85\n    20.672 -40.962\n    20.0 -41.0\n)",
+      "status": "proposed",
+      "surface": "plane",
+      "why": "vertical wall of recognized pocket F3_Pocket (floor F3)"
+    },
+    {
+      "checklist_row": "1.1",
+      "id": "F5",
+      "part": "feature F5_Top Plane(z=30.0)",
+      "status": "proposed",
+      "surface": "plane",
+      "why": "planar, normal +Z, topmost planar face"
+    },
+    {
+      "checklist_row": "2.7",
+      "feature": "F3_Pocket",
+      "id": "F6",
+      "part": "feature F3_Pocket ProfilePocket(z=30.0, extent=10.0\n    20.0 -56.569\n    22.042 -55.826\n    24.048 -54.992\n    26.023 -54.085\n    27.964 -53.108\n    29.868 -52.061\n    31.732 -50.946\n    33.556 -49.764\n    35.335 -48.516\n    37.068 -47.206\n    38.752 -45.833\n    40.386 -44.4\n    41.967 -42.909\n    43.492 -41.362\n    44.961 -39.761\n    46.371 -38.107\n    47.72 -36.404\n    49.006 -34.653\n    50.228 -32.856\n    51.385 -31.016\n    52.474 -29.136\n    53.494 -27.218\n    54.444 -25.263\n    55.323 -23.276\n    56.129 -21.258\n    56.862 -19.213\n    57.52 -17.142\n    58.103 -15.049\n    58.609 -12.936\n    59.039 -10.806\n    59.392 -8.662\n    59.666 -6.506\n    59.863 -4.342\n    59.981 -2.173\n    60.02 0.0\n    59.981 2.173\n    59.863 4.342\n    59.666 6.506\n    59.392 8.662\n    59.039 10.806\n    58.609 12.936\n    58.103 15.049\n    57.52 17.142\n    56.862 19.213\n    56.129 21.258\n    55.323 23.276\n    54.444 25.263\n    53.494 27.218\n    52.474 29.136\n    51.385 31.016\n    50.228 32.856\n    49.006 34.653\n    47.72 36.404\n    46.371 38.107\n    44.961 39.761\n    43.492 41.362\n    41.967 42.909\n    40.386 44.4\n    38.752 45.833\n    37.068 47.206\n    35.335 48.516\n    33.556 49.764\n    31.732 50.946\n    29.868 52.061\n    27.964 53.108\n    26.023 54.085\n    24.048 54.992\n    22.042 55.826\n    20.007 56.587\n    20.0 -29.0\n    20.672 -29.038\n    21.335 -29.15\n    21.982 -29.337\n    22.603 -29.594\n    23.192 -29.92\n    23.741 -30.309\n    24.243 -30.757\n    24.691 -31.259\n    25.08 -31.808\n    25.406 -32.397\n    25.663 -33.018\n    25.85 -33.665\n    25.962 -34.328\n    26.0 -35.0\n    25.962 -35.672\n    25.85 -36.335\n    25.663 -36.982\n    25.406 -37.603\n    25.08 -38.192\n    24.691 -38.741\n    24.243 -39.243\n    23.741 -39.691\n    23.192 -40.08\n    22.603 -40.406\n    21.982 -40.663\n    21.335 -40.85\n    20.672 -40.962\n    20.0 -41.0\n)",
+      "status": "proposed",
+      "surface": "plane",
+      "why": "vertical wall of recognized pocket F3_Pocket (floor F3)"
+    },
+    {
+      "checklist_row": "2.3",
+      "feature": "F7_Bore",
+      "id": "F7",
+      "part": "feature F7_Bore CylinderBore(dia=12.0, extent=18.0, x=20.0, y=-35.0)",
+      "status": "proposed",
+      "surface": "cylinder",
+      "why": "cylindrical, axis +Z, full revolution, material outside (a bore), opens upward; flat floor F12 -- a milled bore"
+    },
+    {
+      "checklist_row": "2.2",
+      "feature": "F8_Profile",
+      "id": "F8",
+      "part": "feature F8_Profile ProfileBoss(z=30.0, extent=10.0\n    35.0 -10.0\n    35.0 10.0\n    55.0 10.0\n    55.0 -10.0\n)",
+      "status": "proposed",
+      "surface": "plane",
+      "why": "outer profile under top cap F13: vertical wall loop F8 F10 F11 F9, top at z=28.0, base at z=20.0, material inside the loop"
+    },
+    {
+      "checklist_row": "2.2",
+      "feature": "F8_Profile",
+      "id": "F9",
+      "part": "feature F8_Profile ProfileBoss(z=30.0, extent=10.0\n    35.0 -10.0\n    35.0 10.0\n    55.0 10.0\n    55.0 -10.0\n)",
+      "status": "proposed",
+      "surface": "plane",
+      "why": "vertical wall of recognized outer profile F8_Profile (top cap F13)"
+    },
+    {
+      "checklist_row": "2.2",
+      "feature": "F8_Profile",
+      "id": "F10",
+      "part": "feature F8_Profile ProfileBoss(z=30.0, extent=10.0\n    35.0 -10.0\n    35.0 10.0\n    55.0 10.0\n    55.0 -10.0\n)",
+      "status": "proposed",
+      "surface": "plane",
+      "why": "vertical wall of recognized outer profile F8_Profile (top cap F13)"
+    },
+    {
+      "checklist_row": "2.2",
+      "feature": "F8_Profile",
+      "id": "F11",
+      "part": "feature F8_Profile ProfileBoss(z=30.0, extent=10.0\n    35.0 -10.0\n    35.0 10.0\n    55.0 10.0\n    55.0 -10.0\n)",
+      "status": "proposed",
+      "surface": "plane",
+      "why": "vertical wall of recognized outer profile F8_Profile (top cap F13)"
+    },
+    {
+      "checklist_row": "2.3",
+      "feature": "F7_Bore",
+      "id": "F12",
+      "part": "feature F7_Bore CylinderBore(dia=12.0, extent=18.0, x=20.0, y=-35.0)",
+      "status": "proposed",
+      "surface": "plane",
+      "why": "flat floor of recognized bore F7_Bore (wall F7)"
+    },
+    {
+      "checklist_row": "1.1",
+      "id": "F13",
+      "part": "feature F13_Face Face(z=28.0\n    loop\n        35.0 -10.0\n        55.0 -10.0\n        55.0 10.0\n        35.0 10.0\n)",
+      "status": "proposed",
+      "surface": "plane",
+      "why": "planar, normal +Z, below the topmost height: a bounded face at z=28.0, 1 loop (outer); caps recognized outer profile F8_Profile"
+    }
+  ],
+  "faces_total": 13,
+  "schema": "nacs-recognition-report",
+  "source": "disc_step.step",
+  "units": "mm",
+  "version": 1
+}

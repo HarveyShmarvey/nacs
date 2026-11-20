@@ -1,0 +1,45 @@
+# tube_pocket.cam — the real part behind tilted_bore.cam (Phase 42;
+# DECISIONS.md → "DRAFT: Phase 42 opens…" and the slice entries above it).
+#
+# A deep angled pocket in a thick-walled tube, intersecting the tube's bore.
+# The box blank stands in for the tube ("it's a wall now"); `Bore` is the
+# tube's bore in this setup's frame — tilted, through the whole slab, and
+# GIVEN: it was cut on another setup, so to this program it is air before
+# the first op. The pocket's right wall crosses it. The tool is the long
+# reach the shop had to use: a quarter-inch endmill with 0.4 of flute, a
+# relieved shank, and a holder that cannot enter the part — its nose face
+# sits 1.25 above the tip, clear of the stock top at this depth.
+#
+# What the engine derives from that (slice 3): the floor the Clear works
+# grows into the LENS — the plan region where the whole tool body stands in
+# the bore's air, the intersection of the bore's sections over the heights
+# the body occupies — so the passes run out into the open air instead of
+# turning back at a wall that is not there, and the knife edge where the
+# pocket's wall meets the bore's is filleted by the tool from the air side.
+# Nothing here draws that boundary: `nacs --outline` says it, and the
+# window draws it as a wall stroke.
+#
+# The Clear is unpinned on purpose: the subject is the grown floor and (slice
+# 4) the entry from the given air, not the pattern.
+units inch
+feed 30
+plunge 10
+rapid_z 0.2
+clearance_z 1
+spindle 3000
+
+stock Box(w=3, l=2.5, h=1, x=0, y=0, z=0)
+
+tool T1 Endmill(dia=0.25, flute_len=0.4, shank_dia=0.22, stickout=1.25, holder_nose_dia=1.0, holder_nose_len=0.5, holder_body_dia=1.5)
+
+feature Bore TiltedBore(dia=0.75, extent=1, x=2.0, y=1.25, tilt=30, heading=180)
+given Bore
+
+feature Pocket ProfilePocket(extent=0.35
+    0.6 0.75
+    1.9 0.75
+    1.9 1.75
+    0.6 1.75
+)
+
+run Clear(tool=T1, profile=Pocket, stepover=0.1)

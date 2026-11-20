@@ -1,0 +1,12 @@
+# meridian b-spline read from spline_funnel.step by import_step_nurbs.py
+# (r, z) control polygon in the meridian half-plane, mouth-first, in mm;
+# revolved about the SplineRevolveFunnel feature's Z axis. No tessellation.
+degree 3
+knots 0.0 0.0 0.0 0.0 4.472 9.472 12.301 14.537 14.537 14.537 14.537
+pole 13.0 0.0
+pole 12.453 -1.39
+pole 10.997 -4.198
+pole 8.651 -7.602
+pole 5.986 -9.748
+pole 5.193 -11.231
+pole 5.0 -12.0

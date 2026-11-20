@@ -1,0 +1,30 @@
+# profile_pocket_regions.cam — the region-decomposition slice-2 demo
+# (DECISIONS.md "adaptive clearing, region decomposition…"): the dia-10 tool
+# clears the pocket dense and leaves its four corner fillets — the ~r(√2−1)
+# lobes a round tool cannot push into a sharp declared corner, the exact
+# material the rest-material report showcases. The dia-3 tool then runs
+# Clear(strategy=regions): the field shapes four corner regions, the
+# declaration keeps the walls, and each region gets its own little spiral.
+# What the SMALL tool cannot reach either — its own, smaller corner residue —
+# is stated in the emitted text by the residue law, not silently absorbed.
+units mm
+feed 800
+plunge 300
+rapid_z 5
+clearance_z 25
+spindle 3000
+
+stock Box(w=60, l=60, h=15, x=0, y=0, z=0)
+
+tool T5 Endmill(dia=10.0)
+tool T3 Endmill(dia=3.0)
+
+feature Pocket ProfilePocket(extent=6.0
+    15 15
+    45 15
+    45 45
+    15 45
+)
+
+run Clear(tool=T5, profile=Pocket, stepover=4.0)
+run Clear(tool=T3, profile=Pocket, stepover=1.0, strategy=regions, voxel_cell=0.25)

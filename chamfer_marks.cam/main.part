@@ -1,0 +1,52 @@
+# chamfer_marks.cam — one loop, two legs (ROADMAP item 1, slice 9). The real
+# part's rib heads carry a 1.5 bevel on their straight edges and a 1.0 bevel
+# on the concave arc where a bolt hole notches the corner; one feature used
+# to carry one chamfer, so the heads proposed without one. Now a loop point
+# may restate the leg for the edges from it on: `chamfer_depth=` or
+# `chamfer_width=` after the two coordinates, 0 to leave the edges unbroken.
+# The feature's own keys hold from the first point. The angle is the loop's,
+# since one tool cuts one angle.
+#
+# The pass runs the loop in stretches of one leg each, moving the tip to the
+# next depth at the point where the leg changes; an unbroken stretch is
+# passed over at rapid_z. Where a deeper stretch meets a shallower one the
+# deeper flank reaches about a reach's width round the corner, and the
+# program's comment says so. The removal model claims one band per stretch,
+# so the checks after a bevel keep running.
+#
+#   Pad   engine comp: 1.5 along the top edge, 1.0 down the right side, 1.5
+#         back along the bottom, the left side left unbroken.
+#   Post  control comp: 1.0 deep by default, 0.5 wide on its right side.
+units mm
+feed 800
+plunge 300
+rapid_z 5
+clearance_z 25
+spindle 3000
+
+stock Box(w=160, l=80, h=20, x=0, y=0, z=0)
+
+tool T5 Endmill(dia=10.0)
+tool T3 ChamferMill(angle=90.0, gauge_dia=8.0, gauge_z=3.75, dia=12.0, tip_dia=0.5)
+
+# CW: a boss bounds standing material, cut from outside.
+feature Pad ProfileBoss(extent=12.0, chamfer_depth=1.5, chamfer_angle=90.0
+    20 60
+    70 60 chamfer_depth=1.0
+    70 20 chamfer_depth=1.5
+    20 20 chamfer_depth=0
+)
+
+feature Post ProfileBoss(extent=12.0, chamfer_depth=1.0
+    100 60
+    150 60 chamfer_width=0.5
+    150 20 chamfer_depth=1.0
+    100 20
+)
+
+run Clear(tool=T5, profile=Pad, stepover=4.0, stepdown=4.0)
+run Side(tool=T5, surface=Pad)
+run Clear(tool=T5, profile=Post, stepover=4.0, stepdown=4.0)
+run Side(tool=T5, surface=Post)
+run Form(tool=T3, surface=Pad)
+run Form(tool=T3, surface=Post, comp=control, tip_clearance=0.6)

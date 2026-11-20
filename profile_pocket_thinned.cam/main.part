@@ -1,0 +1,45 @@
+# profile_pocket_thinned.cam — the chip-thinned derived feed (Phase 8, V1
+# slice 1; DECISIONS.md → "V1 slice 1…"). The twin of profile_pocket_clear.cam
+# on the feeds path: same op, same tool class, but the feed is asked for rather
+# than declared, and it is raised by the engagement the engine MEASURES.
+#
+# The numbers are the point, so they are stated here and pinned in the golden:
+#
+#   * stepover 1.0 on a dia-10 cutter is a radial engagement of 10% of
+#     diameter — deliberately the author's own manual-loop target, the one the
+#     whole engagement item was written around.
+#   * that engagement is theta_e = acos(1 - a_e/r) = 36.9 degrees, and the
+#     chip-thinning factor is exactly 1/sin(theta_e) = 1.667. Not a table
+#     lookup and not a fudge: the correction IS the reciprocal sine of the arc
+#     measure, which is why the primitive had to exist before this feed could.
+#   * so F = (RPM x z x f_z) x 1.667 = 572.958 x 1.667 = 954.930, against the
+#     572.958 the same declaration emits with no engagement to read (that is
+#     floor_derive_feed.cam, on a Floor).
+#
+# The pocket is a plain square ON PURPOSE: no reflex corner, so the corner
+# advisory stays silent and this fixture pins the feed alone. The L-shaped
+# cavities in chamfer_profile.cam / edge_round_profile.cam are where the
+# corner spike lives.
+units mm
+feed 800
+plunge 300
+rapid_z 5
+clearance_z 25
+spindle 3000
+
+# Both axes of the K3 lookup: the workpiece here, the tool below.
+stock Box(w=60, l=60, h=20, x=0, y=0, z=0, material=6061)
+
+# flute_count is K2's field, and the chip-load half of the identity cannot be
+# computed without it — a tool that cannot say how many teeth it has cannot be
+# told how fast to feed them.
+tool T5 Endmill(dia=10.0, flute_count=3)
+
+feature PocketProfile ProfilePocket(extent=5.0
+    15 15
+    45 15
+    45 45
+    15 45
+)
+
+run Clear(tool=T5, profile=PocketProfile, stepover=1.0, spindle=derive, feed=derive)

@@ -1,0 +1,29 @@
+# torus.cam — camp-2 ball-nose finishing fixture for Torus.
+#
+# CONTAINED 2026-08-13 (DECISIONS.md "the torus's annulus island…", slice 2):
+# the stock used to stop AT the torus's base plane, so the whole donut stood in
+# air and the fixture only ran because there was nothing to hit. The stock now
+# stands 2mm proud of the crown (z 4) and T1 roughs BOTH work regions before
+# the finish — the moat outside the part and the hole inside it, which is where
+# this program's own first inner ring already goes: the finish CL runs from
+# (18.000, 0.000), one ball radius inside the hole's rim, AT the base plane.
+# The stock grew in y (l 100, y -10) so the moat's outer edge at r 41.5 still
+# lands on it, and rapid_z clears the stock TOP (z 6) — a rapid at 5 would
+# cross the stock. The finish's own motion is unchanged.
+units mm
+feed 600
+plunge 200
+rapid_z 9
+clearance_z 30
+spindle 4000
+
+stock Box(w=100, l=100, h=31, x=0, y=-10, z=6)
+
+tool T1 Endmill(dia=12.0)
+tool T9 Ballmill(dia=6.0)
+
+# Torus centre at z=0; major_dia=50, minor_dia=8.
+feature T Torus(major_dia=50, minor_dia=8, x=50, y=40, z=0)
+
+run Clear(tool=T1, profile=T, stepover=8.0, stepdown=2.0, stock_to_leave=0.5)
+run Copy(tool=T9, surface=T, stepover=3.0)

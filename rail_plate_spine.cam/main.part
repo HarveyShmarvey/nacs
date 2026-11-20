@@ -1,0 +1,17 @@
+# rail_plate_spine.cam — rail_plate_offset.cam with `pattern=spine` on its three faces
+# (Phase 30; DECISIONS.md → "Phase 30 slice 3: the rail plate…"). The stress
+# test: a floor that is ALL edge. See rail_plate_offset.cam/main.part for the part.
+units mm
+feed 800
+plunge 300
+rapid_z 5
+clearance_z 25
+spindle 3000
+
+stock Box(w=124, l=164, h=21, x=-2, y=-2, z=1)
+
+tool T5 Endmill(dia=10.0)
+
+run End(tool=T5, surface=Land, stepover=5.0, pattern=spine)
+run End(tool=T5, surface=RingRail, stepover=5.0, pattern=spine)
+run End(tool=T5, surface=BarRail, stepover=5.0, pattern=spine)

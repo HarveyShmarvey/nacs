@@ -1,0 +1,113 @@
+# starter.feeds — the shipped feeds-and-speeds table (K3, DECISIONS.md →
+# "K3, the material…", fork 3B).
+#
+# These are CONSERVATIVE STARTING POINTS, chosen to rub rather than break,
+# cross-checked against published handbook ranges — they are not optimized
+# numbers and were never meant to be. Carbide tooling is assumed and said so
+# in every source line (tool material is a K2-side axis, absent in v1). A
+# material we have not vetted is ABSENT from this file, not guessed: the miss
+# refuses by name and lists what the table does hold.
+#
+# Your proven numbers outrank ours: declare `feeds_table "<path>"` in the
+# program and a shop record shadows the shipped record WHOLE at
+# (material × tool type) granularity — never field-merged.
+#
+# Grammar (the `.catalog` family):
+#   units mm|inch          optional header, before any record; default mm.
+#                          inch means surface_speed in SFM, chipload in
+#                          in/tooth, band diameters in inches — converted
+#                          once at parse, downstream is always metric.
+#   feeds <material> <tool-type>   opens a record
+#   surface_speed <m/min>          required, positive
+#   source <free text>             required — every number says where it
+#                                  came from, or the record refuses
+#   chipload <dia-lo>..<dia-hi> <mm/tooth>   repeated; a band covers
+#                                  dia-lo <= dia < dia-hi; overlap refuses;
+#                                  between-band diameters are a miss, never
+#                                  an interpolation.
+
+units mm
+
+feeds 6061 Endmill
+surface_speed 150
+source conservative start, low end of published carbide ranges for 6061-T6 (handbook 150-300 m/min); carbide assumed
+chipload 1..3 0.010
+chipload 3..6 0.020
+chipload 6..13 0.040
+
+feeds 6061 Drill
+surface_speed 90
+source conservative start, low end of published carbide drilling ranges for 6061-T6; carbide assumed
+chipload 1..3 0.020
+chipload 3..6 0.050
+chipload 6..13 0.080
+
+feeds 1018 Endmill
+surface_speed 80
+source conservative start, low end of published carbide ranges for 1018 mild steel (handbook 90-150 m/min); carbide assumed
+chipload 1..3 0.008
+chipload 3..6 0.015
+chipload 6..13 0.030
+
+feeds 1018 Drill
+surface_speed 50
+source conservative start, low end of published carbide drilling ranges for 1018 mild steel; carbide assumed
+chipload 1..3 0.015
+chipload 3..6 0.040
+chipload 6..13 0.060
+
+feeds 304 Endmill
+surface_speed 45
+source conservative start, low end of published carbide ranges for 304 stainless (handbook 50-100 m/min, work-hardens if rubbed — do not baby the chip load); carbide assumed
+chipload 1..3 0.008
+chipload 3..6 0.015
+chipload 6..13 0.030
+
+feeds 304 Drill
+surface_speed 25
+source conservative start, low end of published carbide drilling ranges for 304 stainless; carbide assumed
+chipload 1..3 0.015
+chipload 3..6 0.040
+chipload 6..13 0.060
+
+feeds 360-brass Endmill
+surface_speed 150
+source conservative start, low end of published carbide ranges for C360 free-machining brass; carbide assumed
+chipload 1..3 0.010
+chipload 3..6 0.020
+chipload 6..13 0.040
+
+feeds 360-brass Drill
+surface_speed 90
+source conservative start, low end of published carbide drilling ranges for C360 free-machining brass; carbide assumed
+chipload 1..3 0.020
+chipload 3..6 0.050
+chipload 6..13 0.080
+
+feeds acetal Endmill
+surface_speed 200
+source conservative start for acetal (Delrin), well under published limits (300+ m/min); heat is the failure mode, sharp carbide assumed
+chipload 1..3 0.020
+chipload 3..6 0.050
+chipload 6..13 0.100
+
+feeds acetal Drill
+surface_speed 150
+source conservative start for acetal (Delrin) drilling; heat is the failure mode, sharp carbide assumed
+chipload 1..3 0.030
+chipload 3..6 0.080
+chipload 6..13 0.120
+
+feeds HDPE Endmill
+surface_speed 200
+source conservative start for HDPE, well under published limits; melting is the failure mode, sharp carbide assumed
+chipload 1..3 0.020
+chipload 3..6 0.050
+chipload 6..13 0.100
+
+feeds HDPE Drill
+surface_speed 150
+source conservative start for HDPE drilling; melting is the failure mode, sharp carbide assumed
+chipload 1..3 0.030
+chipload 3..6 0.080
+chipload 6..13 0.120

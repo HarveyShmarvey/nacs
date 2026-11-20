@@ -1,0 +1,50 @@
+# pocket_islands.cam — a pocket cut AROUND what stands in it (Phase 26 slice 2;
+# DECISIONS.md → "Phase 10 lane D — overlap semantics…" for the ruling,
+# "Phase 26 slice 2: the pocket…" for the build).
+#
+# Nothing here says "island". Two round posts and a rectangular pad are
+# declared standing inside the pocket's footprint, from its floor to its top,
+# and that containment IS the declaration: the pocket's Clear goes around all
+# three, by distance from the nearest wall — whoever's wall it is — deepest
+# first, so the pocket wall and each island wall get the last pass beside
+# them. Where the family ends in several disconnected loops, each one ramps
+# in on its own; a loop plunges only where it starts beside air a deeper loop
+# already cut.
+#
+# Then every wall is finished. Each island's Finish leads in through the
+# annulus the pocket's Clear opened — check_moves lets it through because the
+# pocket's removal is its footprint MINUS its islands, so that air is declared.
+# There is no `Clear` on a post: an island's roughing is its host's Clear, and
+# one aimed at the island refuses by name.
+units mm
+feed 800
+plunge 300
+rapid_z 5
+clearance_z 25
+spindle 3000
+
+stock Box(w=140, l=120, h=20, x=0, y=0, z=0)
+
+tool T5 Endmill(dia=10.0)
+
+feature Cavity ProfilePocket(extent=6.0
+    20 20
+    120 20
+    120 100
+    20 100
+)
+
+feature PostA CylinderBoss(dia=12, extent=6, x=45, y=60, z=-6)
+feature PostB CylinderBoss(dia=14, extent=6, x=90, y=40, z=-6)
+feature Pad ProfileBoss(extent=6.0
+    78 68
+    78 84
+    100 84
+    100 68
+)
+
+run Clear(tool=T5, profile=Cavity, stepover=4.0)
+run Side(tool=T5, surface=Cavity)
+run Side(tool=T5, surface=PostA, stepover=5.0)
+run Side(tool=T5, surface=PostB, stepover=5.0)
+run Side(tool=T5, surface=Pad)

@@ -1,0 +1,27 @@
+# Phase 32, after the close: a raised wall 9mm thick beside a face, thinner than the 10mm
+# tool's push — the swath closes round it, so it stands INSIDE the swath as
+# an island. Pinned on zigzag: its closing pass is rebuilt from what stands,
+# and the first build of this fix left the wall out of it and ran the pass
+# straight through the boss.
+units mm
+feed 800
+plunge 300
+rapid_z 5
+clearance_z 25
+spindle 3000
+stock Box(w=70, l=70, h=20, x=0, y=0, z=0)
+tool T5 Endmill(dia=10.0)
+feature Floor Face(z=-4
+    loop
+        10 20
+        60 20
+        60 40
+        10 40
+)
+feature Wall ProfileBoss(extent=4
+    10 49
+    60 49
+    60 40
+    10 40
+)
+run End(tool=T5, surface=Floor, stepover=5.0, pattern=zigzag)

@@ -1,0 +1,25 @@
+# floor_work_offset.cam — the datum selection, one word (DECISIONS.md "work
+# offsets…", forks 1A/4A). `work_offset G55` SELECTS which pre-defined
+# machine register this program's coordinate space rides — vise two of a
+# two-vise setup, say — and the golden differs from its undeclared twin by
+# exactly the G55 in the setup line. Nothing else CAN move: every feature,
+# certificate, and stamp gauges the program's own space unchanged; where
+# the operator PUT G55 is the setup sheet's business. Setting a datum from
+# program text (G92/G10/G52) rejects by name — that act is work
+# positioning wearing offset clothes, the conflation tenet 5 forbids.
+work_offset G55
+
+units mm
+feed 800
+plunge 300
+rapid_z 5
+clearance_z 25
+spindle 3000
+
+stock Box(w=60, l=60, h=20, x=0, y=0, z=0)
+
+tool T1 Endmill(dia=10.0)
+
+feature Top Plane(z=-0.5)
+
+run End(tool=T1, surface=Top, stepover=6.0)

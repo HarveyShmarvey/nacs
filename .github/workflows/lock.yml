@@ -1,0 +1,115 @@
+# The merge gate on Linux and Windows, on every push: the three legs of
+# ./lock.sh as three jobs a platform, so the wait is the longest leg and
+# not their sum. A branch is mergeable when all six are green; neither
+# platform's goldens are trusted on the other's say-so.
+name: lock
+
+on:
+  push:
+
+concurrency:
+  group: lock-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+# The runners are small: no debug info (the Linux linker ran out of room
+# on the window's test binaries) and light optimisation, which the
+# numeric-heavy tests repay many times over. Rust has no fast-math, so
+# the optimiser does not change a float result.
+env:
+  CARGO_INCREMENTAL: 0
+  CARGO_PROFILE_DEV_DEBUG: 0
+  CARGO_PROFILE_DEV_OPT_LEVEL: 1
+
+jobs:
+  lock:
+    name: ${{ matrix.leg.name }} (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        leg:
+          - name: window
+            run: cargo test --no-fail-fast && cargo run --quiet -- plate.cam > /dev/null
+          - name: engine
+            run: cargo test --no-default-features --no-fail-fast
+          - name: shell
+            # One thread on Linux: its Vulkan loader crashes now and then when several tests draw at once.
+            run: cargo test --features shell-tests --test shell_tests -- $([ "$RUNNER_OS" = Linux ] && echo --test-threads=1)
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 120
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+
+      # rust-toolchain.toml names the compiler; this installs it.
+      - name: Toolchain
+        run: rustup toolchain install
+
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: lock-${{ runner.os }}-${{ matrix.leg.name }}-${{ hashFiles('rust-toolchain.toml', 'Cargo.lock') }}
+          restore-keys: lock-${{ runner.os }}-${{ matrix.leg.name }}-
+
+      # The window's build needs the desktop headers; the shell tests render
+      # on a software Vulkan adapter (lavapipe). Windows has WARP built in.
+      - name: Linux packages
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            libxkbcommon-dev libwayland-dev libx11-dev libxcb1-dev \
+            libgl1-mesa-dev mesa-vulkan-drivers
+
+      # The Python sidecar (STEP import): its venv is about 1.8 GB, cached
+      # on the requirements file so it is installed once.
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - uses: actions/cache@v4
+        id: venv
+        with:
+          path: sidecar/.venv
+          key: sidecar-${{ runner.os }}-${{ hashFiles('sidecar/requirements.txt') }}
+      - name: Sidecar venv
+        if: steps.venv.outputs.cache-hit != 'true'
+        run: |
+          python -m venv sidecar/.venv
+          if [ -x sidecar/.venv/bin/pip ]; then PIP=sidecar/.venv/bin/pip; else PIP=sidecar/.venv/Scripts/pip.exe; fi
+          "$PIP" install -r sidecar/requirements.txt
+
+      - name: ${{ matrix.leg.name }}
+        run: ${{ matrix.leg.run }}
+
+      # Every fixture's program, fingerprinted, so the two platforms are
+      # compared output for output and not by which tests happen to fail.
+      - name: Fingerprints
+        if: always() && matrix.leg.name == 'engine'
+        run: |
+          cargo build --quiet --no-default-features
+          for d in *.cam; do
+            echo "$(./target/debug/nacs "$d" 2>&1 | tr -d '\r' | sha256sum | cut -c1-16)  $d"
+          done > fingerprints.txt
+          wc -l fingerprints.txt
+      - uses: actions/upload-artifact@v4
+        if: always() && matrix.leg.name == 'engine'
+        with:
+          name: fingerprints-${{ runner.os }}
+          path: fingerprints.txt
+
+  # Windows and Linux must write the same program for every fixture.
+  agree:
+    needs: lock
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+      - run: diff fingerprints-Linux/fingerprints.txt fingerprints-Windows/fingerprints.txt && echo "the platforms agree on $(wc -l < fingerprints-Linux/fingerprints.txt) fixtures"

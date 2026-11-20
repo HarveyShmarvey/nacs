@@ -1,0 +1,32 @@
+# Proposed features recognized from sunken_bore.step by sidecar/import_step.py
+# (contract v1 -- see sidecar/CONTRACT.md). Review before use:
+# recognition proposes, it does not machine.
+
+# F3: planar, normal +Z, topmost planar face (CHECKLIST row 1.1)
+feature F3_Top Plane(z=20.0)
+
+# F8: outer profile under top cap F3: vertical wall loop F4 F1 F2 F8, top at z=20.0, base at z=10.0, material inside the loop; stepped base: the profile stops at the highest base z=10.0, and F1 to z=0.0, F2 to z=0.0, F4 to z=0.0 run on below it (CHECKLIST row 2.2)
+# consume with: run Side(tool=..., surface=F8_Profile, comp=control)  [the feature carries its own z + extent]
+# the loop is wound CW: material inside, tool outside (the winding convention,
+# DECISIONS.md -> "Row-2.4 side selector")
+# comp=control is required on Contour runs: recognized boundaries carry rounded
+# corners tessellated to chords, and engine comp hard-errors on rounded-corner
+# offsets (DECISIONS.md -> "recognized contours propose comp=control")
+# the base is stepped: this profile stops at z=10.0, the highest base; the walls F1 F2 F4 run on below it
+# and belong to whatever stands lower -- declare that by hand or accept its own proposal
+feature F8_Profile ProfileBoss(z=20.0, extent=10.0
+    0.0 0.0
+    0.0 80.0
+    50.0 80.0
+    50.0 0.0
+)
+
+# F9: cylindrical, axis +Z, full revolution, material outside (a bore), opens upward; flat floor F11 -- a milled bore (CHECKLIST row 2.3)
+# finish the wall with: run Side(tool=..., surface=F9_Bore, stepover=...)  [stepover is the ring spacing up the wall]
+# a flat floor is milled, not drilled -- a twist drill leaves a conical point, so no drill run is suggested
+feature F9_Bore CylinderBore(dia=16.0, extent=8.0, x=25.0, y=40.0)
+
+# F10: cylindrical, axis +Z, full revolution, material outside (a bore), opens upward; flat floor F12 -- a milled bore; rim at z=10.0, 10.0 below the stock top z=20.0 -- authored from its rim by z=, so the step above it is another feature's material (CHECKLIST row 2.3)
+# finish the wall with: run Side(tool=..., surface=F10_Bore, stepover=...)  [stepover is the ring spacing up the wall]
+# a flat floor is milled, not drilled -- a twist drill leaves a conical point, so no drill run is suggested
+feature F10_Bore CylinderBore(dia=16.0, extent=6.0, x=75.0, y=40.0, z=10.0)

@@ -1,0 +1,9 @@
+{
+  "name": "confusable — a validator fixture, not a theme to wear",
+  "appearance": "dark",
+  "style": {},
+  "nacs": {
+    "role.roughing": "#c8783c",
+    "role.finishing": "#82963c"
+  }
+}

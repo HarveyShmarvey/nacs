@@ -1,0 +1,102 @@
+# Proposed features recognized from pocket_plate.step by sidecar/import_step.py
+# (contract v1 -- see sidecar/CONTRACT.md). Review before use:
+# recognition proposes, it does not machine.
+
+# F1: outer profile under top cap F3: vertical wall loop F1 F2 F6 F4, top at z=15.0, base at z=0.0, material inside the loop (CHECKLIST row 2.2)
+# consume with: run Side(tool=..., surface=F1_Profile, comp=control)  [the feature carries its own z + extent]
+# the loop is wound CW: material inside, tool outside (the winding convention,
+# DECISIONS.md -> "Row-2.4 side selector")
+# comp=control is required on Contour runs: recognized boundaries carry rounded
+# corners tessellated to chords, and engine comp hard-errors on rounded-corner
+# offsets (DECISIONS.md -> "recognized contours propose comp=control")
+feature F1_Profile ProfileBoss(z=15.0, extent=15.0
+    0.0 0.0
+    0.0 80.0
+    100.0 80.0
+    100.0 0.0
+)
+
+# F3: planar, normal +Z, topmost planar face (CHECKLIST row 1.1)
+feature F3_Top Plane(z=15.0)
+
+# F27: pocket floor at z=9.0; vertical wall loop F7 F9 F10 F8, mouth at z=15.0, depth 6.0, opens upward (CHECKLIST row 2.1)
+# consume with: run Clear(tool=..., profile=F27_Pocket, stepover=...)  [the feature carries its own z + extent]
+# or finish with: run Side(tool=..., surface=F27_Pocket, comp=control)
+# comp=control is required on recognized profile Side runs: recognized boundaries carry rounded
+# corners tessellated to chords, and engine comp hard-errors on rounded-corner
+# offsets (DECISIONS.md -> "recognized contours propose comp=control")
+feature F27_Pocket ProfilePocket(z=15.0, extent=6.0
+    10.0 10.0
+    40.0 10.0
+    40.0 30.0
+    10.0 30.0
+)
+
+# F28: pocket floor at z=10.0; vertical wall loop F11 F13 F15 F17 F18 F16 F14 F12, mouth at z=15.0, depth 5.0, opens upward (CHECKLIST row 2.7)
+# consume with: run Clear(tool=..., profile=F28_Pocket, stepover=...)  [the feature carries its own z + extent]
+# or finish with: run Side(tool=..., surface=F28_Pocket, comp=control)
+# comp=control is required on recognized profile Side runs: recognized boundaries carry rounded
+# corners tessellated to chords, and engine comp hard-errors on rounded-corner
+# offsets (DECISIONS.md -> "recognized contours propose comp=control")
+feature F28_Pocket ProfilePocket(z=15.0, extent=5.0
+    55.0 16.0
+    55.038 15.328
+    55.15 14.665
+    55.337 14.018
+    55.594 13.397
+    55.92 12.808
+    56.309 12.259
+    56.757 11.757
+    57.259 11.309
+    57.808 10.92
+    58.397 10.594
+    59.018 10.337
+    59.665 10.15
+    60.328 10.038
+    61.0 10.0
+    84.0 10.0
+    84.672 10.038
+    85.335 10.15
+    85.982 10.337
+    86.603 10.594
+    87.192 10.92
+    87.741 11.309
+    88.243 11.757
+    88.691 12.259
+    89.08 12.808
+    89.406 13.397
+    89.663 14.018
+    89.85 14.665
+    89.962 15.328
+    90.0 16.0
+    90.0 29.0
+    89.962 29.672
+    89.85 30.335
+    89.663 30.982
+    89.406 31.603
+    89.08 32.192
+    88.691 32.741
+    88.243 33.243
+    87.741 33.691
+    87.192 34.08
+    86.603 34.406
+    85.982 34.663
+    85.335 34.85
+    84.672 34.962
+    84.0 35.0
+    61.0 35.0
+    60.328 34.962
+    59.665 34.85
+    59.018 34.663
+    58.397 34.406
+    57.808 34.08
+    57.259 33.691
+    56.757 33.243
+    56.309 32.741
+    55.92 32.192
+    55.594 31.603
+    55.337 30.982
+    55.15 30.335
+    55.038 29.672
+    55.0 29.0
+)

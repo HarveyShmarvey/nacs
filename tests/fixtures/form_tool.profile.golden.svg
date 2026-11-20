@@ -1,0 +1,10 @@
+<!-- tool cutter profile converted from form_tool.dxf by sidecar/import_dxf_profile.py -->
+<!-- review before use; consume with: tool T? FormTool(dia=..., profile="profile.svg") -->
+<!-- x is radius from the tool axis, y is height above the tip; the engine rescales to
+     the tool's dia and re-measures heights from the min-radius point, so the drawing's
+     absolute units and position do not matter -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0.0 -8.0 3.586 8.0">
+  <g transform="scale(1 -1)">
+    <path fill="none" stroke="black" stroke-width="0.05" d="M 0.0 0.0 L 3.0 3.0 L 3.249 3.303 L 3.434 3.649 L 3.547 4.024 L 3.586 4.414 L 3.586 8.0"/>
+  </g>
+</svg>

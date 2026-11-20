@@ -1,0 +1,29 @@
+# floor_travel.cam — the Phase 15 slice 1 acceptance fixture (DECISIONS.md
+# "Phase 15 opens: the envelope DRAFT…"): a facing job on a DECLARED machine
+# whose travel spans it respects, with the datum placing the setup on the
+# table. The check has both its homes — spans in vmc.machine, the register's
+# machine-coordinate position on the `datum` line below — and finds nothing,
+# and the emitted program is byte-identical to the same source minus the
+# `machine` and `datum` lines (the twin test in tests/check_tests.rs pins
+# exactly that: an envelope the program respects changes zero bytes). Shift
+# the datum toward a wall and the same walk names the crossing instead.
+machine vmc.machine
+
+units mm
+feed 800
+plunge 300
+rapid_z 5
+clearance_z 25
+spindle 3000
+
+stock Box(w=120, l=80, h=20, x=0, y=0, z=0)
+
+# The setup sheet's number, made declarable: the machine coordinates of the
+# work XY zero. Declaring is not setting — nothing about emission changes.
+datum x=-500.0 y=-200.0
+
+tool T5 Endmill(dia=10.0)
+
+feature TopFace Plane(z=-0.5)
+
+run End(tool=T5, surface=TopFace, stepover=6.0)

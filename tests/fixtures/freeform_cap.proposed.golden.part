@@ -1,0 +1,7 @@
+# freeform_cap.step -- 1 freeform face(s) tessellated to STL by import_step_mesh.py
+# 74 triangles at deflection 2.5 mm; the 6 analytic face(s) are LEFT for import_step.py recognition.
+# Camp-3 mesh finishing accepts tessellation + sampling error (DECISIONS.md "Camp-3 slice 1…"); the analytical camps do not.
+# STL vertices are millimetres by definition; x/y/z place the mesh in stock coords.
+feature Freeform_cap_Mesh Mesh(file="mesh.stl", x=0, y=0, z=0)
+# Consume with a ball-nose Copy (the only Mesh consumer today):
+#   run Copy(tool=T?, surface=Freeform_cap_Mesh, stepover=?)

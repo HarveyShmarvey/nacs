@@ -1,0 +1,61 @@
+{
+  "$schema": "https://zed.dev/schema/themes/v0.2.0.json",
+  "name": "Tokyo Night",
+  "author": "a port for nacs — the Night palette, with Moon's yellow where Night has one amber and the table wants two",
+  "themes": [
+    {
+      "name": "Tokyo Night",
+      "appearance": "dark",
+      "style": {
+        "background": "#1a1b26",
+        "panel.background": "#16161e",
+        "border": "#57628c",
+        "border.focused": "#3b4261",
+        "text": "#a9b1d6",
+        "element.background": "#292e42",
+        "element.hover": "#3b4261",
+        "element.active": "#414868",
+        "element.selected": "#3d59a1",
+        "editor.background": "#0e0e16",
+        "scrollbar.thumb.background": "#57628c"
+      },
+      "nacs": {
+        "text.interactive": "#a9b1d6",
+        "text.hover": "#c0caf5",
+        "text.active": "#ffffff",
+        "text.open": "#9aa5ce",
+        "element.open": "#292e42",
+
+        "role.roughing": "#e0af68",
+        "role.finishing": "#7aa2f7",
+        "role.untagged": "#a9b1d6",
+        "rapid": "#57618f",
+        "select": "#c0caf5",
+        "wire": "#58628d",
+        "stock": "#58618c",
+        "ground": "#16161e",
+        "map.ground": "#1a1b26",
+        "indicator": "#c0caf5be",
+        "sim.base": "#737aa2",
+        "removal": "#73daca",
+        "forgotten": "#ff9e64",
+        "violated": "#ff007c",
+        "refusal": "#f7768e",
+        "tool": "#b4f9f8",
+        "fixture": "#4260ae",
+
+        "family.engagement": "#df4c4c",
+        "family.deviation": "#ff9e64",
+        "family.entry": "#bb9af7",
+        "family.fixture": "#9d7cd8",
+        "family.reach": "#7dcfff",
+        "family.envelope": "#7aa2f7",
+        "family.containment": "#41a6b5",
+        "family.body_foul": "#1abc9c",
+        "family.field_body_foul": "#9ece6a",
+        "family.part_violation": "#2ac3de",
+        "family.decline": "#737eac"
+      }
+    }
+  ]
+}

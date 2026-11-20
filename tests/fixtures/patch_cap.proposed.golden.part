@@ -1,0 +1,7 @@
+# patch_cap.step -- 1 untrimmed b-spline patch(es) read by import_step_nurbs.py (6 faces total).
+# Each patch is the EXACT tensor-product b-spline surface (no tessellation); Feature::NurbsPatch machines it with the raster
+# drop-cutter against the exact surface — the mesh contract minus the chord error. The .patch control net is mm by definition,
+# in model coords (placement x/y/z default 0).
+feature Patch_cap_Patch NurbsPatch(file="surface.patch")
+#   4x4-pole degree 3x3 patch, full natural domain; consume with a ball-nose Copy (raster drop-cutter):
+#   run Copy(tool=T?, surface=Patch_cap_Patch, stepover=?)

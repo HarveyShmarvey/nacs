@@ -1,0 +1,18 @@
+# meridian.spline — a freeform b-spline cavity meridian for spline_funnel.cam.
+# The (r, z) control polygon of a cubic funnel of revolution, in mm, stored
+# MOUTH-FIRST (mouth rim widest, in the stock-top plane; tip circle at the
+# bottom). Both coordinate sequences are monotone — r non-increasing, z
+# non-increasing — so the revolved cavity is machinable with no undercut (the
+# mirror of the cap's apex-first envelope). Genuinely freeform, mixed
+# curvature (a concave upper wall rolling through an inflection into a convex
+# flare above the tip), so recognition cannot name it as a primitive: the
+# analytic reader's cavity counterpart. The open tip (r=5) carries the
+# stated tip-relief assumption — see the .cam file.
+degree 3
+knots 0 0 0 0 0.3333333333333333 0.6666666666666666 1 1 1 1
+pole 13 0
+pole 12 -3
+pole 10 -8
+pole 8 -12
+pole 6 -15
+pole 5 -18

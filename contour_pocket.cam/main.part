@@ -1,0 +1,42 @@
+# contour_pocket.cam — the 3D-wire pocket rim, slice 1 (DECISIONS.md "the
+# 3D-wire Contour…", blessed 2026-07-29). A square rim whose top edge rises
+# and falls in Z, swept down by extent=3 — the first feature where both
+# halves of `total Z span = the wire's own Z span + extent` are nonzero.
+# Both comp modes in one golden (the two-runs pattern).
+#
+# The wall-only op declares no interior (the stock model reports itself
+# incomplete for it, silencing the entry restriction by design) — a real
+# part would Clear or Face the region first; this fixture is the standalone
+# wall trace.
+#
+# Hand-checked anchors (60mm square 20..80, T5 dia 10 so r = 5; wire corners
+# alternate z = 0 and z = -2, so every side's slope is ±2/60 = ±1/30):
+#   - engine comp offsets the projection inward to the sharp square 25..75.
+#     Every offset corner is 5mm along BOTH adjacent walls from its wire
+#     corner, so its top edge sits 5·(1/30) = 1/6 below/above that corner's
+#     own z, and the tie-min rule picks the deeper (equal here by symmetry):
+#     corner near (20,20,z=0):  top = -1/6,  cut Z = -1/6  - 3 = -3.167
+#     corner near (80,20,z=-2): top = -11/6, cut Z = -11/6 - 3 = -4.833
+#   - control comp emits the PART EDGE with a Z word per vertex: the wire's
+#     own points at z - 3 (X20 Y20 Z-3.000, X80 Y20 Z-5.000, …), D register
+#     the pure tool radius (D5).
+units mm
+feed 800
+plunge 300
+rapid_z 5
+clearance_z 25
+spindle 3000
+
+stock Box(w=100, l=100, h=20, x=0, y=0, z=0)
+
+tool T5 Endmill(dia=10.0)
+
+feature Rim ContourPocket(extent=3.0
+    20 20 0
+    80 20 -2
+    80 80 0
+    20 80 -2
+)
+
+run Side(tool=T5, surface=Rim)
+run Side(tool=T5, surface=Rim, comp=control)

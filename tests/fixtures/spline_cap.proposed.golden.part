@@ -1,0 +1,6 @@
+# spline_cap.step -- 1 analytic spline-of-revolution face(s) read by import_step_nurbs.py (7 faces total).
+# Each meridian is an EXACT b-spline (no tessellation); Feature::SplineRevolve machines the surface of revolution through the pointwise
+# ball-offset R2 machinery. The .spline (r,z) control points are mm by definition; x/y/z place the axis in stock coords.
+feature Spline_cap_Cap SplineRevolve(file="meridian.spline", x=0.0, y=0.0, z=6.0)
+#   8-pole meridian; consume with a ball-nose Copy (the only SplineRevolve consumer):
+#   run Copy(tool=T?, surface=Spline_cap_Cap, stepover=?)

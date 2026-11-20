@@ -1,0 +1,48 @@
+# Proposed features recognized from rib_head.step by sidecar/import_step.py
+# (contract v1 -- see sidecar/CONTRACT.md). Review before use:
+# recognition proposes, it does not machine.
+
+# F1: outer profile under top cap F3: vertical wall loop F1 F2 F6 F4, top at z=34.0, base at z=26.0, material inside the loop; the base at z=26.0 is the head's own underside, and nothing from above reaches what is under the head -- F5 (the head's underside), F7 (a wall of the neck), F8 (a wall of the neck), F9 (a wall of the neck), F10 (a wall of the neck) -- so the boss is proposed down to z=20.0, the floor F11 it stands over, and the program leaves the material under the head standing (CHECKLIST row 2.2)
+# consume with: run Side(tool=..., surface=F1_Profile, comp=control)  [the feature carries its own z + extent]
+# the loop is wound CW: material inside, tool outside (the winding convention,
+# DECISIONS.md -> "Row-2.4 side selector")
+# comp=control is required on Contour runs: recognized boundaries carry rounded
+# corners tessellated to chords, and engine comp hard-errors on rounded-corner
+# offsets (DECISIONS.md -> "recognized contours propose comp=control")
+# the walls end at z=26.0 on the head's own underside; the neck, the pad and the pad's
+# foot bevels under it are out of reach from above, so the boss runs down to z=20.0, the
+# floor it stands over, and the program leaves what is under the head standing
+feature F1_Profile ProfileBoss(z=34.0, extent=14.0
+    15.0 25.0
+    15.0 55.0
+    45.0 55.0
+    45.0 25.0
+)
+
+# F3: planar, normal +Z, topmost planar face (CHECKLIST row 1.1)
+feature F3_Top Plane(z=34.0)
+
+# F15: outer profile under top cap F20: vertical wall loop F17 F18 F13 F15, top at z=30.0, base at z=20.0, material inside the loop; stepped base: the profile stops at the highest base z=20.0, and F13 to z=0.0 run on below it (CHECKLIST row 2.2)
+# consume with: run Side(tool=..., surface=F15_Profile, comp=control)  [the feature carries its own z + extent]
+# the loop is wound CW: material inside, tool outside (the winding convention,
+# DECISIONS.md -> "Row-2.4 side selector")
+# comp=control is required on Contour runs: recognized boundaries carry rounded
+# corners tessellated to chords, and engine comp hard-errors on rounded-corner
+# offsets (DECISIONS.md -> "recognized contours propose comp=control")
+# the base is stepped: this profile stops at z=20.0, the highest base; the walls F13 run on below it
+# and belong to whatever stands lower -- declare that by hand or accept its own proposal
+feature F15_Profile ProfileBoss(z=34.0, extent=14.0
+    80.0 30.0
+    80.0 50.0
+    100.0 50.0
+    100.0 30.0
+)
+
+# F20: planar, normal +Z, below the topmost height: a bounded face at z=30.0, 1 loop (outer); caps recognized outer profile F15_Profile (CHECKLIST row 1.1)
+feature F20_Face Face(z=30.0
+    loop
+        80.0 30.0
+        100.0 30.0
+        100.0 50.0
+        80.0 50.0
+)

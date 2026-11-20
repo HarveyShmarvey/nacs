@@ -1,0 +1,11 @@
+# shop_inch.machine — an inch-dialect controller (DECISIONS.md "K1 slice 1 —
+# the formatting boundary…"). `units inch` flips the units word to G20 and
+# converts every dimension word once at the formatting boundary; coordinate
+# decimals default to 4 under inch (tenths of a thou), and `feed_decimals 2`
+# is declared so the golden exercises the classes SPLIT — coordinates and
+# feeds finally spell differently. `spindle_word` is left at its `decimal`
+# default on purpose: the S words must come through the conversion untouched
+# (an RPM has no length unit), which the twin test pins.
+name Inch-dialect VMC
+units inch
+feed_decimals 2

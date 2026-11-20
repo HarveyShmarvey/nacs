@@ -1,0 +1,88 @@
+{
+  "faces": [
+    {
+      "checklist_row": "2.2",
+      "feature": "F1_Profile",
+      "id": "F1",
+      "part": "feature F1_Profile ProfileBoss(z=15.0, extent=15.0\n    0.0 0.0\n    0.0 80.0\n    100.0 80.0\n    100.0 0.0\n)",
+      "status": "proposed",
+      "surface": "plane",
+      "why": "outer profile under top cap F3: vertical wall loop F1 F2 F6 F4, top at z=15.0, base at z=0.0, material inside the loop"
+    },
+    {
+      "checklist_row": "2.2",
+      "feature": "F1_Profile",
+      "id": "F2",
+      "part": "feature F1_Profile ProfileBoss(z=15.0, extent=15.0\n    0.0 0.0\n    0.0 80.0\n    100.0 80.0\n    100.0 0.0\n)",
+      "status": "proposed",
+      "surface": "plane",
+      "why": "vertical wall of recognized outer profile F1_Profile (top cap F3)"
+    },
+    {
+      "checklist_row": "1.1",
+      "id": "F3",
+      "part": "feature F3_Top Plane(z=15.0)",
+      "status": "proposed",
+      "surface": "plane",
+      "why": "planar, normal +Z, topmost planar face"
+    },
+    {
+      "checklist_row": "2.2",
+      "feature": "F1_Profile",
+      "id": "F4",
+      "part": "feature F1_Profile ProfileBoss(z=15.0, extent=15.0\n    0.0 0.0\n    0.0 80.0\n    100.0 80.0\n    100.0 0.0\n)",
+      "status": "proposed",
+      "surface": "plane",
+      "why": "vertical wall of recognized outer profile F1_Profile (top cap F3)"
+    },
+    {
+      "checklist_row": "no row",
+      "code": "plane_downward",
+      "id": "F5",
+      "reason": "downward-facing planar face -- unreachable from above (undercut relative to the tool axis)",
+      "status": "unsupported",
+      "surface": "plane"
+    },
+    {
+      "checklist_row": "2.2",
+      "feature": "F1_Profile",
+      "id": "F6",
+      "part": "feature F1_Profile ProfileBoss(z=15.0, extent=15.0\n    0.0 0.0\n    0.0 80.0\n    100.0 80.0\n    100.0 0.0\n)",
+      "status": "proposed",
+      "surface": "plane",
+      "why": "vertical wall of recognized outer profile F1_Profile (top cap F3)"
+    },
+    {
+      "checklist_row": "2.3",
+      "id": "F7",
+      "part": "feature F7_Hole CylinderBore(dia=12.0, extent=15.0, x=20.0, y=20.0)",
+      "status": "proposed",
+      "surface": "cylinder",
+      "why": "cylindrical, axis +Z, full revolution, material outside (a bore), opens upward; bottom opens through -- a drillable through hole"
+    },
+    {
+      "checklist_row": "2.3",
+      "feature": "F8_Bore",
+      "id": "F8",
+      "part": "feature F8_Bore CylinderBore(dia=16.0, extent=6.0, x=80.0, y=20.0)",
+      "status": "proposed",
+      "surface": "cylinder",
+      "why": "cylindrical, axis +Z, full revolution, material outside (a bore), opens upward; flat floor F9 -- a milled bore"
+    },
+    {
+      "checklist_row": "2.3",
+      "feature": "F8_Bore",
+      "id": "F9",
+      "part": "feature F8_Bore CylinderBore(dia=16.0, extent=6.0, x=80.0, y=20.0)",
+      "status": "proposed",
+      "surface": "plane",
+      "why": "flat floor of recognized bore F8_Bore (wall F8)"
+    }
+  ],
+  "faces_total": 9,
+  "schema": "nacs-recognition-report",
+  "source": "tilted_plate.step",
+  "units": "mm",
+  "up": "y+",
+  "version": 1
+}

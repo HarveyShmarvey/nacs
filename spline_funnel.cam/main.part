@@ -1,0 +1,39 @@
+# spline_funnel.cam — the spline surface of revolution's INSIDE orientation
+# (CHECKLIST row 5.3's last member; DECISIONS.md "Spline funnel…"). The same
+# analytic-reader regime as spline_cap.cam, machined from the void side: a
+# top-open cavity whose meridian (meridian.spline, stored mouth-first) no
+# camp-1/2 equation names. Contact point, into-void normal, and curvature all
+# come from de Boor evaluation — no tessellation error, the mesh path's
+# opposite trade, now in both orientations like the catenoid and pseudosphere
+# pairs before it.
+#
+# The mouth circle (r=13) sits in the stock-top plane by construction (no z
+# field — the throat/funnel precedent); depth is the meridian's own z extent
+# (18mm). The gouge guard here is the first TWO-principal-direction scan:
+# the meridian's concave stretches bound the ball like the cap's coves, and
+# the hoop direction (normal-section radius rho/|n_r|) bounds it like the
+# bore ring — tightest ≈ 5.3mm at the r=5 tip circle for this meridian, so
+# the 6mm ball (r=3) passes. The op assumes a tip relief below the r=5 tip
+# circle is already opened (a drill suffices; the ball's cap dips below the
+# tip plane within rho <= 5) — the tractrix funnel's stated assumption.
+#
+# Worked mouth anchor (the hand-derived pin the golden test carries): the
+# clamped end tangent at the mouth is parallel to the first control leg
+# (−1, −3)/√10, so the into-void normal is (−3, 1)/√10 and the mouth CL is
+# (13 − 9/√10, 3/√10) = (10.154, 0.949) — X60.154 Z0.949 about x=50.
+units mm
+feed 600
+plunge 200
+rapid_z 5
+clearance_z 40
+spindle 4000
+
+stock Box(w=100, l=80, h=40, x=0, y=0, z=0)
+
+tool T10 Ballmill(dia=6.0)
+
+# Mouth circle of radius 13 in the stock-top plane, funneling down the
+# freeform meridian to the radius-5 tip at depth 18.
+feature Vortex SplineRevolveFunnel(file="meridian.spline", x=50, y=40)
+
+run Copy(tool=T10, surface=Vortex, stepover=3.0)

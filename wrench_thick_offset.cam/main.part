@@ -1,0 +1,21 @@
+# wrench_thick_offset.cam — the wrench with BOTH ends raised (Phase 29 slice 2;
+# DECISIONS.md → "Phase 29 slice 2…").
+#
+# The ring end and the jaw end are both finished at z=3; the shank between them
+# is a deck at z=0. That deck is the point of the fixture: 14mm wide against a
+# 10mm tool — 1.4 diameters, one-pass-or-two territory — WALLED AT BOTH ENDS and
+# free along both long sides. Three faces at two heights, and the optimization
+# target is the narrow band and the two raised tops together.
+#
+# `wrench_step_offset.cam` is the same part with only the box end raised.
+units mm
+feed 800
+plunge 300
+rapid_z 5
+clearance_z 25
+spindle 3000
+stock Box(w=262, l=60, h=12, x=0, y=0, z=4)
+tool T5 Endmill(dia=10.0)
+run End(tool=T5, surface=BoxTop, stepover=5.0, pattern=offset)
+run End(tool=T5, surface=JawTop, stepover=5.0, pattern=offset)
+run End(tool=T5, surface=Deck, stepover=5.0, pattern=offset)

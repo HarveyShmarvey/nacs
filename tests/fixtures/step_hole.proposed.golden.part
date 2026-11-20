@@ -1,0 +1,63 @@
+# Proposed features recognized from step_hole.step by sidecar/import_step.py
+# (contract v1 -- see sidecar/CONTRACT.md). Review before use:
+# recognition proposes, it does not machine.
+
+# F3: planar, normal +Z, topmost planar face (CHECKLIST row 1.1)
+feature F3_Top Plane(z=10.0)
+
+# F8: outer profile under top cap F3: vertical wall loop F4 F1 F2 F8 F10 F9, top at z=10.0, base at z=6.0, material inside the loop; stepped base: the profile stops at the highest base z=6.0, and F1 to z=0.0, F2 to z=0.0, F4 to z=0.0, F10 to z=0.0 run on below it (CHECKLIST row 2.8)
+# consume with: run Side(tool=..., surface=F8_Profile, comp=control)  [the feature carries its own z + extent]
+# the loop is wound CW: material inside, tool outside (the winding convention,
+# DECISIONS.md -> "Row-2.4 side selector")
+# comp=control is required on Contour runs: recognized boundaries carry rounded
+# corners tessellated to chords, and engine comp hard-errors on rounded-corner
+# offsets (DECISIONS.md -> "recognized contours propose comp=control")
+# the base is stepped: this profile stops at z=6.0, the highest base; the walls F1 F2 F4 F10 run on below it
+# and belong to whatever stands lower -- declare that by hand or accept its own proposal
+feature F8_Profile ProfileBoss(z=10.0, extent=4.0
+    0.0 0.0
+    0.0 40.0
+    30.0 40.0
+    30.0 16.0
+    29.455 15.963
+    28.921 15.852
+    28.406 15.669
+    27.922 15.418
+    27.476 15.103
+    27.077 14.73
+    26.732 14.307
+    26.448 13.84
+    26.231 13.34
+    26.084 12.814
+    26.009 12.273
+    26.009 11.727
+    26.084 11.186
+    26.231 10.66
+    26.448 10.16
+    26.732 9.693
+    27.077 9.27
+    27.476 8.897
+    27.922 8.582
+    28.406 8.331
+    28.921 8.148
+    29.455 8.037
+    30.0 8.0
+    30.0 0.0
+)
+
+# F10: cylindrical, axis +Z, full revolution, material outside (a bore), opens upward; bottom opens through -- a drillable through hole (CHECKLIST row 2.3)
+# consume with: run Form(points=[F10_Hole], tool=..., cycle=Simple)  [the bore carries its own extent, measured down from the stock top]
+# through hole -- drill past extent=10.0 by the tip's point length for full-diameter breakthrough
+# or finish the wall with: run Side(tool=..., surface=F10_Hole, stepover=...)
+feature F10_Hole CylinderBore(dia=8.0, extent=10.0, x=30.0, y=12.0)
+
+# F11: cylindrical, axis +Z, full revolution, material outside (a bore), opens upward; bottom is not a flat floor or drill point -- proposed wall-only as a milled bore (CHECKLIST row 2.3)
+# finish the wall with: run Side(tool=..., surface=F11_Bore, stepover=...)  [stepover is the ring spacing up the wall]
+# wall-only proposal: the bottom face is not reproducible by drill or a flat-floor bore (see its own report entry)
+feature F11_Bore CylinderBore(dia=12.0, extent=4.0, x=15.0, y=28.0)
+
+# F12: cylindrical, axis +Z, full revolution, material outside (a bore), opens upward; bottom opens through -- a drillable through hole; rim at z=6.0, 4.0 below the stock top z=10.0, with open air straight above it to the top -- proposed from the top, where a drill through the blank starts, extent 10.0 the whole way down; what the model has above the rim is another feature's to cut (CHECKLIST row 2.3)
+# consume with: run Form(points=[F12_Hole], tool=..., cycle=Simple)  [the bore carries its own extent, measured down from the stock top]
+# through hole -- drill past extent=10.0 by the tip's point length for full-diameter breakthrough
+# or finish the wall with: run Side(tool=..., surface=F12_Hole, stepover=...)
+feature F12_Hole CylinderBore(dia=6.0, extent=10.0, x=15.0, y=28.0)

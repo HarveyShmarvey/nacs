@@ -1,0 +1,31 @@
+# plate_conventional.cam/main.part — plate.cam cut conventional (ROADMAP item 2, slice 2):
+# the same notch, the Clear's shore pass and the Side's trace run the other way round,
+# the material on the tool's left under M03, and the Side's control comp writes G42.
+units mm
+feed 800
+plunge 300
+rapid_z 5
+clearance_z 25
+spindle 3000
+
+stock Box(w=120, l=80, h=20, x=0, y=0, z=0)
+
+# tool T<number> <name>(dia=<diameter>)
+tool T5 Endmill(dia=10.0)
+
+# The Plane is the FINISHED face — the surface we want, not the one we start
+# from — so Floor simply cuts to it (DECISIONS.md "Vertical occupancy is
+# `extent`…"). Stock top is z=0, so a 0.5mm skim names its face at z=-0.5.
+feature TopFace Plane(z=-0.5)
+
+run End(tool=T5, surface=TopFace, stepover=6.0)
+# The notch is the VOID (Phase 53 slice 1): the L plate is what remains.
+# Its loop is drawn past the blank, so two of its edges are OPEN — a step —
+# and the Clear enters from that air; the Side then traces the notch's two
+# walls, which are the L's inner edges (the outer edges are the blank's and
+# need no cut). Until 2026-10-18 the loop here was the L itself, half a
+# millimetre deep: the part drawn as a void, traced in air the End had made.
+run Clear(tool=T5, profile=Notch, stepover=4.0, pattern=spine, direction=conventional)
+# comp=control: emit centerline + G41/G42 and let the controller apply cutter
+# comp (the opt-in mode; engine-computed offsets are the default — DECISIONS.md).
+run Side(tool=T5, surface=Notch, comp=control, direction=conventional)

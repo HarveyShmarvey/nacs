@@ -1,0 +1,28 @@
+# pocket_wall_lead.cam/main.part — pocket_floor_offset.cam with the cavity wall's lead shaped
+# (ROADMAP item 2, slice 5): the Side on the cavity leads in from four millimetres off its start,
+# on a line 45 degrees between the path's own line behind the start and the air side's normal,
+# descending 10 degrees as it flies onto the wall. The post's ring keeps its unsaid lead.
+units mm
+feed 800
+plunge 300
+rapid_z 5
+clearance_z 25
+spindle 3000
+
+stock Box(w=100, l=80, h=20, x=0, y=0, z=0)
+
+tool T5 Endmill(dia=10.0)
+
+feature Cavity ProfilePocket(extent=6.0
+    15 15
+    85 15
+    85 65
+    15 65
+)
+
+feature Post CylinderBoss(dia=14, extent=6, x=50, y=40, z=-6)
+
+run Clear(tool=T5, profile=Cavity, stepover=4.0, stock_to_leave=0.5)
+run End(tool=T5, surface=Cavity, stepover=4.0, stock_to_leave=0.5, pattern=offset)
+run Side(tool=T5, surface=Cavity, lead=4, lead_angle=45, lead_descent=10)
+run Side(tool=T5, surface=Post, stepover=6.0)

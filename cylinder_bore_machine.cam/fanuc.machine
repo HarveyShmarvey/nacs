@@ -1,0 +1,7 @@
+# fanuc.machine — the shop's controller, declared once beside the project and
+# referenced by a single `machine fanuc.machine` line (DECISIONS.md "K1, the
+# machine…", fork 1B: a machine is shared infrastructure, never inlined per
+# part). Named directives only, the `.part` global-directive shape; an unknown
+# key refuses with its line (fork 3B).
+name Fanuc-family VMC
+spindle_word integer   # S is an integer word on Fanuc-family controls; `decimal` is the undeclared default

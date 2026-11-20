@@ -1,0 +1,38 @@
+# disc_step.cam — a ROUND blank (Phase 46 slice 1; DECISIONS.md → "DRAFT:
+# Phase 46 opens…", fork 1A). `stock Cylinder(dia=, h=, x=, y=, z=)`: the
+# line says the axis, and every reader of the blank's FOOTPRINT reads
+# `parse::derive_blank` — the circle, chorded at the one tolerance.
+#
+# Nothing here says "open". The Plane's region is the disc, so every edge of
+# the step is open — `nacs --outline` says so — and the Side on the pad near
+# the rim swings its pass past r 60 into air the stock model agrees is air.
+# The same program on a Box blank of the same size holds the box's corners
+# as steel beyond the round: `stock::remaining_after` says material stands
+# at (55, 55) where this blank says air. That comparison is a test, not a
+# golden.
+units mm
+feed 800
+plunge 300
+rapid_z 5
+clearance_z 25
+spindle 3000
+
+stock Cylinder(dia=120, h=30, x=0, y=0, z=0)
+
+tool T5 Endmill(dia=10.0)
+
+feature Step Plane(z=-10.0)
+# CW: a boss bounds standing material, cut from outside. Its far corners
+# reach r 59.9 — inside the round by a hair, so the pass around it runs
+# off the blank.
+feature Pad ProfileBoss(extent=10.0
+    30 -15
+    30 15
+    58 15
+    58 -15
+)
+feature Hole CylinderBore(dia=12.0, extent=8.0, x=-35.0, y=0.0, z=-10.0)
+
+run End(tool=T5, surface=Step, stepover=4.0)
+run Side(tool=T5, surface=Pad)
+run Clear(tool=T5, profile=Hole, stepover=4.0)

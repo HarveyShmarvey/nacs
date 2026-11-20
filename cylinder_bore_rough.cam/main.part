@@ -1,0 +1,25 @@
+# cylinder_bore_rough.cam — flank roughing fixture (DECISIONS.md "stock_to_leave
+# first slice…"). The cylinder_bore.cam bore wall run as a ROUGHING pass with a
+# 0.5mm allowance. A flank's stepdown is purely axial, so it leaves NO cusp:
+# the cusp budget is exactly 0.000mm and the whole allowance becomes radial
+# skin. Engine mode's tool-centre ring shrinks to 20 − 5 − 0.5 = 14.5mm
+# (X64.5, the hand-checked anchor); control mode emits the ROUGHED wall
+# (19.5mm, X69.5) as its part edge while the D register stays the pure tool
+# radius — the allowance is engine-baked in both comp modes, so a double-comp
+# is unrepresentable. The wall is still cut to FULL depth: the radial skin is
+# the wall's, and a floor's skin belongs to a floor op.
+units mm
+feed 800
+plunge 300
+rapid_z 5
+clearance_z 25
+spindle 3000
+
+stock Box(w=100, l=100, h=20, x=0, y=0, z=0)
+
+tool T5 Endmill(dia=10.0)
+
+feature Bore CylinderBore(dia=40.0, extent=12.0, x=50.0, y=50.0)
+
+run Side(tool=T5, surface=Bore, stepover=5.0, stock_to_leave=0.5)
+run Side(tool=T5, surface=Bore, stepover=5.0, comp=control, stock_to_leave=0.5)

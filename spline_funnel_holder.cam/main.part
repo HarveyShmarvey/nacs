@@ -1,0 +1,21 @@
+# spline_funnel_holder.cam: the holder-nose tool-body fixture. The same funnel
+# as spline_funnel.cam, finished by the same 6 mm ball on a 10 mm shank with
+# 8 mm of stickout, so the holder's 32 mm nose stands below the stock top
+# against the funnel wall. The advisory should name the nose; the program
+# itself must not change (tests/check_tests.rs).
+units mm
+feed 600
+plunge 200
+rapid_z 5
+clearance_z 40
+spindle 4000
+
+stock Box(w=100, l=80, h=40, x=0, y=0, z=0)
+
+tool T10 Ballmill(dia=6.0, flute_len=3.0, shank_dia=10.0, stickout=8.0, holder="ER32 slim nose", holder_nose_dia=32.0, holder_nose_len=40.0, holder_body_dia=50.0)
+
+# Mouth circle of radius 13 in the stock-top plane, funneling down the
+# freeform meridian to the radius-5 tip at depth 18.
+feature Vortex SplineRevolveFunnel(file="meridian.spline", x=50, y=40)
+
+run Copy(tool=T10, surface=Vortex, stepover=3.0)

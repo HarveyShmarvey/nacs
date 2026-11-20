@@ -1,0 +1,40 @@
+# torus_rough.cam — scallop-mode stock_to_leave roughing on the torus
+# (DECISIONS.md "stock_to_leave convex mirrors…"). torus.cam's ring run as a
+# ROUGHING pass, and the first convex-mirror carrier: the ring-to-ring cusps
+# live on the tube meridian, which the ball rides convexly on BOTH halves
+# (the concave slice's reclassification), and the tube meridian is a circle —
+# so the whole budget is the sphere recipe with the tube radius standing in
+# for the sphere's, and the inflated torus is still a torus (R1
+# self-offsetting, tube 4 + 0.3).
+#
+# The 0.5mm allowance is a ceiling on TOTAL remaining material including this
+# pass's own cusps (max, not min): scallop=0.2 spends 0.2mm as cusp budget and
+# the remaining 0.3mm is nominal skin, so every CL ring sits 7.3mm
+# (= 4 + 3 + 0.3) off the tube's centre circle — crown ring at z = 7.300,
+# radius 25 (X75.000 / X25.000), the hand-checked anchors. The inner bowl's
+# circumferential concavity is the gouge guard's business, checked at the
+# roughing offset: 3 + 0.3 = 3.3mm against the 21mm inner-equator radius.
+#
+# CONTAINED 2026-08-13 (DECISIONS.md "the torus's annulus island…", slice 2):
+# stock 2mm proud of the crown and grown in y so the moat lands on it, with T1
+# opening the moat and the hole first. This one's Clear leaves 1.0 — the
+# finish's own 0.5 allowance plus 0.5 — so the pass behind it is handed real
+# skin rather than eating into what it promises to leave. The ring numbers
+# above are unchanged: the feature did not move.
+units mm
+feed 600
+plunge 200
+rapid_z 9
+clearance_z 30
+spindle 4000
+
+stock Box(w=100, l=100, h=31, x=0, y=-10, z=6)
+
+tool T1 Endmill(dia=12.0)
+tool T9 Ballmill(dia=6.0)
+
+# Torus centre at z=0; major_dia=50, minor_dia=8.
+feature T Torus(major_dia=50, minor_dia=8, x=50, y=40, z=0)
+
+run Clear(tool=T1, profile=T, stepover=8.0, stepdown=2.0, stock_to_leave=1.0)
+run Copy(tool=T9, surface=T, scallop=0.2, stock_to_leave=0.5)

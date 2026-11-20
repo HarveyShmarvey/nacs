@@ -1,0 +1,23 @@
+# b-spline patch read from patch_cap.step by import_step_nurbs.py
+# (x, y, z) control net, row-major (u rows of v poles), in mm; full
+# natural domain (untrimmed). No tessellation.
+degree_u 3
+degree_v 3
+knots_u 0.0 0.0 0.0 0.0 1.0 1.0 1.0 1.0
+knots_v 0.0 0.0 0.0 0.0 1.0 1.0 1.0 1.0
+pole 0.0 0.0 0.0
+pole 0.0 8.0 0.0
+pole 0.0 16.0 0.0
+pole 0.0 24.0 0.0
+pole 8.0 0.0 0.0
+pole 8.0 8.0 16.0
+pole 8.0 16.0 16.0
+pole 8.0 24.0 0.0
+pole 16.0 0.0 0.0
+pole 16.0 8.0 16.0
+pole 16.0 16.0 16.0
+pole 16.0 24.0 0.0
+pole 24.0 0.0 0.0
+pole 24.0 8.0 0.0
+pole 24.0 16.0 0.0
+pole 24.0 24.0 0.0

@@ -1,0 +1,121 @@
+{
+  "faces": [
+    {
+      "checklist_row": "no row",
+      "code": "trim_wire_candidate_wall/trim_wire_open_loop",
+      "id": "F1",
+      "reason": "wall of refused trim-wire candidate on part bottom F5: trim-wire top edges do not chain into one closed loop (a broken or non-manifold rim)",
+      "refs": [
+        "F5"
+      ],
+      "status": "unsupported",
+      "surface": "plane"
+    },
+    {
+      "checklist_row": "no row",
+      "code": "trim_wire_candidate_wall/trim_wire_open_loop",
+      "id": "F2",
+      "reason": "wall of refused trim-wire candidate on part bottom F5: trim-wire top edges do not chain into one closed loop (a broken or non-manifold rim)",
+      "refs": [
+        "F5"
+      ],
+      "status": "unsupported",
+      "surface": "plane"
+    },
+    {
+      "checklist_row": "1.1",
+      "id": "F3",
+      "part": "feature F3_Top Plane(z=20.0)",
+      "status": "proposed",
+      "surface": "plane",
+      "why": "planar, normal +Z, topmost planar face"
+    },
+    {
+      "checklist_row": "no row",
+      "code": "trim_wire_candidate_wall/trim_wire_open_loop",
+      "id": "F4",
+      "reason": "wall of refused trim-wire candidate on part bottom F5: trim-wire top edges do not chain into one closed loop (a broken or non-manifold rim)",
+      "refs": [
+        "F5"
+      ],
+      "status": "unsupported",
+      "surface": "plane"
+    },
+    {
+      "checklist_row": "no row",
+      "code": "plane_downward",
+      "id": "F5",
+      "reason": "downward-facing planar face -- unreachable from above (undercut relative to the tool axis)",
+      "status": "unsupported",
+      "surface": "plane"
+    },
+    {
+      "checklist_row": "no row",
+      "code": "trim_wire_candidate_wall/trim_wire_open_loop",
+      "id": "F6",
+      "reason": "wall of refused trim-wire candidate on part bottom F5: trim-wire top edges do not chain into one closed loop (a broken or non-manifold rim)",
+      "refs": [
+        "F5"
+      ],
+      "status": "unsupported",
+      "surface": "plane"
+    },
+    {
+      "checklist_row": "no row",
+      "code": "pocket_walls_stepped",
+      "id": "F7",
+      "reason": "pocket walls do not rise to a single mouth height (stepped or multi-level walls) -- not a simple pocket",
+      "status": "unsupported",
+      "surface": "plane"
+    },
+    {
+      "checklist_row": "2.2",
+      "id": "F8",
+      "part": "feature F8_Profile ProfileBoss(z=20.0, extent=10.0\n    0.0 0.0\n    0.0 80.0\n    50.0 80.0\n    50.0 0.0\n)",
+      "status": "proposed",
+      "surface": "plane",
+      "why": "outer profile under top cap F3: vertical wall loop F4 F1 F2 F8, top at z=20.0, base at z=10.0, material inside the loop; stepped base: the profile stops at the highest base z=10.0, and F1 to z=0.0, F2 to z=0.0, F4 to z=0.0 run on below it"
+    },
+    {
+      "checklist_row": "2.3",
+      "feature": "F9_Bore",
+      "id": "F9",
+      "part": "feature F9_Bore CylinderBore(dia=16.0, extent=8.0, x=25.0, y=40.0)",
+      "status": "proposed",
+      "surface": "cylinder",
+      "why": "cylindrical, axis +Z, full revolution, material outside (a bore), opens upward; flat floor F11 -- a milled bore"
+    },
+    {
+      "checklist_row": "2.3",
+      "feature": "F10_Bore",
+      "id": "F10",
+      "part": "feature F10_Bore CylinderBore(dia=16.0, extent=6.0, x=75.0, y=40.0, z=10.0)",
+      "status": "proposed",
+      "surface": "cylinder",
+      "why": "cylindrical, axis +Z, full revolution, material outside (a bore), opens upward; flat floor F12 -- a milled bore; rim at z=10.0, 10.0 below the stock top z=20.0 -- authored from its rim by z=, so the step above it is another feature's material"
+    },
+    {
+      "checklist_row": "2.3",
+      "feature": "F9_Bore",
+      "id": "F11",
+      "part": "feature F9_Bore CylinderBore(dia=16.0, extent=8.0, x=25.0, y=40.0)",
+      "status": "proposed",
+      "surface": "plane",
+      "why": "flat floor of recognized bore F9_Bore (wall F9)"
+    },
+    {
+      "checklist_row": "2.3",
+      "feature": "F10_Bore",
+      "id": "F12",
+      "part": "feature F10_Bore CylinderBore(dia=16.0, extent=6.0, x=75.0, y=40.0, z=10.0)",
+      "status": "proposed",
+      "surface": "plane",
+      "why": "flat floor of recognized bore F10_Bore (wall F10)"
+    }
+  ],
+  "faces_total": 12,
+  "schema": "nacs-recognition-report",
+  "source": "sunken_bore.step",
+  "units": "mm",
+  "version": 1
+}

@@ -1,0 +1,45 @@
+# sphere_formtool_band.cam — the drawn profile's cutting band, said out loud
+# (DECISIONS.md "K2, the tool body", slice 2, fork 3A). The same program as
+# sphere_formtool.cam with one difference: the tool declares which part of
+# its drawing earns contact — cut_bottom=0 to cut_top=5, exactly the span the
+# dome's contact rides (the tip vertex at the pole, the (5,5) corner from the
+# midway angle out; the wall above 5 is the drawing's clearance, relieved).
+# A covering band is the default made explicit, so this program emits BYTE
+# FOR BYTE what the undeclared twin emits — and a band ending any lower
+# rejects with the shortfall in mm (contact on relieved surface is the
+# form-tool gripe this field exists to close).
+#
+# Contained and paired since Phase 10 lane B, slice 0 (DECISIONS.md "Phase 10
+# lane B, slice 0..."): the stock holds the dome (top z=10, 25mm below the
+# equator plane) and T2 roughs the moat around it first, leaving 0.5mm for
+# T1 -- sphere_clear.cam's own Clear, numbers and all. Until then the dome
+# stood 10mm proud of a z=0 stock, because the form tool alone, contained,
+# rejected at the SURROUND: the full stock beside the rim that nothing had
+# roughed (standing stock at (48.819, 20.000, 9.839), its shank in the
+# stock's top; the flat collar's day-one reading of (45.044, 20.000, 5.044)
+# was the collar's own box-top). Both twins took the change together, so this one still emits
+# BYTE FOR BYTE what its sibling emits. The program emits
+# silent under every lint and gate. Its rest report reads ~128 mm^3
+# `forgotten`: the pointed tip's ridges near the pole (a 3mm Z step there is
+# a 7mm step in radius), which the undeclared twin's CUTTING wall above the
+# corner mows off and this relieved band cannot -- fork 6 of lane B's DRAFT,
+# the profile cusp budget (T3), named out of the lane; the claim beside the
+# rim is the honest tube here too (slice 1). rapid_z clears the stock top
+# (z=10).
+units mm
+feed 600
+plunge 200
+rapid_z 15
+clearance_z 30
+spindle 4000
+
+stock Box(w=100, l=80, h=35, x=0, y=0, z=10)
+
+tool T2 Endmill(dia=12.0)
+tool T1 FormTool(dia=10.0, profile="tool_profile.svg", cut_bottom=0.0, cut_top=5.0)
+
+# Sphere centre (equator plane) at z=0; the machinable dome rises to z=10 (r=10).
+feature TopDome Sphere(dia=20, x=30, y=20, z=0)
+
+run Clear(tool=T2, profile=TopDome, stepover=8.0, stepdown=5.0, stock_to_leave=0.5)
+run Form(tool=T1, surface=TopDome, stepover=3.0)

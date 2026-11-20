@@ -1,0 +1,11 @@
+# Proposed stock from l_plate.step by sidecar/import_stock.py
+# (Phase 54 slice 5b): the topmost flat face's outer wire as the
+# plan outline, the solid's Z extent as the height, the top as z.
+stock Profile(h=20.0, z=20.0
+    0.0 0.0
+    120.0 0.0
+    120.0 80.0
+    60.0 80.0
+    60.0 40.0
+    0.0 40.0
+)

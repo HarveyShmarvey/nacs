@@ -1,0 +1,22 @@
+# cylinder_bore_inch_input.cam — the inch INPUT golden the ROADMAP's inch
+# entry noted was missing ("the input path is itself one golden away from
+# proven"). Authored entirely in inches under `units inch`, machine
+# UNDECLARED: every length converts once at the parse boundary and the
+# emitted program is plain metric G21 — a 0.5" endmill prints as dia 12.700,
+# the 1.5" bore at (2", 2") finishes at X63.500 (50.8 + 38.1/2 − 12.7/2),
+# and the 32 in/min feed rides as F812.800. One conversion in, one out, mm
+# everywhere between — this fixture pins the "in" half end to end.
+units inch
+feed 32
+plunge 12
+rapid_z 0.2
+clearance_z 1.0
+spindle 3000
+
+stock Box(w=4.0, l=4.0, h=0.8, x=0, y=0, z=0)
+
+tool T5 Endmill(dia=0.5)
+
+feature Bore CylinderBore(dia=1.5, extent=0.5, x=2.0, y=2.0)
+
+run Side(tool=T5, surface=Bore, stepover=0.2, compress=arcs)

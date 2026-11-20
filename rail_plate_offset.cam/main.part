@@ -1,0 +1,32 @@
+# rail_plate_offset.cam — a valve-body-style rail plate: the LAND, and nothing else
+# (Phase 30; DECISIONS.md → "Phase 30 slice 3: the rail plate…").
+#
+# 120 x 160, and the surface to finish is the tops of a network of RAILS 3mm
+# wide — 4188mm² of land on a 19200mm² plate, 22% — with R5 bosses and O4 bolt
+# holes where the rails meet. Every rail top is coplanar. It is all one
+# surface, so a raster over the whole plate with a big cutter does it, 78% of
+# it over nothing. And it is one or two walls away from a nightmare: raise any
+# neighbour of any rail and that rail's edge is CLOSED.
+#
+# Today every edge is OPEN: the channels between the rails are below the land
+# and nothing stands in them. Three faces, because a Face's inner loops may not
+# nest and two rails stand free inside channel pockets (geometry.part).
+#
+# The tool is 3.3 rails wide. No pattern here gets to think in stepovers: a
+# rail is covered by ONE pass anywhere within 3.5mm of its centreline, and the
+# whole question is which passes, how long, and how many lifts between them.
+units mm
+feed 800
+plunge 300
+rapid_z 5
+clearance_z 25
+spindle 3000
+
+# The plate, 1mm proud of the finished land, 2mm of margin all round.
+stock Box(w=124, l=164, h=21, x=-2, y=-2, z=1)
+
+tool T5 Endmill(dia=10.0)
+
+run End(tool=T5, surface=Land, stepover=5.0, pattern=offset)
+run End(tool=T5, surface=RingRail, stepover=5.0, pattern=offset)
+run End(tool=T5, surface=BarRail, stepover=5.0, pattern=offset)

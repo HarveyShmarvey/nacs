@@ -1,0 +1,48 @@
+# spline_cap.cam — analytic NURBS reader fixture (ROADMAP Phase 4 follow-up).
+# A surface of revolution whose meridian is an arbitrary cubic b-spline
+# (meridian.spline), machined by finish_spline_revolve — the *analytic*
+# counterpart to mesh.cam. Where the freeform_cap STEP fixture tessellates the
+# same kind of revolved-spline face to an STL and the drop-cutter accepts the
+# stair-step error (DECISIONS.md "Camp-3 slice 1…"), this reads the meridian as
+# an exact curve and leaves NO tessellation error: contact point, surface
+# normal, and curvature all come from de Boor evaluation of the spline.
+#
+# The meridian (see meridian.spline) is a monotone freeform cap — apex on the
+# axis at z=20, base rim at r=13, z=0 — that no camp-1/2 equation names, so it
+# is recognition's residue and the reader's job. Convex toward the tool over
+# its whole span, so the shared gouge guard finds no concave point and (like
+# the sphere/ogive noses) does not fire; a concave meridian would be guarded
+# against its tightest radius of curvature from the exact second derivative.
+#
+# Waterline (stepover) finishing here, spaced at uniform meridian arc length;
+# the constant-scallop twin of this fixture is spline_cap_scallop.cam (the
+# curvature-adaptive Newton march, DECISIONS.md "Constant scallop over a spline
+# meridian…"). The committed golden (tests/spline_cap.golden.gcode) plus the
+# closed-form nurbs unit tests (the rational quarter-circle reproduces a circle
+# to 1e-9) are the anchors.
+#
+# CONTAINED 2026-08-13 (DECISIONS.md "rim-area accounting…", slice 2):
+# the stock used to stop AT this feature's base plane, so the whole
+# surface stood in air and the fixture only ran because there was
+# nothing to hit. The stock now stands 2mm proud of the feature's top
+# (z 22) and T1 roughs the moat before the finish;
+# numbers in the older comments describe the same toolpath, whose
+# motion is unchanged where it touches the surface.
+units mm
+feed 600
+plunge 200
+rapid_z 25
+clearance_z 40
+spindle 4000
+
+stock Box(w=100, l=80, h=62, x=0, y=0, z=22)
+
+tool T1 Endmill(dia=12.0)
+tool T10 Ballmill(dia=6.0)
+
+# The spline cap sits centred at (50, 40); z=0 places its base rim on z=0, apex
+# at z=20 (the meridian's own z, added to the feature z).
+feature Cap SplineRevolve(file="meridian.spline", x=50, y=40, z=0)
+
+run Clear(tool=T1, profile=Cap, stepover=8.0, stepdown=5.0, stock_to_leave=0.5)
+run Copy(tool=T10, surface=Cap, stepover=3.0)

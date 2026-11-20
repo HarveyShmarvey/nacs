@@ -1,0 +1,50 @@
+# floor_clamped_offset.cam — the first program that declares a KEEP-OUT
+# (DECISIONS.md → "V2, the fixture…", slice 0). It is floor_dry.cam's job
+# with one line added, and that line is the whole fixture: a toe clamp sitting
+# on the stock's far end.
+#
+# The accident it reproduces is the one the item was written for, and it is
+# NOT a cutting mistake. Every move here is legal against the material: the
+# facing passes cut the top face and nothing else, so `check_moves`, the
+# body-foul lint and the containment lint all stay silent, exactly as they do
+# for floor_dry.cam. What is wrong is the CLEARANCE PLANE — 25mm was chosen
+# for a 20mm stock and says nothing about a clamp standing 25mm proud of it —
+# so the tool traverses the face and drives its body straight through steel
+# that no operation was ever going to remove.
+#
+# SINCE PHASE 27 (DECISIONS.md → "Phase 27 slice 3: the keep-out…") the
+# emitter reads the declaration too: a fixture standing in the faced region is
+# something the face goes AROUND, exactly as it goes around a boss, and the
+# program says so — `(keep-outs: ToeClamp)`. So this program no longer drives
+# its cutting passes through the clamp, its lifts between loops go to the
+# clearance plane rather than `rapid_z`, and the keep-out check is silent on
+# it because there is nothing left to say. The accident above is kept as a
+# test device (the raster's moves judged against the clamp), and the check's
+# original subject — a traverse at a clearance plane lower than the steel —
+# is pinned on a taller clamp. The stepover came down from 6 to 5 with it: a
+# family that goes around anything takes at most a tool's radius (the ridge
+# law), and at 6 this program now refuses by name.
+#
+# The clamp overlaps the stock on purpose (fork 7): a clamp that touches
+# nothing holds nothing, so an overlapping keep-out is legal and takes no part
+# in containment or in any removal law. It is an obstacle for the TOOL alone.
+units mm
+feed 800
+plunge 300
+rapid_z 5
+clearance_z 25
+spindle 3000
+
+stock Box(w=60, l=60, h=20, x=0, y=0, z=0)
+
+# The toe clamp: sat on the stock's top face (z=0, the datum this program
+# faces from) and standing 25mm proud of it — right up to the plane the
+# program retracts to. Its foot straddles the stock's far edge at x=60, which
+# is what a toe clamp does.
+fixture ToeClamp Box(w=14, l=24, h=25, x=48, y=18, z=0)
+
+tool T1 Endmill(dia=10.0, flute_len=22.0, shank_dia=10.0, stickout=55.0)
+
+feature Top Plane(z=-0.5)
+
+run End(tool=T1, surface=Top, stepover=5.0, pattern=offset)

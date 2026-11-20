@@ -1,0 +1,13 @@
+# meridian b-spline read from spline_cap.step by import_step_nurbs.py
+# (r, z) control polygon in the meridian half-plane, apex-first, in mm;
+# revolved about the SplineRevolve feature's Z axis. No tessellation.
+degree 3
+knots 0.0 0.0 0.0 0.0 4.123 9.123 14.954 19.226 22.267 22.267 22.267 22.267
+pole 0.0 16.0
+pole 1.412 15.942
+pole 4.374 15.149
+pole 8.51 12.043
+pole 10.853 7.497
+pole 12.522 3.432
+pole 12.928 1.019
+pole 13.0 0.0

@@ -1,0 +1,31 @@
+# mesh.cam — camp-3 mesh finishing fixture (ROADMAP Phase 4).
+# Raster drop-cutter (z-map) finishing of an STL triangle mesh: serpentine XY
+# passes, and at every sample the ball-nose centre rides the upper envelope of
+# the ball-drop contact over all triangles. This is the ONE finishing path that
+# accepts tessellation + sampling error (DECISIONS.md "Camp-3 slice 1…") — the
+# analytical camps reject it.
+#
+# The mesh is a hand-written 4-triangle open square pyramid: base 40x40 at z=0,
+# apex at (20,20,10) in model coords, so every golden number is hand-checkable.
+# With the placement below and a dia-8 ball (r=4), the raster grid runs
+# (6..54)^2 at step 2 (25x25 samples) and the apex lands exactly on the sample
+# at (30,30): centre Z there = 10 + 4 = 14.0. Grid corners are beyond the
+# ball's reach and clamp to the floor: Z = 0 + 4 = 4.0.
+units mm
+feed 600
+plunge 200
+rapid_z 5
+clearance_z 30
+spindle 4000
+
+stock Box(w=60, l=60, h=15, x=0, y=0, z=0)
+
+tool T9 Ballmill(dia=8.0)
+
+# STL vertices are mm by definition (DECISIONS.md); x/y/z place the mesh in
+# stock coords — base spans (10..50)^2, apex at (30,30,10).
+feature Blob Mesh(file="pyramid.stl", x=10, y=10, z=0)
+
+# stepover is both the Y row spacing and the X sample spacing
+# (parse::derive_mesh_sample_step — one isotropic error budget).
+run Copy(tool=T9, surface=Blob, stepover=2.0)

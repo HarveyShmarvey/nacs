@@ -1,0 +1,27 @@
+# profile_boss_arc.cam — engine-comp arc-emission fixture (outside / convex
+# case). The rectangle is wound CW, so the tool cuts *outside* it (the winding
+# convention, DECISIONS.md "Row-2.4 `side` selector"). Offsetting outward by the
+# tool radius rounds all four convex corners into exact quarter-circle arcs of
+# radius = tool radius (5). This pins the opposite arc direction (G02) from the
+# concave L-profile (profile_pocket_arc.cam, G03), so the pair covers both direction
+# words (DECISIONS.md "Arc emission…").
+units mm
+feed 800
+plunge 300
+rapid_z 5
+clearance_z 25
+spindle 3000
+
+stock Box(w=100, l=100, h=20, x=0, y=0, z=0)
+
+tool T5 Endmill(dia=10.0)
+
+feature Pad ProfileBoss(extent=0.5
+    20 20
+    20 80
+    80 80
+    80 20
+)
+
+run Clear(tool=T5, profile=Pad, stepover=4.0, stepdown=4.0)
+run Side(tool=T5, surface=Pad)

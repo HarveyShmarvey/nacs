@@ -1,0 +1,42 @@
+# profile_pocket_rough.cam — the wall-only roughing fixture, both comp modes in one
+# golden (the cylinder_rough.cam two-run pattern). The finishing sibling is
+# profile_pocket.cam; the two differ by exactly the stock_to_leave field.
+#
+# A Contour cuts one surface — a wall — and the allowance is radial, so the
+# whole 0.5mm becomes offset and the cusp budget is structurally 0.000: a single
+# pass at one Z has no adjacent pair to leave a cusp between.
+#
+# The Window loop is wound CCW, so the tool cuts INSIDE it (the winding
+# convention, DECISIONS.md "Row-2.4 `side` selector") and leaving stock means
+# the wall closes IN on the tool: every emitted coordinate moves 0.5mm toward
+# the centre versus profile_pocket.cam.
+#
+# Hand-checked anchors (60mm square from 20 to 80, T5 dia 10 so r = 5):
+#   - engine comp offsets by r + skin = 5.5 inward, so the emitted tool-centre
+#     path runs 25.5 .. 74.5 (profile_pocket.cam emits 25 .. 75).
+#   - control comp emits the PART EDGE, not the tool centre, and bakes only the
+#     skin into it: 20.5 .. 79.5 (the authored 20 .. 80 shrunk by 0.5). The D
+#     register stays D5 — the pure tool radius — so the controller adds r on top
+#     and the metal lands in the same place as the engine pass. Baking the
+#     allowance into D instead would be a double-comp waiting to happen, which
+#     is why finish_cylinder set this precedent and why it holds here.
+units mm
+feed 800
+plunge 300
+rapid_z 5
+clearance_z 25
+spindle 3000
+
+stock Box(w=100, l=100, h=20, x=0, y=0, z=0)
+
+tool T5 Endmill(dia=10.0)
+
+feature Window ProfilePocket(extent=2.0
+    20 20
+    80 20
+    80 80
+    20 80
+)
+
+run Side(tool=T5, surface=Window, stock_to_leave=0.5)
+run Side(tool=T5, surface=Window, comp=control, stock_to_leave=0.5)

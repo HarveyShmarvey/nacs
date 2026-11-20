@@ -1,0 +1,88 @@
+{
+  "faces": [
+    {
+      "checklist_row": "1.1",
+      "id": "F1",
+      "part": "feature F1_Top Plane(z=15.0)",
+      "status": "proposed",
+      "surface": "plane",
+      "why": "planar, normal +Z, topmost planar face"
+    },
+    {
+      "checklist_row": "2.3",
+      "feature": "F7_Bore",
+      "id": "F2",
+      "part": "feature F7_Bore CylinderBore(dia=24.0, extent=10.0, x=30.0, y=30.0, edge_round=3.0)",
+      "status": "proposed",
+      "surface": "torus",
+      "why": "mouth round of recognized bore F7_Bore (wall F7): a full-revolution toroidal blend, tangent to the wall and the top plane -- proposed as edge_round, not a standalone ring"
+    },
+    {
+      "checklist_row": "2.2",
+      "feature": "F3_Profile",
+      "id": "F3",
+      "part": "feature F3_Profile ProfileBoss(z=15.0, extent=15.0\n    0.0 0.0\n    0.0 60.0\n    60.0 60.0\n    60.0 0.0\n)",
+      "status": "proposed",
+      "surface": "plane",
+      "why": "outer profile under top cap F1: vertical wall loop F3 F5 F6 F4, top at z=15.0, base at z=0.0, material inside the loop"
+    },
+    {
+      "checklist_row": "2.2",
+      "feature": "F3_Profile",
+      "id": "F4",
+      "part": "feature F3_Profile ProfileBoss(z=15.0, extent=15.0\n    0.0 0.0\n    0.0 60.0\n    60.0 60.0\n    60.0 0.0\n)",
+      "status": "proposed",
+      "surface": "plane",
+      "why": "vertical wall of recognized outer profile F3_Profile (top cap F1)"
+    },
+    {
+      "checklist_row": "2.2",
+      "feature": "F3_Profile",
+      "id": "F5",
+      "part": "feature F3_Profile ProfileBoss(z=15.0, extent=15.0\n    0.0 0.0\n    0.0 60.0\n    60.0 60.0\n    60.0 0.0\n)",
+      "status": "proposed",
+      "surface": "plane",
+      "why": "vertical wall of recognized outer profile F3_Profile (top cap F1)"
+    },
+    {
+      "checklist_row": "2.2",
+      "feature": "F3_Profile",
+      "id": "F6",
+      "part": "feature F3_Profile ProfileBoss(z=15.0, extent=15.0\n    0.0 0.0\n    0.0 60.0\n    60.0 60.0\n    60.0 0.0\n)",
+      "status": "proposed",
+      "surface": "plane",
+      "why": "vertical wall of recognized outer profile F3_Profile (top cap F1)"
+    },
+    {
+      "checklist_row": "2.3",
+      "feature": "F7_Bore",
+      "id": "F7",
+      "part": "feature F7_Bore CylinderBore(dia=24.0, extent=10.0, x=30.0, y=30.0, edge_round=3.0)",
+      "status": "proposed",
+      "surface": "cylinder",
+      "why": "cylindrical, axis +Z, full revolution, material outside (a bore), opens upward; flat floor F9 -- a milled bore; mouth blend F2 absorbed -- extent runs to the virtual sharp corner (10.0), not the wall face's own top (7.0)"
+    },
+    {
+      "checklist_row": "no row",
+      "code": "plane_downward",
+      "id": "F8",
+      "reason": "downward-facing planar face -- unreachable from above (undercut relative to the tool axis)",
+      "status": "unsupported",
+      "surface": "plane"
+    },
+    {
+      "checklist_row": "2.3",
+      "feature": "F7_Bore",
+      "id": "F9",
+      "part": "feature F7_Bore CylinderBore(dia=24.0, extent=10.0, x=30.0, y=30.0, edge_round=3.0)",
+      "status": "proposed",
+      "surface": "plane",
+      "why": "flat floor of recognized bore F7_Bore (wall F7)"
+    }
+  ],
+  "faces_total": 9,
+  "schema": "nacs-recognition-report",
+  "source": "lip_bore.step",
+  "units": "mm",
+  "version": 1
+}

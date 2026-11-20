@@ -1,0 +1,24 @@
+# plate_raster.cam — plate.cam with its Floor pinned to the first raster
+# (Phase 35 slice 4). This is the program nacs.py ports and is held to.
+# plate.cam/main.part — main script for plate CAM project
+units mm
+feed 800
+plunge 300
+rapid_z 5
+clearance_z 25
+spindle 3000
+
+stock Box(w=120, l=80, h=20, x=0, y=0, z=0)
+
+# tool T<number> <name>(dia=<diameter>)
+tool T5 Endmill(dia=10.0)
+
+# The Plane is the FINISHED face — the surface we want, not the one we start
+# from — so Floor simply cuts to it (DECISIONS.md "Vertical occupancy is
+# `extent`…"). Stock top is z=0, so a 0.5mm skim names its face at z=-0.5.
+feature TopFace Plane(z=-0.5)
+
+run End(tool=T5, surface=TopFace, stepover=6.0, pattern=raster)
+# comp=control: emit centerline + G41/G42 and let the controller apply cutter
+# comp (the opt-in mode; engine-computed offsets are the default — DECISIONS.md).
+run Side(tool=T5, surface=Profile1, comp=control)

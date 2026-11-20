@@ -1,0 +1,9 @@
+# plate.cam/geometry.part — geometry features for plate CAM project
+feature Profile1 ProfilePocket(extent=0.5
+    0 0
+    120 0
+    120 80
+    60 80
+    60 40
+    0 40
+)

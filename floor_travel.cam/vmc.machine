@@ -1,0 +1,16 @@
+# The declared machine for floor_travel.cam — a VMC's spec-sheet travels
+# (Phase 15 slice 1, DECISIONS.md "Phase 15 opens: the envelope DRAFT…").
+# The spans are MACHINE coordinates, min then max, in this file's own units;
+# they claim nothing until the part declares its datum. There is no travel_z
+# on purpose — the key rejects by name (fork 1's Z ruling).
+name generic-vmc-30
+travel_x -762 0
+travel_y -406 0
+spindle_max 12000
+# Rapid traverse per axis, mm/min — time inputs for --time-report, never
+# limits (Phase 16 slice 1). Omit them and the report declines the rapid
+# share by name instead of guessing.
+rapid_x 36000
+rapid_y 36000
+rapid_z 24000
+atc_pockets 24

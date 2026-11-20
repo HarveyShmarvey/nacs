@@ -1,0 +1,6 @@
+# tombstone.machine — a Fanuc-family control on a 48-station tombstone
+# (DECISIONS.md "work offsets…", fork 3A): the extended work-offset family
+# is declared with the vendor's own word, because that spelling is exactly
+# what varies between controllers (G54.1P here, G154P on a Haas).
+name Fanuc-family HMC
+extended_offsets G54.1P 48

@@ -1,0 +1,12 @@
+# plate_conventional.cam/geometry.part (plate.cam's, unchanged) — geometry features for plate CAM project
+# The notch cut out of the 120 x 80 blank's corner, through the full 20 mm:
+# the ORIGINAL L's missing corner (x < 60, y > 40 — Profile1's loop since
+# Phase 0 ran 0 0 / 120 0 / 120 80 / 60 80 / 60 40 / 0 40), drawn 5 mm past
+# the blank on its west and north sides so those edges are open (the engine
+# clips the loop to the blank and reads them as air).
+feature Notch ProfilePocket(extent=20
+    -5 40
+    60 40
+    60 85
+    -5 85
+)

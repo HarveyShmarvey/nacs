@@ -1,0 +1,8 @@
+# Line endings are part of the project's byte-exact contract: every golden
+# under tests/ is compared byte for byte against the engine's LF output, and
+# the .part / .cam files are parsed by the same engine. Pin LF in the working
+# tree on every platform, so a Windows checkout with core.autocrlf=true does
+# not hand the tests CRLF goldens (found on the 2026-10-03 move from WSL to
+# native Windows: 115 integration tests red, all of them this). `text=auto`
+# leaves files git detects as binary alone.
+* text=auto eol=lf

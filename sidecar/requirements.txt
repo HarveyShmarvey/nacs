@@ -1,0 +1,12 @@
+# The sidecar's dependency ledger — same standing rule as Cargo.toml's
+# [dependencies] block: every entry gets a one-line "why", and this stack's
+# full justification lives in DECISIONS.md ("CAD import & feature recognition
+# go through a Python (CadQuery / OCP) sidecar" + the Phase-4 contract entry).
+#
+# Cost, stated loudly: ~1.8 GB installed venv. Wheels-only on Python 3.11 —
+# no compile step (verified 2026-07-12 spike). Required at runtime ONLY for
+# import / recognition / camp-3; the Rust core never needs it.
+
+cadquery==2.8.0        # why: high-level OCCT wrapper — STEP import + face/surface interrogation without hand-rolled geometry
+cadquery-ocp==7.9.3.1  # why: the OCCT 7.9 bindings cadquery rides on; pinned so the pair installs from wheels together (cadquery 2.8.0 requires >=7.9.3.1,<8.0)
+ezdxf==1.4.4           # why: DXF entity reading for tool profiles (import_dxf_profile.py) — cadquery's own DXF engine, already in the venv transitively; pinned now that the sidecar imports it directly

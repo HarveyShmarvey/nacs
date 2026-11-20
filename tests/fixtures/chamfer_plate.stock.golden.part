@@ -1,0 +1,5 @@
+# Proposed stock from chamfer_plate.step by sidecar/import_stock.py:
+# the smallest blank the model fits, not the model's own outline --
+# a face is neither flat on top, flat on the bottom nor vertical
+# (normal z 0.707). Add the allowance you will cut off.
+stock Box(w=100.0, l=80.0, h=28.0, x=0.0, y=0.0, z=28.0)

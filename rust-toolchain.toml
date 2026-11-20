@@ -1,0 +1,4 @@
+# One compiler for this machine, the cloud sessions and CI, so a golden
+# never moves because two of them disagreed about the Rust version.
+[toolchain]
+channel = "1.99.0"

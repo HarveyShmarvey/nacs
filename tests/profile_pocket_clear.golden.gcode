@@ -1,0 +1,75 @@
+%
+(nacs — nacs output)
+(tool T5 dia 10.000 -> comp register D5)
+G21
+G90 G54 G17
+M06 T5
+M03 S3000.000
+M08
+G00 G43 H5 Z25.000
+(--- pocket clear: PocketProfile with T5 ---)
+(direction: climb — the material on the tool's right under M03)
+G00 Z25.000
+G00 X49.000 Y49.000
+G00 Z5.000
+(plunge: this loop is 8.000mm round, under one diameter — no room to ramp)
+G01 Z-5.000 F300.000
+G01 X51.000 Y49.000 F800.000
+G01 X51.000 Y51.000
+G01 X49.000 Y51.000
+G01 X49.000 Y49.000
+G00 Z5.000
+(plunge: beside air an earlier loop cut, 4.000mm off its path)
+G00 X45.000 Y45.000
+G01 Z-5.000 F300.000
+G01 X55.000 Y45.000 F800.000
+G01 X55.000 Y55.000
+G01 X45.000 Y55.000
+G01 X45.000 Y45.000
+G00 Z5.000
+(plunge: beside air an earlier loop cut, 4.000mm off its path)
+G00 X41.000 Y41.000
+G01 Z-5.000 F300.000
+G01 X59.000 Y41.000 F800.000
+G01 X59.000 Y59.000
+G01 X41.000 Y59.000
+G01 X41.000 Y41.000
+G00 Z5.000
+(plunge: beside air an earlier loop cut, 4.000mm off its path)
+G00 X37.000 Y37.000
+G01 Z-5.000 F300.000
+G01 X63.000 Y37.000 F800.000
+G01 X63.000 Y63.000
+G01 X37.000 Y63.000
+G01 X37.000 Y37.000
+G00 Z5.000
+(plunge: beside air an earlier loop cut, 4.000mm off its path)
+G00 X33.000 Y33.000
+G01 Z-5.000 F300.000
+G01 X67.000 Y33.000 F800.000
+G01 X67.000 Y67.000
+G01 X33.000 Y67.000
+G01 X33.000 Y33.000
+G00 Z5.000
+(plunge: beside air an earlier loop cut, 4.000mm off its path)
+G00 X29.000 Y29.000
+G01 Z-5.000 F300.000
+G01 X71.000 Y29.000 F800.000
+G01 X71.000 Y71.000
+G01 X29.000 Y71.000
+G01 X29.000 Y29.000
+G00 Z5.000
+(plunge: beside air an earlier loop cut, 4.000mm off its path)
+G00 X25.000 Y25.000
+G01 Z-5.000 F300.000
+G01 X75.000 Y25.000 F800.000
+G01 X75.000 Y75.000
+G01 X25.000 Y75.000
+G01 X25.000 Y25.000
+G00 Z5.000
+G00 Z25.000
+M09
+M05
+G00 Z25.000
+M30
+%

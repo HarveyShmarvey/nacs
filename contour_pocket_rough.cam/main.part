@@ -1,0 +1,48 @@
+# contour_pocket_rough.cam — the 3D-wire roughing fixture, both comp modes in
+# one golden (the profile_pocket_rough.cam pattern). The finishing sibling is
+# contour_pocket.cam; the two differ by exactly the stock_to_leave field.
+#
+# The wire wall is one full-height flank pass, so the allowance is radial and
+# the cusp budget structurally 0.000 — the planar wall's budget, now riding
+# the wire's Z re-attachment (DECISIONS.md "the 3D-wire Contour…", slice 2).
+# The rim is wound CCW (a void), so leaving stock means the wall closes IN on
+# the tool: every emitted coordinate moves 0.5mm toward the centre versus
+# contour_pocket.cam — and every emitted Z re-attaches at the shrunk edge's
+# own plan position, not the authored corner's.
+#
+# Hand-checked anchors (60mm square 20..80, corners alternating z=0/-2 so
+# every side's slope is 2/60 = 1/30; extent 3; T5 dia 10 so r = 5):
+#   - engine comp offsets by r + skin = 5.5 inward: the tool-centre square
+#     runs 25.5 .. 74.5. Every offset corner is 5.5mm along BOTH adjacent
+#     walls from its wire corner, so its top edge sits 5.5/30 = 11/60 below/
+#     above that corner's own z (the structural tie is equal here by
+#     symmetry):
+#       corner near (20,20,z=0):  top = -11/60,       cut Z = -3.183
+#       corner near (80,20,z=-2): top = -2 + 11/60,   cut Z = -4.817
+#   - control comp emits the PART EDGE shrunk by only the skin: 20.5 .. 79.5,
+#     each corner 0.5mm along both walls so its top edge is 1/60 from its
+#     corner's z (cut Z = -3.017 near (20,20), -4.983 near (80,20)). The D
+#     register stays D5 — the pure tool radius — so the controller adds r on
+#     top and the metal lands where the engine pass put it; baking the
+#     allowance into D instead would be a double-comp waiting to happen
+#     (finish_cylinder's precedent, held by the planar walls, held here).
+units mm
+feed 800
+plunge 300
+rapid_z 5
+clearance_z 25
+spindle 3000
+
+stock Box(w=100, l=100, h=20, x=0, y=0, z=0)
+
+tool T5 Endmill(dia=10.0)
+
+feature Rim ContourPocket(extent=3.0
+    20 20 0
+    80 20 -2
+    80 80 0
+    20 80 -2
+)
+
+run Side(tool=T5, surface=Rim, stock_to_leave=0.5)
+run Side(tool=T5, surface=Rim, comp=control, stock_to_leave=0.5)

@@ -1,0 +1,15 @@
+# meridian.spline — a freeform b-spline meridian for spline_cap.cam.
+# The (r, z) control polygon of a cubic surface-of-revolution cap, in mm,
+# stored apex-first (apex on the axis at the top, base rim at the bottom).
+# Both coordinate sequences are monotone — r non-decreasing, z non-increasing —
+# so the revolved surface is a machinable cap with no undercut. It is a genuine
+# freeform curve, not a circle/parabola/ogive arc, so recognition cannot name
+# it as a primitive: exactly the face the analytic NURBS reader exists for.
+degree 3
+knots 0 0 0 0 0.3333333333333333 0.6666666666666666 1 1 1 1
+pole 0 20
+pole 3 19
+pole 7 16
+pole 10 11
+pole 12 5
+pole 13 0

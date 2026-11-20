@@ -1,0 +1,45 @@
+# sphere_clear.cam — the revolve-boss Clear (DECISIONS.md "roughing a convex
+# revolve…", slice 1). The first fixture in this project whose stock actually
+# CONTAINS its part: every other convex-revolve fixture datums the feature at
+# the stock top so the dome stands in air, because until this op existed a
+# containing stock made the program a HARD ERROR — check_moves had no earlier
+# op to credit with opening the material the finish pass enters.
+#
+# T1 roughs the moat around the buried dome in Z levels down to the equator
+# plane, leaving a 0.5mm allowance; T9 finishes the dome out of what T1 opened.
+#
+# What this fixture claims, exactly: the program BUILDS and is SILENT. The
+# containment lint is quiet (the part fits the stock), check_moves passes on
+# both ops, the swept-tube ceiling accounts for the rim area the ball sweeps
+# beside the equator (DECISIONS.md "rim-area accounting…", slices 0-1), and
+# T9's apex entry — a plunge through the residual cap its own rough left,
+# category 3 by charter — is licensed by the derived pairing (fork 3A): a
+# finish behind its own rough cuts only what it declares on the way in.
+#
+# What is deliberately NOT machined: the stock outside the moat. Nothing
+# declares that it should go — the moat is one tool diameter past the rim,
+# which is the width a tool must sweep to reach an edge at all — so the dome
+# comes out standing on a pedestal. A program that wants the whole block down
+# says so with a Floor.
+#
+# rapid_z clears the stock TOP (z=22), not z=0: this is the first fixture whose
+# stock top is not the origin, and a rapid at 5 would cross the stock.
+units mm
+feed 600
+plunge 200
+rapid_z 25
+clearance_z 40
+spindle 4000
+
+# The stock stands 2mm proud of the dome's apex (z=20) and reaches 25mm below
+# its equator plane.
+stock Box(w=100, l=80, h=47, x=0, y=0, z=22)
+
+tool T1 Endmill(dia=12.0)
+tool T9 Ballmill(dia=6.0)
+
+# Sphere centre (equator plane) at z=0; the machinable dome rises to z=20.
+feature TopDome Sphere(dia=40, x=50, y=40, z=0)
+
+run Clear(tool=T1, profile=TopDome, stepover=8.0, stepdown=5.0, stock_to_leave=0.5)
+run Copy(tool=T9, surface=TopDome, stepover=3.0)

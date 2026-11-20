@@ -1,0 +1,28 @@
+# cylinder_bore_inch.cam — the K1 slice-1 acceptance fixture (DECISIONS.md
+# "K1 slice 1 — the formatting boundary…"): cylinder_bore_arcs.cam's exact
+# program — mm-authored, mm-modeled — on a DECLARED inch machine. The golden
+# says G20 where the mm twin says G21, every X/Y/Z/I/J word at 4 inch
+# decimals (50mm → X1.9685), every F word at the machine's declared 2
+# (800mm/min → F31.50), and the S words byte-identical to the twin's —
+# conversion changes numbers, never structure, and never a unit-free word.
+# compress=arcs is chosen deliberately so the golden proves the arc IJ words
+# convert with the coordinates they steer; the control-comp run proves the
+# G41/D lines and the tool-header D-register value (what the operator DIALS)
+# speak inch too.
+machine shop_inch.machine
+
+units mm
+feed 800
+plunge 300
+rapid_z 5
+clearance_z 25
+spindle 3000
+
+stock Box(w=100, l=100, h=20, x=0, y=0, z=0)
+
+tool T5 Endmill(dia=10.0)
+
+feature Bore CylinderBore(dia=40.0, extent=12.0, x=50.0, y=50.0)
+
+run Side(tool=T5, surface=Bore, stepover=5.0, compress=arcs)
+run Side(tool=T5, surface=Bore, stepover=5.0, comp=control, compress=arcs)

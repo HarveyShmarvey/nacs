@@ -1,0 +1,148 @@
+# Proposed features recognized from disc_step.step by sidecar/import_step.py
+# (contract v1 -- see sidecar/CONTRACT.md). Review before use:
+# recognition proposes, it does not machine.
+
+# F3: pocket floor at z=20.0; vertical wall loop F4 F6, mouth at z=30.0, depth 10.0, opens upward; 1 inner wire -- standing material inside the pocket proposes beside it; open along F1 (the blank's silhouette, drawn 0.02 past it); the edge along the rim of F7 is a wall the Clear rides to (a void proposed beside it) (CHECKLIST row 2.7)
+# consume with: run Clear(tool=..., profile=F3_Pocket, stepover=...)  [the feature carries its own z + extent]
+# or finish with: run Side(tool=..., surface=F3_Pocket, comp=control)
+# comp=control is required on recognized profile Side runs: recognized boundaries carry rounded
+# corners tessellated to chords, and engine comp hard-errors on rounded-corner
+# offsets (DECISIONS.md -> "recognized contours propose comp=control")
+# open along F1: the part's silhouette, drawn 0.02 past the blank --
+# the engine clips the outline to the declared stock, so on a `stock Cylinder` of the
+# part's diameter those edges read OPEN, and on a larger Box they read WALL
+# this floor has 1 inner wire: a boss proposed INSIDE this loop is its island, derived from
+# containment -- the Clear above goes around it (stepover at most the tool's radius), and the
+# island takes no Clear of its own. CHECK that every inner wire has a proposed boss below:
+# standing material this reader could not name is NOT in the proposal, and would be cleared through.
+feature F3_Pocket ProfilePocket(z=30.0, extent=10.0
+    20.0 -56.569
+    22.042 -55.826
+    24.048 -54.992
+    26.023 -54.085
+    27.964 -53.108
+    29.868 -52.061
+    31.732 -50.946
+    33.556 -49.764
+    35.335 -48.516
+    37.068 -47.206
+    38.752 -45.833
+    40.386 -44.4
+    41.967 -42.909
+    43.492 -41.362
+    44.961 -39.761
+    46.371 -38.107
+    47.72 -36.404
+    49.006 -34.653
+    50.228 -32.856
+    51.385 -31.016
+    52.474 -29.136
+    53.494 -27.218
+    54.444 -25.263
+    55.323 -23.276
+    56.129 -21.258
+    56.862 -19.213
+    57.52 -17.142
+    58.103 -15.049
+    58.609 -12.936
+    59.039 -10.806
+    59.392 -8.662
+    59.666 -6.506
+    59.863 -4.342
+    59.981 -2.173
+    60.02 0.0
+    59.981 2.173
+    59.863 4.342
+    59.666 6.506
+    59.392 8.662
+    59.039 10.806
+    58.609 12.936
+    58.103 15.049
+    57.52 17.142
+    56.862 19.213
+    56.129 21.258
+    55.323 23.276
+    54.444 25.263
+    53.494 27.218
+    52.474 29.136
+    51.385 31.016
+    50.228 32.856
+    49.006 34.653
+    47.72 36.404
+    46.371 38.107
+    44.961 39.761
+    43.492 41.362
+    41.967 42.909
+    40.386 44.4
+    38.752 45.833
+    37.068 47.206
+    35.335 48.516
+    33.556 49.764
+    31.732 50.946
+    29.868 52.061
+    27.964 53.108
+    26.023 54.085
+    24.048 54.992
+    22.042 55.826
+    20.007 56.587
+    20.0 -29.0
+    20.672 -29.038
+    21.335 -29.15
+    21.982 -29.337
+    22.603 -29.594
+    23.192 -29.92
+    23.741 -30.309
+    24.243 -30.757
+    24.691 -31.259
+    25.08 -31.808
+    25.406 -32.397
+    25.663 -33.018
+    25.85 -33.665
+    25.962 -34.328
+    26.0 -35.0
+    25.962 -35.672
+    25.85 -36.335
+    25.663 -36.982
+    25.406 -37.603
+    25.08 -38.192
+    24.691 -38.741
+    24.243 -39.243
+    23.741 -39.691
+    23.192 -40.08
+    22.603 -40.406
+    21.982 -40.663
+    21.335 -40.85
+    20.672 -40.962
+    20.0 -41.0
+)
+
+# F5: planar, normal +Z, topmost planar face (CHECKLIST row 1.1)
+feature F5_Top Plane(z=30.0)
+
+# F7: cylindrical, axis +Z, full revolution, material outside (a bore), opens upward; flat floor F12 -- a milled bore (CHECKLIST row 2.3)
+# finish the wall with: run Side(tool=..., surface=F7_Bore, stepover=...)  [stepover is the ring spacing up the wall]
+# a flat floor is milled, not drilled -- a twist drill leaves a conical point, so no drill run is suggested
+feature F7_Bore CylinderBore(dia=12.0, extent=18.0, x=20.0, y=-35.0)
+
+# F8: outer profile under top cap F13: vertical wall loop F8 F10 F11 F9, top at z=28.0, base at z=20.0, material inside the loop (CHECKLIST row 2.2)
+# consume with: run Side(tool=..., surface=F8_Profile, comp=control)  [the feature carries its own z + extent]
+# the loop is wound CW: material inside, tool outside (the winding convention,
+# DECISIONS.md -> "Row-2.4 side selector")
+# comp=control is required on Contour runs: recognized boundaries carry rounded
+# corners tessellated to chords, and engine comp hard-errors on rounded-corner
+# offsets (DECISIONS.md -> "recognized contours propose comp=control")
+feature F8_Profile ProfileBoss(z=30.0, extent=10.0
+    35.0 -10.0
+    35.0 10.0
+    55.0 10.0
+    55.0 -10.0
+)
+
+# F13: planar, normal +Z, below the topmost height: a bounded face at z=28.0, 1 loop (outer); caps recognized outer profile F8_Profile (CHECKLIST row 1.1)
+feature F13_Face Face(z=28.0
+    loop
+        35.0 -10.0
+        55.0 -10.0
+        55.0 10.0
+        35.0 10.0
+)

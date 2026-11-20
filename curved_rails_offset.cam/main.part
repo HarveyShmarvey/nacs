@@ -1,0 +1,22 @@
+# curved_rails_offset.cam — the curved rail plate (Phase 31; DECISIONS.md → "Phase 31
+# opens…"). A land of 3mm rails again, and this time they CURVE: an S-trunk
+# swinging through two arcs, a scalloped rail of alternating R6.5/R3.5 arcs,
+# a rail that widens to 14mm for a stretch, a spiral boss, a chevron, a slot.
+# Exact lines and circular arcs; bosses R8 with 6mm bolt holes; coplanar.
+#
+# A curved rail is a tooth in EVERY comb direction. This is the part that
+# Phase 30's spine cannot do well by construction, and the reason Phase 31 is
+# the rail-following pass.
+units mm
+feed 800
+plunge 300
+rapid_z 5
+clearance_z 25
+spindle 3000
+
+stock Box(w=170, l=130, h=21, x=-5, y=-5, z=1)
+
+tool T5 Endmill(dia=10.0)
+
+run End(tool=T5, surface=Land, stepover=5.0, pattern=offset)
+run End(tool=T5, surface=SpiralBoss, stepover=5.0, pattern=offset)

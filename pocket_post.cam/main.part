@@ -1,0 +1,48 @@
+# pocket_post.cam — a post declared standing inside a pocket's footprint, and
+# the pocket cut AROUND it. It is profile_pocket_clear.cam's job with one line
+# added, and that line is the whole fixture.
+#
+# This was the first program whose DECLARED PART was violated by its own sweep
+# (DECISIONS.md → "Phase 9 lane C — over-cut of the declared part, in the
+# field…"): the Clear knew nothing about the post, emitted byte for byte what
+# profile_pocket_clear.cam emits, and ramped onto the post's own centre —
+# `nacs --rest-report` named 'Post' with the 388.1 mm³ it lost, and nothing
+# else in the engine could.
+#
+# The ruling (DECISIONS.md → "Phase 10 lane D — overlap semantics…"): a
+# standing feature inside a cavity's footprint is an ISLAND of that cavity,
+# derived from containment, never declared. The build (DECISIONS.md → "Phase
+# 26 slice 2: the pocket…"): the Clear below erodes the region between the
+# pocket's wall AND the post's, deepest level first — four disconnected
+# corners, each with its own ramp — and both walls get the last pass beside
+# them. The pocket's removal is its footprint minus the post; the rest report
+# reads `violated … none`; the 21.0 mm³ it still calls forgotten is the four
+# corner radii, exactly what profile_pocket_clear.cam leaves.
+#
+# The old defect is kept as a TEST DEVICE, not a fixture: tests/vox_tests.rs's
+# `swept_post` lifts the post 2µm off the floor after the parse, which blinds
+# the emitter to it again, so the over-cut check is still shown a sweep that
+# takes a declared solid.
+units mm
+feed 800
+plunge 300
+rapid_z 5
+clearance_z 25
+spindle 3000
+
+stock Box(w=100, l=100, h=20, x=0, y=0, z=0)
+
+tool T5 Endmill(dia=10.0)
+
+feature PocketProfile ProfilePocket(extent=5.0
+    20 20
+    80 20
+    80 80
+    20 80
+)
+
+# The one added line: a post standing from the pocket floor (z=-5) to the
+# top face, dead centre in the footprint the Clear below sweeps.
+feature Post CylinderBoss(dia=12, extent=5, x=50, y=50, z=-5)
+
+run Clear(tool=T5, profile=PocketProfile, stepover=4.0)

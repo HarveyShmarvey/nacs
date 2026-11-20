@@ -1,0 +1,59 @@
+{
+  "$schema": "https://zed.dev/schema/themes/v0.2.0.json",
+  "name": "nacs",
+  "author": "the nacs project",
+  "themes": [
+    {
+      "name": "nacs light",
+      "appearance": "light",
+      "style": {
+        "background": "#fafafa",
+        "panel.background": "#fafafa",
+        "border": "#878787",
+        "border.focused": "#505050",
+        "text": "#3c3c3c",
+        "element.background": "#e1e1e1",
+        "element.hover": "#d7d7d7",
+        "element.active": "#cdcdcd",
+        "element.selected": "#b4cdeb",
+        "editor.background": "#ffffff",
+        "scrollbar.thumb.background": "#828282"
+      },
+      "nacs": {
+        "text.interactive": "#282828",
+        "text.hover": "#141414",
+        "text.active": "#000000",
+        "text.open": "#1e1e1e",
+        "element.open": "#ebebeb",
+        "role.roughing": "#964b00",
+        "role.finishing": "#0050aa",
+        "role.untagged": "#3c3c46",
+        "rapid": "#787882",
+        "select": "#825f00",
+        "wire": "#696973",
+        "stock": "#5f5f69",
+        "ground": "#f0f0f0",
+        "map.ground": "#e2e2e2",
+        "indicator": "#1e1e28be",
+        "sim.base": "#55555f",
+        "removal": "#00732d",
+        "forgotten": "#b91e1e",
+        "violated": "#a00082",
+        "refusal": "#be0000",
+        "tool": "#696900",
+        "fixture": "#7d4b1e",
+        "family.engagement": "#005f9b",
+        "family.deviation": "#7d4b00",
+        "family.entry": "#af0041",
+        "family.fixture": "#73009b",
+        "family.reach": "#4b41a5",
+        "family.envelope": "#0055b9",
+        "family.containment": "#00694b",
+        "family.body_foul": "#9b2d69",
+        "family.field_body_foul": "#5f5f00",
+        "family.part_violation": "#00737d",
+        "family.decline": "#555f69"
+      }
+    }
+  ]
+}

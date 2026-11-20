@@ -1,0 +1,77 @@
+{
+  "faces": [
+    {
+      "checklist_row": "2.2",
+      "feature": "F1_Profile",
+      "id": "F1",
+      "part": "feature F1_Profile ProfileBoss(z=18.0, extent=18.0\n    0.0 0.0\n    0.0 80.0\n    100.0 80.0\n    100.0 0.0\n)",
+      "status": "proposed",
+      "surface": "plane",
+      "why": "outer profile under top cap F3: vertical wall loop F1 F2 F6 F4, top at z=10.0, base at z=0.0, material inside the loop"
+    },
+    {
+      "checklist_row": "2.2",
+      "feature": "F1_Profile",
+      "id": "F2",
+      "part": "feature F1_Profile ProfileBoss(z=18.0, extent=18.0\n    0.0 0.0\n    0.0 80.0\n    100.0 80.0\n    100.0 0.0\n)",
+      "status": "proposed",
+      "surface": "plane",
+      "why": "vertical wall of recognized outer profile F1_Profile (top cap F3)"
+    },
+    {
+      "checklist_row": "1.1",
+      "id": "F3",
+      "part": "feature F3_Face Face(z=10.0\n    loop\n        0.0 0.0\n        100.0 0.0\n        100.0 80.0\n        0.0 80.0\n    loop\n        25.0 40.0\n        25.03 40.736\n        25.12 41.47\n        25.271 42.201\n        25.48 42.926\n        25.749 43.645\n        26.076 44.354\n        26.461 45.053\n        26.903 45.74\n        27.4 46.413\n        27.952 47.071\n        28.557 47.712\n        29.213 48.334\n        29.92 48.935\n        30.675 49.516\n        31.476 50.073\n        32.322 50.607\n        33.211 51.114\n        34.14 51.595\n        35.108 52.048\n        36.111 52.472\n        37.147 52.866\n        38.215 53.229\n        39.311 53.56\n        40.433 53.858\n        41.578 54.123\n        42.743 54.354\n        43.925 54.55\n        45.123 54.712\n        46.332 54.838\n        47.55 54.928\n        48.773 54.982\n        50.0 55.0\n        51.227 54.982\n        52.45 54.928\n        53.668 54.838\n        54.877 54.712\n        56.075 54.55\n        57.257 54.354\n        58.422 54.123\n        59.567 53.858\n        60.689 53.56\n        61.785 53.229\n        62.853 52.866\n        63.889 52.472\n        64.892 52.048\n        65.86 51.595\n        66.789 51.114\n        67.678 50.607\n        68.524 50.073\n        69.325 49.516\n        70.08 48.935\n        70.787 48.334\n        71.443 47.712\n        72.048 47.071\n        72.6 46.413\n        73.097 45.74\n        73.539 45.053\n        73.924 44.354\n        74.251 43.645\n        74.52 42.926\n        74.729 42.201\n        74.88 41.47\n        74.97 40.736\n        75.0 40.0\n        74.97 39.264\n        74.88 38.53\n        74.729 37.799\n        74.52 37.074\n        74.251 36.355\n        73.924 35.646\n        73.539 34.947\n        73.097 34.26\n        72.6 33.587\n        72.048 32.929\n        71.443 32.288\n        70.787 31.666\n        70.08 31.065\n        69.325 30.484\n        68.524 29.927\n        67.678 29.393\n        66.789 28.886\n        65.86 28.405\n        64.892 27.952\n        63.889 27.528\n        62.853 27.134\n        61.785 26.771\n        60.689 26.44\n        59.567 26.142\n        58.422 25.877\n        57.257 25.646\n        56.075 25.45\n        54.877 25.288\n        53.668 25.162\n        52.45 25.072\n        51.227 25.018\n        50.0 25.0\n        48.773 25.018\n        47.55 25.072\n        46.332 25.162\n        45.123 25.288\n        43.925 25.45\n        42.743 25.646\n        41.578 25.877\n        40.433 26.142\n        39.311 26.44\n        38.215 26.771\n        37.147 27.134\n        36.111 27.528\n        35.108 27.952\n        34.14 28.405\n        33.211 28.886\n        32.322 29.393\n        31.476 29.927\n        30.675 30.484\n        29.92 31.065\n        29.213 31.666\n        28.557 32.288\n        27.952 32.929\n        27.4 33.587\n        26.903 34.26\n        26.461 34.947\n        26.076 35.646\n        25.749 36.355\n        25.48 37.074\n        25.271 37.799\n        25.12 38.53\n        25.03 39.264\n)",
+      "status": "proposed",
+      "surface": "plane",
+      "why": "planar, normal +Z, below the topmost height: a bounded face at z=10.0, 2 loops (outer + 1 inner); caps recognized outer profile F1_Profile"
+    },
+    {
+      "checklist_row": "2.2",
+      "feature": "F1_Profile",
+      "id": "F4",
+      "part": "feature F1_Profile ProfileBoss(z=18.0, extent=18.0\n    0.0 0.0\n    0.0 80.0\n    100.0 80.0\n    100.0 0.0\n)",
+      "status": "proposed",
+      "surface": "plane",
+      "why": "vertical wall of recognized outer profile F1_Profile (top cap F3)"
+    },
+    {
+      "checklist_row": "no row",
+      "code": "plane_downward",
+      "id": "F5",
+      "reason": "downward-facing planar face -- unreachable from above (undercut relative to the tool axis)",
+      "status": "unsupported",
+      "surface": "plane"
+    },
+    {
+      "checklist_row": "2.2",
+      "feature": "F1_Profile",
+      "id": "F6",
+      "part": "feature F1_Profile ProfileBoss(z=18.0, extent=18.0\n    0.0 0.0\n    0.0 80.0\n    100.0 80.0\n    100.0 0.0\n)",
+      "status": "proposed",
+      "surface": "plane",
+      "why": "vertical wall of recognized outer profile F1_Profile (top cap F3)"
+    },
+    {
+      "checklist_row": "no row",
+      "code": "surface_not_graduated",
+      "id": "F7",
+      "reason": "surface type 'extrusion' not yet graduated to a proposable primitive; recognition breadth is a later slice",
+      "status": "unsupported",
+      "surface": "extrusion"
+    },
+    {
+      "checklist_row": "1.1",
+      "id": "F8",
+      "part": "feature F8_Top Plane(z=18.0)",
+      "status": "proposed",
+      "surface": "plane",
+      "why": "planar, normal +Z, topmost planar face"
+    }
+  ],
+  "faces_total": 8,
+  "schema": "nacs-recognition-report",
+  "source": "ledge_face.step",
+  "units": "mm",
+  "version": 1
+}

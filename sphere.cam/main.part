@@ -1,0 +1,31 @@
+# sphere.cam — camp-2 ball-nose finishing fixture (ROADMAP Phase 3).
+# Finishes the upper hemisphere of a Sphere with constant-Z waterline passes,
+# computed straight from the sphere equation (no geometry crate). The tool must
+# be a Ballmill: the tool-centre path is the surface offset one ball radius along
+# the normal, which for a sphere is just a larger concentric sphere.
+#
+# CONTAINED 2026-08-13 (DECISIONS.md "rim-area accounting…", slice 2):
+# the stock used to stop AT this feature's base plane, so the whole
+# surface stood in air and the fixture only ran because there was
+# nothing to hit. The stock now stands 2mm proud of the feature's top
+# (z 22) and T1 roughs the moat before the finish;
+# numbers in the older comments describe the same toolpath, whose
+# motion is unchanged where it touches the surface.
+units mm
+feed 600
+plunge 200
+rapid_z 25
+clearance_z 40
+spindle 4000
+
+stock Box(w=100, l=80, h=47, x=0, y=0, z=22)
+
+tool T1 Endmill(dia=12.0)
+tool T9 Ballmill(dia=6.0)
+
+# Sphere centre (equator plane) at z=0; the machinable dome rises to z=20 (r=20).
+feature TopDome Sphere(dia=40, x=50, y=40, z=0)
+
+# stepover here is the Z pass spacing (waterline stepdown).
+run Clear(tool=T1, profile=TopDome, stepover=8.0, stepdown=5.0, stock_to_leave=0.5)
+run Copy(tool=T9, surface=TopDome, stepover=3.0)

@@ -1,0 +1,206 @@
+# Proposed features recognized from outer_profile.step by sidecar/import_step.py
+# (contract v1 -- see sidecar/CONTRACT.md). Review before use:
+# recognition proposes, it does not machine.
+
+# F1: cylindrical, axis +Z, full revolution, material inside (a standing boss), flat top cap F3, the base at z=13.0 is the head's own underside, and nothing from above reaches what is under the head -- F2 (the head's underside), F4 (a wall of the neck) -- so the boss is proposed down to z=10.0, the floor F5 it stands over, and the program leaves the material under the head standing (CHECKLIST row 2.4)
+# finish the wall with: run Side(tool=..., surface=F1_Boss, stepover=...)  [stepover is the ring spacing up the wall]
+# the tool rides outside at R + r_tool (convex flank; finish_cylinder's mirror)
+# the walls end at z=13.0 on the head's own underside; the neck, the pad and the pad's
+# foot bevels under it are out of reach from above, so the boss runs down to z=10.0, the
+# floor it stands over, and the program leaves what is under the head standing
+feature F1_Boss CylinderBoss(dia=14.0, extent=6.0, x=42.0, y=36.0, z=10.0)
+
+# F3: planar, normal +Z, topmost planar face (CHECKLIST row 1.1)
+feature F3_Top Plane(z=16.0)
+
+# F5: planar, normal +Z, below the topmost height: a bounded face at z=10.0, 5 loops (outer + 4 inner); caps recognized outer profile F6_Profile (CHECKLIST row 1.1)
+feature F5_Face Face(z=10.0
+    loop
+        0.0 0.0
+        60.0 0.0
+        60.0 50.0
+        0.0 50.0
+    loop
+        6.01 13.601
+        6.01 14.399
+        6.089 15.192
+        6.247 15.974
+        6.482 16.736
+        6.792 17.471
+        7.174 18.171
+        7.623 18.83
+        8.136 19.441
+        8.707 19.998
+        9.33 20.496
+        10.0 20.928
+        10.71 21.292
+        11.452 21.583
+        12.22 21.799
+        13.005 21.938
+        13.801 21.998
+        14.598 21.978
+        15.389 21.878
+        16.167 21.701
+        16.923 21.447
+        17.65 21.119
+        18.34 20.72
+        18.988 20.255
+        19.586 19.727
+        20.128 19.142
+        20.61 18.507
+        21.026 17.826
+        21.372 17.107
+        21.645 16.358
+        21.841 15.585
+        21.96 14.797
+        22.0 14.0
+        21.96 13.203
+        21.841 12.415
+        21.645 11.642
+        21.372 10.893
+        21.026 10.174
+        20.61 9.493
+        20.128 8.858
+        19.586 8.273
+        18.988 7.745
+        18.34 7.28
+        17.65 6.881
+        16.923 6.553
+        16.167 6.299
+        15.389 6.122
+        14.598 6.022
+        13.801 6.002
+        13.005 6.062
+        12.22 6.201
+        11.452 6.417
+        10.71 6.708
+        10.0 7.072
+        9.33 7.504
+        8.707 8.002
+        8.136 8.559
+        7.623 9.17
+        7.174 9.829
+        6.792 10.529
+        6.482 11.264
+        6.247 12.026
+        6.089 12.808
+    loop
+        8.0 32.0
+        8.0 44.0
+        20.0 44.0
+        20.0 32.0
+    loop
+        30.0 6.0
+        30.0 20.0
+        46.0 20.0
+        46.522 19.966
+        47.035 19.864
+        47.531 19.696
+        48.0 19.464
+        48.435 19.173
+        48.828 18.828
+        49.173 18.435
+        49.464 18.0
+        49.696 17.531
+        49.864 17.035
+        49.966 16.522
+        50.0 16.0
+        50.0 6.0
+    loop
+        38.01 35.721
+        38.01 36.279
+        38.087 36.832
+        38.241 37.368
+        38.468 37.878
+        38.764 38.351
+        39.123 38.779
+        39.537 39.152
+        40.0 39.464
+        40.502 39.709
+        41.032 39.881
+        41.582 39.978
+        42.14 39.998
+        42.695 39.939
+        43.236 39.804
+        43.753 39.595
+        44.237 39.316
+        44.677 38.973
+        45.064 38.571
+        45.392 38.12
+        45.654 37.627
+        45.845 37.103
+        45.961 36.557
+        46.0 36.0
+        45.961 35.443
+        45.845 34.897
+        45.654 34.373
+        45.392 33.88
+        45.064 33.429
+        44.677 33.027
+        44.237 32.684
+        43.753 32.405
+        43.236 32.196
+        42.695 32.061
+        42.14 32.002
+        41.582 32.022
+        41.032 32.119
+        40.502 32.291
+        40.0 32.536
+        39.537 32.848
+        39.123 33.221
+        38.764 33.649
+        38.468 34.122
+        38.241 34.632
+        38.087 35.168
+)
+
+# F6: outer profile under top cap F5: vertical wall loop F6 F8 F9 F7, top at z=10.0, base at z=0.0, material inside the loop (CHECKLIST row 2.2)
+# consume with: run Side(tool=..., surface=F6_Profile, comp=control)  [the feature carries its own z + extent]
+# the loop is wound CW: material inside, tool outside (the winding convention,
+# DECISIONS.md -> "Row-2.4 side selector")
+# comp=control is required on Contour runs: recognized boundaries carry rounded
+# corners tessellated to chords, and engine comp hard-errors on rounded-corner
+# offsets (DECISIONS.md -> "recognized contours propose comp=control")
+feature F6_Profile ProfileBoss(z=16.0, extent=16.0
+    0.0 0.0
+    0.0 50.0
+    60.0 50.0
+    60.0 0.0
+)
+
+# F10: cylindrical, axis +Z, full revolution, material inside (a standing boss), flat top cap F21, clean base at z=10.0 (CHECKLIST row 2.4)
+# finish the wall with: run Side(tool=..., surface=F10_Boss, stepover=...)  [stepover is the ring spacing up the wall]
+# the tool rides outside at R + r_tool (convex flank; finish_cylinder's mirror)
+feature F10_Boss CylinderBoss(dia=16.0, extent=6.0, x=14.0, y=14.0, z=10.0)
+
+# F11: outer profile under top cap F22: vertical wall loop F13 F15 F14 F12 F11, top at z=16.0, base at z=10.0, material inside the loop (CHECKLIST row 2.8)
+# consume with: run Side(tool=..., surface=F11_Profile, comp=control)  [the feature carries its own z + extent]
+# the loop is wound CW: material inside, tool outside (the winding convention,
+# DECISIONS.md -> "Row-2.4 side selector")
+# comp=control is required on Contour runs: recognized boundaries carry rounded
+# corners tessellated to chords, and engine comp hard-errors on rounded-corner
+# offsets (DECISIONS.md -> "recognized contours propose comp=control")
+feature F11_Profile ProfileBoss(z=16.0, extent=6.0
+    30.0 6.0
+    30.0 20.0
+    46.0 20.0
+    46.522 19.966
+    47.035 19.864
+    47.531 19.696
+    48.0 19.464
+    48.435 19.173
+    48.828 18.828
+    49.173 18.435
+    49.464 18.0
+    49.696 17.531
+    49.864 17.035
+    49.966 16.522
+    50.0 16.0
+    50.0 6.0
+)
+
+# F21: planar, normal +Z, topmost planar face (CHECKLIST row 1.1)
+feature F21_Top Plane(z=16.0)
+
+# F22: planar, normal +Z, topmost planar face (CHECKLIST row 1.1)
+feature F22_Top Plane(z=16.0)

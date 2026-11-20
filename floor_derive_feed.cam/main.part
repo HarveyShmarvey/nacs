@@ -1,0 +1,29 @@
+# floor_derive_feed.cam — the K3 slice-1 acceptance fixture (DECISIONS.md →
+# "K3, the material…", slice 1): both derived words on one real op, behind
+# the opt-in — the sibling of floor_derive.cam, whose tool deliberately
+# declares NO flute count and must keep deriving only S.
+#
+# The tool carries K2's flute_count and the op replaces BOTH numbers with the
+# word `derive`, so the shipped 6061×Endmill row closes both identities at
+# validate: RPM = 1000·150/(π·10) = 4774.648, and F = RPM × z × f_z =
+# 4774.648… × 3 × 0.040 (the 6..13 band) = 572.958. The feed identity reads
+# the op's RESOLVED spindle — here the derived one, since spindle=derive
+# rides along per the entry's own sequencing — because the chip thins by what
+# the spindle actually turns. The globals below are what every op WITHOUT the
+# sentinel would still get, byte for byte.
+units mm
+feed 800
+plunge 300
+rapid_z 5
+clearance_z 25
+spindle 3000
+
+stock Box(w=120, l=80, h=20, x=0, y=0, z=0, material=6061)
+
+tool T5 Endmill(dia=10.0, flute_count=3)
+
+# The Plane is the FINISHED face — stock top is z=0, so a 0.5mm skim names
+# its face at z=-0.5 (the plate.cam stance).
+feature TopFace Plane(z=-0.5)
+
+run End(tool=T5, surface=TopFace, stepover=6.0, spindle=derive, feed=derive)

@@ -1,0 +1,26 @@
+# cylinder_boss.cam — the circular outside boss (CHECKLIST row 2.4), pinned in
+# one golden (DECISIONS.md "Row-2.4 `side` selector"). Two runs:
+#   1. Finish on a CylinderBoss, engine comp: the tool-centre rides the coaxial circle
+#      R + r_tool *outside* the wall — finish_cylinder_bore's mirror, convex, so no
+#      concave gouge guard. `stepover` is the axial Z stepdown.
+#   2. The same wall with control comp: centerline = part edge, cut CW so
+#      G41's left-of-travel offset lands outside (the blessed winding rule).
+# The CW/outside polyline case this fixture once smuggled as a third run lives
+# in its own fixture now: profile_boss.cam.
+units mm
+feed 800
+plunge 300
+rapid_z 5
+clearance_z 25
+spindle 3000
+
+stock Box(w=100, l=100, h=20, x=0, y=0, z=0)
+
+tool T5 Endmill(dia=10.0)
+
+# Base plane 12mm below the stock top; the wall rises back up to z=0.
+feature Post CylinderBoss(dia=40.0, extent=12.0, x=50.0, y=50.0, z=-12.0)
+
+run Clear(tool=T5, profile=Post, stepover=4.0, stepdown=4.0)
+run Side(tool=T5, surface=Post, stepover=5.0)
+run Side(tool=T5, surface=Post, stepover=5.0, comp=control)

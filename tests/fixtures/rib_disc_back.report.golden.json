@@ -1,0 +1,228 @@
+{
+  "faces": [
+    {
+      "checklist_row": "no row",
+      "code": "other_setup",
+      "id": "F1",
+      "reason": "cylindrical face: the part's own material lies straight above it -- conical F6 is 10.0 up -- so nothing on this setup's tool axis reaches it; see what the other side makes of it with --up z+",
+      "refs": [
+        "F6"
+      ],
+      "status": "unsupported",
+      "surface": "cylinder"
+    },
+    {
+      "checklist_row": "no row",
+      "code": "other_setup",
+      "id": "F2",
+      "reason": "planar face: the part's own material lies straight above it -- planar F5 is 5.9 up -- so nothing on this setup's tool axis reaches it; see what the other side makes of it with --up z+",
+      "refs": [
+        "F5"
+      ],
+      "status": "unsupported",
+      "surface": "plane"
+    },
+    {
+      "checklist_row": "no row",
+      "code": "plane_downward",
+      "id": "F3",
+      "reason": "downward-facing planar face -- unreachable from above (undercut relative to the tool axis)",
+      "status": "unsupported",
+      "surface": "plane"
+    },
+    {
+      "checklist_row": "no row",
+      "code": "other_setup",
+      "id": "F4",
+      "reason": "cylindrical face: the part's own material lies straight above it -- planar F5 is 3.0 up -- so nothing on this setup's tool axis reaches it; see what the other side makes of it with --up z+",
+      "refs": [
+        "F5"
+      ],
+      "status": "unsupported",
+      "surface": "cylinder"
+    },
+    {
+      "checklist_row": "no row",
+      "code": "plane_downward",
+      "id": "F5",
+      "reason": "downward-facing planar face -- unreachable from above (undercut relative to the tool axis)",
+      "status": "unsupported",
+      "surface": "plane"
+    },
+    {
+      "checklist_row": "no row",
+      "code": "other_setup",
+      "id": "F6",
+      "reason": "conical face: the part's own material lies straight above it -- planar F14 is 20.5 up -- so nothing on this setup's tool axis reaches it; see what the other side makes of it with --up z+",
+      "refs": [
+        "F14"
+      ],
+      "status": "unsupported",
+      "surface": "cone"
+    },
+    {
+      "checklist_row": "no row",
+      "code": "plane_downward",
+      "id": "F7",
+      "reason": "downward-facing planar face -- unreachable from above (undercut relative to the tool axis)",
+      "status": "unsupported",
+      "surface": "plane"
+    },
+    {
+      "checklist_row": "no row",
+      "code": "other_setup",
+      "id": "F8",
+      "reason": "planar face: the part's own material lies straight above it -- planar F14 is 20.5 up -- so nothing on this setup's tool axis reaches it; see what the other side makes of it with --up z+",
+      "refs": [
+        "F14"
+      ],
+      "status": "unsupported",
+      "surface": "plane"
+    },
+    {
+      "checklist_row": "2.4",
+      "id": "F9",
+      "part": "feature F9_Boss CylinderBoss(dia=100.0, extent=35.0, x=0.0, y=0.0, z=-35.0)",
+      "status": "proposed",
+      "surface": "cylinder",
+      "why": "cylindrical, axis +Z, full revolution, material inside (a standing boss), flat top cap F14, clean base at z=-35.0"
+    },
+    {
+      "checklist_row": "no row",
+      "code": "other_setup",
+      "id": "F10",
+      "reason": "planar face: the part's own material lies straight above it -- planar F14 is 20.5 up -- so nothing on this setup's tool axis reaches it; see what the other side makes of it with --up z+",
+      "refs": [
+        "F14"
+      ],
+      "status": "unsupported",
+      "surface": "plane"
+    },
+    {
+      "checklist_row": "no row",
+      "code": "other_setup",
+      "id": "F11",
+      "reason": "planar face: the part's own material lies straight above it -- planar F14 is 20.5 up -- so nothing on this setup's tool axis reaches it; see what the other side makes of it with --up z+",
+      "refs": [
+        "F14"
+      ],
+      "status": "unsupported",
+      "surface": "plane"
+    },
+    {
+      "checklist_row": "2.3",
+      "id": "F12",
+      "part": "feature F12_Hole CylinderBore(dia=10.0, extent=20.0, x=-15.0, y=-30.0)",
+      "status": "proposed",
+      "surface": "cylinder",
+      "why": "cylindrical, axis +Z, full revolution, material outside (a bore), opens upward; bottom opens through -- a drillable through hole"
+    },
+    {
+      "checklist_row": "no row",
+      "code": "plane_downward",
+      "id": "F13",
+      "reason": "downward-facing planar face -- unreachable from above (undercut relative to the tool axis)",
+      "status": "unsupported",
+      "surface": "plane"
+    },
+    {
+      "checklist_row": "1.1",
+      "id": "F14",
+      "part": "feature F14_Top Plane(z=0.0)",
+      "status": "proposed",
+      "surface": "plane",
+      "why": "planar, normal +Z, topmost planar face"
+    },
+    {
+      "checklist_row": "no row",
+      "code": "other_setup",
+      "id": "F15",
+      "reason": "planar face: the part's own material lies straight above it -- planar F13 is 3.0 up -- so nothing on this setup's tool axis reaches it; see what the other side makes of it with --up z+",
+      "refs": [
+        "F13"
+      ],
+      "status": "unsupported",
+      "surface": "plane"
+    },
+    {
+      "checklist_row": "no row",
+      "code": "other_setup",
+      "id": "F16",
+      "reason": "planar face: the part's own material lies straight above it -- planar F13 is 5.9 up -- so nothing on this setup's tool axis reaches it; see what the other side makes of it with --up z+",
+      "refs": [
+        "F13"
+      ],
+      "status": "unsupported",
+      "surface": "plane"
+    },
+    {
+      "checklist_row": "no row",
+      "code": "other_setup",
+      "id": "F17",
+      "reason": "planar face: the part's own material lies straight above it -- planar F11 is 10.1 up -- so nothing on this setup's tool axis reaches it; see what the other side makes of it with --up z+",
+      "refs": [
+        "F11"
+      ],
+      "status": "unsupported",
+      "surface": "plane"
+    },
+    {
+      "checklist_row": "no row",
+      "code": "plane_downward",
+      "id": "F18",
+      "reason": "downward-facing planar face -- unreachable from above (undercut relative to the tool axis)",
+      "status": "unsupported",
+      "surface": "plane"
+    },
+    {
+      "checklist_row": "no row",
+      "code": "other_setup",
+      "id": "F19",
+      "reason": "planar face: the part's own material lies straight above it -- planar F8 is 10.1 up -- so nothing on this setup's tool axis reaches it; see what the other side makes of it with --up z+",
+      "refs": [
+        "F8"
+      ],
+      "status": "unsupported",
+      "surface": "plane"
+    },
+    {
+      "checklist_row": "no row",
+      "code": "other_setup",
+      "id": "F20",
+      "reason": "planar face: the part's own material lies straight above it -- planar F13 is 3.0 up -- so nothing on this setup's tool axis reaches it; see what the other side makes of it with --up z+",
+      "refs": [
+        "F13"
+      ],
+      "status": "unsupported",
+      "surface": "plane"
+    },
+    {
+      "checklist_row": "no row",
+      "code": "other_setup",
+      "id": "F21",
+      "reason": "planar face: the part's own material lies straight above it -- planar F13 is 3.0 up -- so nothing on this setup's tool axis reaches it; see what the other side makes of it with --up z+",
+      "refs": [
+        "F13"
+      ],
+      "status": "unsupported",
+      "surface": "plane"
+    },
+    {
+      "checklist_row": "no row",
+      "code": "other_setup",
+      "id": "F22",
+      "reason": "planar face: the part's own material lies straight above it -- planar F10 is 10.1 up -- so nothing on this setup's tool axis reaches it; see what the other side makes of it with --up z+",
+      "refs": [
+        "F10"
+      ],
+      "status": "unsupported",
+      "surface": "plane"
+    }
+  ],
+  "faces_total": 22,
+  "schema": "nacs-recognition-report",
+  "source": "rib_disc.step",
+  "units": "mm",
+  "up": "z-",
+  "version": 1
+}

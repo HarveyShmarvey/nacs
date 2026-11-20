@@ -1,0 +1,26 @@
+# Proposed features recognized from assembly_pair.step by sidecar/import_step.py
+# (contract v1 -- see sidecar/CONTRACT.md). Review before use:
+# recognition proposes, it does not machine.
+# solid S1 of 2 in the file (--solid 1)
+
+# F1: outer profile under top cap F3: vertical wall loop F1 F2 F6 F4, top at z=10.0, base at z=0.0, material inside the loop (CHECKLIST row 2.2)
+# consume with: run Side(tool=..., surface=F1_Profile, comp=control)  [the feature carries its own z + extent]
+# the loop is wound CW: material inside, tool outside (the winding convention,
+# DECISIONS.md -> "Row-2.4 side selector")
+# comp=control is required on Contour runs: recognized boundaries carry rounded
+# corners tessellated to chords, and engine comp hard-errors on rounded-corner
+# offsets (DECISIONS.md -> "recognized contours propose comp=control")
+feature F1_Profile ProfileBoss(z=10.0, extent=10.0
+    0.0 0.0
+    0.0 40.0
+    60.0 40.0
+    60.0 0.0
+)
+
+# F3: planar, normal +Z, topmost planar face (CHECKLIST row 1.1)
+feature F3_Top Plane(z=10.0)
+
+# F7: cylindrical, axis +Z, full revolution, material outside (a bore), opens upward; flat floor F8 -- a milled bore (CHECKLIST row 2.3)
+# finish the wall with: run Side(tool=..., surface=F7_Bore, stepover=...)  [stepover is the ring spacing up the wall]
+# a flat floor is milled, not drilled -- a twist drill leaves a conical point, so no drill run is suggested
+feature F7_Bore CylinderBore(dia=16.0, extent=5.0, x=20.0, y=20.0)

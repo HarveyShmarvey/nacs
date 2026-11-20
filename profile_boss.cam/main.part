@@ -1,0 +1,29 @@
+# profile_boss.cam — the CW/outside polyline wall, control comp (CHECKLIST
+# rows 2.2/2.8). Extracted from cylinder_boss.cam, where it was smuggled as a
+# third run: the ProfileBoss loop is standing material, wound CW (validated by
+# the variant), so G41's left-of-travel offset lands *outside* the wall — the
+# blessed comp convention's outside half; profile_pocket.cam's CCW loop pins
+# the inside case. The engine-comp outside case (with its G03 corner arcs)
+# lives in profile_boss_arc.cam.
+units mm
+feed 800
+plunge 300
+rapid_z 5
+clearance_z 25
+spindle 3000
+
+stock Box(w=100, l=100, h=20, x=0, y=0, z=0)
+
+tool T5 Endmill(dia=10.0)
+
+# The plate's outer rectangle, authored CW (negative signed area): standing
+# material inside the loop, tool outside.
+feature Outline ProfileBoss(extent=2.0
+    10 10
+    10 90
+    90 90
+    90 10
+)
+
+run Clear(tool=T5, profile=Outline, stepover=4.0, stepdown=4.0)
+run Side(tool=T5, surface=Outline, comp=control)

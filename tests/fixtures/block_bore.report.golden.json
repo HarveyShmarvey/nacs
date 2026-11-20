@@ -1,0 +1,95 @@
+{
+  "faces": [
+    {
+      "checklist_row": "2.2",
+      "feature": "F1_Profile",
+      "id": "F1",
+      "part": "feature F1_Profile ProfileBoss(z=20.0, extent=20.0\n    0.0 0.0\n    0.0 80.0\n    100.0 80.0\n    100.0 0.0\n)",
+      "status": "proposed",
+      "surface": "plane",
+      "why": "outer profile under top cap F3: vertical wall loop F1 F2 F6 F4, top at z=15.0, base at z=0.0, material inside the loop"
+    },
+    {
+      "checklist_row": "2.2",
+      "feature": "F1_Profile",
+      "id": "F2",
+      "part": "feature F1_Profile ProfileBoss(z=20.0, extent=20.0\n    0.0 0.0\n    0.0 80.0\n    100.0 80.0\n    100.0 0.0\n)",
+      "status": "proposed",
+      "surface": "plane",
+      "why": "vertical wall of recognized outer profile F1_Profile (top cap F3)"
+    },
+    {
+      "checklist_row": "1.1",
+      "id": "F3",
+      "part": "feature F3_Face Face(z=15.0\n    loop\n        0.0 0.0\n        100.0 0.0\n        100.0 80.0\n        0.0 80.0\n    loop\n        20.01 39.458\n        20.01 40.542\n        20.088 41.622\n        20.244 42.694\n        20.477 43.751\n        20.785 44.79\n        21.168 45.803\n        21.623 46.786\n        22.147 47.733\n        22.739 48.641\n        23.394 49.503\n        24.11 50.315\n        24.883 51.074\n        25.708 51.776\n        26.582 52.415\n        27.5 52.99\n        28.457 53.498\n        29.448 53.935\n        30.468 54.299\n        31.511 54.589\n        32.573 54.802\n        33.648 54.939\n        34.729 54.998\n        35.812 54.978\n        36.891 54.88\n        37.96 54.705\n        39.013 54.453\n        40.045 54.126\n        41.052 53.725\n        42.026 53.253\n        42.964 52.711\n        43.861 52.103\n        44.711 51.432\n        45.51 50.702\n        46.255 49.916\n        46.941 49.078\n        47.565 48.192\n        48.124 47.264\n        48.614 46.298\n        49.033 45.3\n        49.378 44.273\n        49.649 43.225\n        49.844 42.159\n        49.961 41.082\n        50.0 40.0\n        49.961 38.918\n        49.844 37.841\n        49.649 36.775\n        49.378 35.727\n        49.033 34.7\n        48.614 33.702\n        48.124 32.736\n        47.565 31.808\n        46.941 30.922\n        46.255 30.084\n        45.51 29.298\n        44.711 28.568\n        43.861 27.897\n        42.964 27.289\n        42.026 26.747\n        41.052 26.275\n        40.045 25.874\n        39.013 25.547\n        37.96 25.295\n        36.891 25.12\n        35.812 25.022\n        34.729 25.002\n        33.648 25.061\n        32.573 25.198\n        31.511 25.411\n        30.468 25.701\n        29.448 26.065\n        28.457 26.502\n        27.5 27.01\n        26.582 27.585\n        25.708 28.224\n        24.883 28.926\n        24.11 29.685\n        23.394 30.497\n        22.739 31.359\n        22.147 32.267\n        21.623 33.214\n        21.168 34.197\n        20.785 35.21\n        20.477 36.249\n        20.244 37.306\n        20.088 38.378\n    loop\n        60.01 39.558\n        60.01 40.442\n        60.088 41.324\n        60.244 42.194\n        60.476 43.048\n        60.783 43.878\n        61.161 44.677\n        61.609 45.44\n        62.123 46.16\n        62.698 46.833\n        63.331 47.451\n        64.015 48.011\n        64.747 48.509\n        65.519 48.94\n        66.327 49.301\n        67.163 49.589\n        68.022 49.802\n        68.896 49.939\n        69.779 49.998\n        70.663 49.978\n        71.542 49.88\n        72.41 49.705\n        73.258 49.454\n        74.081 49.129\n        74.872 48.733\n        75.624 48.268\n        76.333 47.739\n        76.992 47.149\n        77.597 46.503\n        78.142 45.806\n        78.623 45.064\n        79.037 44.282\n        79.38 43.466\n        79.65 42.624\n        79.844 41.761\n        79.961 40.884\n        80.0 40.0\n        79.961 39.116\n        79.844 38.239\n        79.65 37.376\n        79.38 36.534\n        79.037 35.718\n        78.623 34.936\n        78.142 34.194\n        77.597 33.497\n        76.992 32.851\n        76.333 32.261\n        75.624 31.732\n        74.872 31.267\n        74.081 30.871\n        73.258 30.546\n        72.41 30.295\n        71.542 30.12\n        70.663 30.022\n        69.779 30.002\n        68.896 30.061\n        68.022 30.198\n        67.163 30.411\n        66.327 30.699\n        65.519 31.06\n        64.747 31.491\n        64.015 31.989\n        63.331 32.549\n        62.698 33.167\n        62.123 33.84\n        61.609 34.56\n        61.161 35.323\n        60.783 36.122\n        60.476 36.952\n        60.244 37.806\n        60.088 38.676\n)",
+      "status": "proposed",
+      "surface": "plane",
+      "why": "planar, normal +Z, below the topmost height: a bounded face at z=15.0, 3 loops (outer + 2 inner); caps recognized outer profile F1_Profile"
+    },
+    {
+      "checklist_row": "2.2",
+      "feature": "F1_Profile",
+      "id": "F4",
+      "part": "feature F1_Profile ProfileBoss(z=20.0, extent=20.0\n    0.0 0.0\n    0.0 80.0\n    100.0 80.0\n    100.0 0.0\n)",
+      "status": "proposed",
+      "surface": "plane",
+      "why": "vertical wall of recognized outer profile F1_Profile (top cap F3)"
+    },
+    {
+      "checklist_row": "no row",
+      "code": "plane_downward",
+      "id": "F5",
+      "reason": "downward-facing planar face -- unreachable from above (undercut relative to the tool axis)",
+      "status": "unsupported",
+      "surface": "plane"
+    },
+    {
+      "checklist_row": "2.2",
+      "feature": "F1_Profile",
+      "id": "F6",
+      "part": "feature F1_Profile ProfileBoss(z=20.0, extent=20.0\n    0.0 0.0\n    0.0 80.0\n    100.0 80.0\n    100.0 0.0\n)",
+      "status": "proposed",
+      "surface": "plane",
+      "why": "vertical wall of recognized outer profile F1_Profile (top cap F3)"
+    },
+    {
+      "checklist_row": "2.3",
+      "feature": "F7_Bore",
+      "id": "F7",
+      "part": "feature F7_Bore CylinderBore(dia=30.0, extent=10.0, x=35.0, y=40.0, z=15.0)",
+      "status": "proposed",
+      "surface": "cylinder",
+      "why": "cylindrical, axis +Z, full revolution, material outside (a bore), opens upward; flat floor F9 -- a milled bore; rim at z=15.0, 5.0 below the stock top z=20.0 -- authored from its rim by z=, so the step above it is another feature's material"
+    },
+    {
+      "checklist_row": "2.4",
+      "id": "F8",
+      "part": "feature F8_Boss CylinderBoss(dia=20.0, extent=5.0, x=70.0, y=40.0, z=15.0)",
+      "status": "proposed",
+      "surface": "cylinder",
+      "why": "cylindrical, axis +Z, full revolution, material inside (a standing boss), flat top cap F10, clean base at z=15.0"
+    },
+    {
+      "checklist_row": "2.3",
+      "feature": "F7_Bore",
+      "id": "F9",
+      "part": "feature F7_Bore CylinderBore(dia=30.0, extent=10.0, x=35.0, y=40.0, z=15.0)",
+      "status": "proposed",
+      "surface": "plane",
+      "why": "flat floor of recognized bore F7_Bore (wall F7)"
+    },
+    {
+      "checklist_row": "1.1",
+      "id": "F10",
+      "part": "feature F10_Top Plane(z=20.0)",
+      "status": "proposed",
+      "surface": "plane",
+      "why": "planar, normal +Z, topmost planar face"
+    }
+  ],
+  "faces_total": 10,
+  "schema": "nacs-recognition-report",
+  "source": "block_bore.step",
+  "units": "mm",
+  "version": 1
+}

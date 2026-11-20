@@ -1,0 +1,72 @@
+# tilted_bore.cam — a pocket built against the intruder with an axis (Phase 41
+# slice 5; DECISIONS.md → "Phase 41 slice 5…").
+#
+# `Drain` is a bore whose axis is NOT vertical: it enters the top face at
+# (70, 40) and leans toward -X at 30° from vertical, 14mm deep. No op here
+# cuts it — a 3-axis program never tilts the tool, so it is cut on another
+# setup — and every verb that names it refuses by name. It is declared so
+# the pocket's boundary can be BUILT AGAINST it: looking down the tool axis
+# the bore is not its mouth (a circle) nor its section at the pocket's floor
+# (an ellipse) but its plan ENVELOPE over the whole slab it spans — two
+# lines a diameter apart along the lean, joined by the far halves of its two
+# end sections — because the cylinder leans, and above the floor it overhangs
+# what the floor section reaches.
+#
+# The pocket's right wall is an arc through (58, 20) and (58, 60) tangent to
+# that envelope pushed out 3mm — the web the machinist wants left between the
+# pocket and the hole — chorded by the construction itself:
+#
+#     nacs --arc '58,20 58,60 tangent=Drain offset=3 pick=2' tilted_bore.cam
+#
+# pasted as the loop lines below (the first answer, the larger arc around the
+# far side of the hole, is the one that wraps the bore; the second bulges
+# into the pocket and kisses the near cap at (51.994, 40)). The grammar gained
+# no arc: the file holds points, as every curved footprint does, and the
+# parser is the only judge. `nacs --outline` lists Drain under "unused" —
+# honestly: the construction is an authoring step, not a thing the engine
+# reads at generation.
+units mm
+feed 800
+plunge 300
+rapid_z 5
+clearance_z 25
+spindle 3000
+
+stock Box(w=100, l=80, h=20, x=0, y=0, z=0)
+
+tool T5 Endmill(dia=10.0)
+
+feature Drain TiltedBore(dia=12, extent=14, x=70, y=40, tilt=30, heading=180)
+
+feature Pocket ProfilePocket(extent=8
+    10 20
+    58.000 20.000
+    57.100 21.435
+    56.267 22.911
+    55.505 24.424
+    54.814 25.971
+    54.196 27.549
+    53.652 29.154
+    53.184 30.782
+    52.792 32.431
+    52.477 34.095
+    52.241 35.773
+    52.083 37.460
+    52.004 39.153
+    52.004 40.847
+    52.083 42.540
+    52.241 44.227
+    52.477 45.905
+    52.792 47.569
+    53.184 49.218
+    53.652 50.846
+    54.196 52.451
+    54.814 54.029
+    55.505 55.576
+    56.267 57.089
+    57.100 58.565
+    58.000 60.000
+    10 60
+)
+
+run Clear(tool=T5, profile=Pocket, stepover=4.0)

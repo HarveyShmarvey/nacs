@@ -1,0 +1,39 @@
+# through_plate.cam — the FRONT of the Phase 48 fixture pair (DECISIONS.md →
+# "Phase 48 slice 1…"). A plate with three bores from the top: two taken
+# through to the bottom face, cleared and wall-finished to the full depth, and
+# one stopped a millimetre short ON PURPOSE — the web the real part's first
+# program left under every through-hole (the Phase 48 DRAFT, premise 3).
+#
+# `through_plate_back.cam` is the same plate turned over (`given from
+# ../through_plate.cam up=z-`): it reads what this program cut as air before
+# it starts. The origin is the plate's plan centre at the bottom face, so the
+# blank turned over about the origin is the blank — no translation, which is
+# the one thing `given from` refuses to guess.
+#
+# The Clears are unpinned: the subject is what the stock model records of
+# this program, not the pattern.
+units mm
+feed 800
+plunge 300
+# rapid_z stood at 5 for four days with the top at z=12 — a rapid seven
+# millimetres into the plate the entry restriction could not see, because the
+# bore's own material does not outlive its op. The header law (Phase 50 slice
+# 1) refuses it now; 17 is five above the top, the house's usual margin.
+rapid_z 17
+clearance_z 25
+spindle 3000
+
+stock Box(w=90, l=50, h=12, x=-45, y=-25, z=12)
+
+tool T5 Endmill(dia=8.0)
+
+feature Left CylinderBore(dia=14.0, extent=12.0, x=-25.0, y=6.0)
+feature Mid CylinderBore(dia=14.0, extent=12.0, x=0.0, y=6.0)
+feature Short CylinderBore(dia=14.0, extent=11.0, x=25.0, y=6.0)
+
+run Clear(tool=T5, profile=Left, stepover=4.0)
+run Side(tool=T5, surface=Left, stepover=5.0)
+run Clear(tool=T5, profile=Mid, stepover=4.0)
+run Side(tool=T5, surface=Mid, stepover=5.0)
+run Clear(tool=T5, profile=Short, stepover=4.0)
+run Side(tool=T5, surface=Short, stepover=5.0)

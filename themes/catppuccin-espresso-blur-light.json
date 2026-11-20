@@ -1,0 +1,60 @@
+{
+  "$schema": "https://zed.dev/schema/themes/v0.2.0.json",
+  "name": "Catppuccin Blur",
+  "author": "jenslys (the Zed extension's chrome, verbatim); the nacs object by the nacs project \u2014 Macchiato's accents on Espresso's black, five mixed toward the paper",
+  "themes": [
+    {
+      "name": "Catppuccin Espresso (Blur) [Light]",
+      "appearance": "dark",
+      "style": {
+        "background.appearance": "blurred",
+        "background": "#00000099",
+        "panel.background": "#00000000",
+        "border": "#363a4f15",
+        "border.focused": "#b7bdf8",
+        "text": "#cad3f5",
+        "element.background": "#181926",
+        "element.hover": "#363a4f",
+        "element.active": "#00000000",
+        "element.selected": "#363a4f4d",
+        "editor.background": "#00000000",
+        "scrollbar.thumb.background": "#8087a280"
+      },
+      "nacs": {
+        "text.interactive": "#b8c0e0",
+        "text.hover": "#cad3f5",
+        "text.active": "#ffffff",
+        "text.open": "#cad3f5",
+        "element.open": "#0a0a0a90",
+        "role.roughing": "#f5a97f",
+        "role.finishing": "#8aadf4",
+        "role.untagged": "#a5adcb",
+        "rapid": "#939ab7",
+        "wire": "#8087a2",
+        "stock": "#6e738d",
+        "sim.base": "#b8c0e0",
+        "ground": "#000000d7",
+        "map.ground": "#363a4fd7",
+        "select": "#eed49f",
+        "indicator": "#eed49fbe",
+        "refusal": "#ed8796",
+        "fixture": "#ee99a0",
+        "removal": "#7ca470",
+        "forgotten": "#b49494",
+        "violated": "#b88eac",
+        "tool": "#898eba",
+        "family.engagement": "#8bd5ca",
+        "family.deviation": "#f4dbd6",
+        "family.entry": "#c6a0f6",
+        "family.fixture": "#7dc4e4",
+        "family.reach": "#91d7e3",
+        "family.envelope": "#cad3f5",
+        "family.containment": "#a6da95",
+        "family.body_foul": "#f5bde6",
+        "family.field_body_foul": "#b29f77",
+        "family.part_violation": "#f0c6c6",
+        "family.decline": "#b7bdf8"
+      }
+    }
+  ]
+}

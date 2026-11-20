@@ -1,0 +1,27 @@
+# floor_work_offset_ext.cam — an extended register, licensed by its machine
+# (DECISIONS.md "work offsets…", fork 3A). The extended families are menu
+# territory because their spelling is the vendor's — this Fanuc-family
+# machine says `G54.1 P7` where a Haas would say `G154 P7` — so
+# tombstone.machine declares `extended_offsets G54.1P 48` and the register
+# becomes sayable; strip that line and this program REJECTS at validate,
+# naming the key. The program-text token is one word (G54.1P7); the
+# emission is the controller's two-word spelling, split at the family's
+# trailing P.
+machine tombstone.machine
+
+work_offset G54.1P7
+
+units mm
+feed 800
+plunge 300
+rapid_z 5
+clearance_z 25
+spindle 3000
+
+stock Box(w=60, l=60, h=20, x=0, y=0, z=0)
+
+tool T1 Endmill(dia=10.0)
+
+feature Top Plane(z=-0.5)
+
+run End(tool=T1, surface=Top, stepover=6.0)

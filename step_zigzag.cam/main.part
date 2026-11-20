@@ -1,0 +1,28 @@
+# step_zigzag.cam — the path step.cam's own header said a step really wants
+# (Phase 28 slice 3; DECISIONS.md → "Phase 28 slice 3: the patterns…").
+#
+# step.cam cuts its shoulder with loops parallel to EVERY edge, three of which
+# are air. This is the same shoulder with one word added, `pattern=zigzag`:
+# passes parallel to the step's WALL, walked from the open side in — the first
+# pass is a plunge in air, one radius outside the blank, and the wall gets the
+# LAST pass, a stepover wide, never the first as a full slot — then one closing
+# pass along the wall to take the scallops the pass-ends left on it.
+units mm
+feed 800
+plunge 300
+rapid_z 5
+clearance_z 25
+spindle 3000
+
+stock Box(w=100, l=80, h=20, x=0, y=0, z=0)
+
+tool T5 Endmill(dia=10.0)
+
+feature Step ProfilePocket(extent=5.0
+    60 -12
+    112 -12
+    112 92
+    60 92
+)
+
+run Clear(tool=T5, profile=Step, stepover=4.0, pattern=zigzag)

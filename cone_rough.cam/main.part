@@ -1,0 +1,42 @@
+# cone_rough.cam — scallop-mode stock_to_leave roughing on the cone
+# (DECISIONS.md "stock_to_leave corner roll…"). cone_scallop.cam's sharp
+# point run as a ROUGHING pass, and the first sharp-apex carrier: the
+# roughing surface is the nominal flank pushed out a' PLUS an a'-sphere
+# about the apex (the offset of a corner), so the whole CL locus is the
+# nominal locus with the ball radius standing at r_ball + a'.
+#
+# The 0.5mm allowance is a ceiling on TOTAL remaining material including
+# this pass's own cusps (max, not min): scallop=0.2 spends 0.2mm as cusp
+# budget and the remaining 0.3mm is nominal skin. Under stock the scallop
+# grid forks (the corner-roll slice's one grid change): the cap re-grids as
+# a uniform-psi sweep whose chords stay within the flat-scallop chord s, and
+# the cap/flank seam itself becomes a pass — so no pair straddles the seam
+# and every pair prices at or under the scallop by the chord-fixed
+# monotonicity lemma (parse::derive_cusp_height_flat). Hand-checked anchors:
+# pole pass at z = 20 + 3.3 = 23.300 dead on the axis (X50.000), seam pass
+# at z = 20 + 3.3·sin45° = 22.333 with rho = 3.3·cos45° = 2.333 (X52.333).
+#
+# CONTAINED 2026-08-13 (DECISIONS.md "rim-area accounting…", slice 2):
+# the stock used to stop AT this feature's base plane, so the whole
+# surface stood in air and the fixture only ran because there was
+# nothing to hit. The stock now stands 2mm proud of the feature's top
+# (z 22) and T1 roughs the moat before the finish;
+# numbers in the older comments describe the same toolpath, whose
+# motion is unchanged where it touches the surface.
+units mm
+feed 600
+plunge 200
+rapid_z 25
+clearance_z 40
+spindle 4000
+
+stock Box(w=100, l=80, h=47, x=0, y=0, z=22)
+
+tool T1 Endmill(dia=12.0)
+tool T9 Ballmill(dia=6.0)
+
+# Cone centre (base plane) at z=0; base dia=40, height=20 — a 45° flank.
+feature Point Cone(dia=40, height=20, x=50, y=40, z=0)
+
+run Clear(tool=T1, profile=Point, stepover=8.0, stepdown=5.0, stock_to_leave=1)
+run Copy(tool=T9, surface=Point, scallop=0.2, stock_to_leave=0.5)

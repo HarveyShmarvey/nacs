@@ -1,0 +1,44 @@
+# pocket_floor_offset.cam — a pocket's floor finished to size by its own op (Phase 27
+# slice 4; DECISIONS.md → "Phase 27 slice 4: the floor's verb…").
+#
+# `Floor` finishes a declared planar floor to its declared height, and a
+# pocket declares one. So the floor has a verb, and the three verbs never
+# compete because each names a different surface of the same feature:
+#
+#   Clear   the VOLUME   — roughed, leaving 0.5 on every surface it touches
+#   Floor  the FLOOR    — taken to z=-6, standing 0.5 off the walls
+#   Finish  the WALL     — taken to size, full depth
+#
+# There is still ONE allowance. `stock_to_leave=0.5` on the Clear is the
+# radial skin it always was; it is left on the FLOOR as well only because the
+# Floor below is there to take it — delete that line and the same Clear cuts
+# its floor to size, as every pocket roughed before this rule still does. The
+# program says which: "(floor: 0.500 left for the Floor op that follows)".
+#
+# The Floor's own stock_to_leave is its stand-off from the walls, so the floor
+# pass does not rub a wall the Finish has yet to take; the post in the middle
+# is an island of the floor exactly as it is of the volume.
+units mm
+feed 800
+plunge 300
+rapid_z 5
+clearance_z 25
+spindle 3000
+
+stock Box(w=100, l=80, h=20, x=0, y=0, z=0)
+
+tool T5 Endmill(dia=10.0)
+
+feature Cavity ProfilePocket(extent=6.0
+    15 15
+    85 15
+    85 65
+    15 65
+)
+
+feature Post CylinderBoss(dia=14, extent=6, x=50, y=40, z=-6)
+
+run Clear(tool=T5, profile=Cavity, stepover=4.0, stock_to_leave=0.5)
+run End(tool=T5, surface=Cavity, stepover=4.0, stock_to_leave=0.5, pattern=offset)
+run Side(tool=T5, surface=Cavity)
+run Side(tool=T5, surface=Post, stepover=6.0)

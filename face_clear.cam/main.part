@@ -1,0 +1,42 @@
+# face_clear.cam — the Clear takes a Face (Phase 61 slice 1; DECISIONS.md →
+# "Phase 61 slice 1: a Clear takes a Plane and a Face…").
+#
+# A Face is a floor whose wall is the stock: the loop is the boundary, every
+# edge of it open, and the Post standing through it is its island, derived
+# from containment — nobody names it. The Clear is the VOLUME verb: it roughs
+# everything above the floor, around the Post, leaving its one allowance on
+# the Post's flank (the Side that follows takes it) and on the FLOOR too,
+# because an End on the same Face follows and takes it (`derive_floor_skin`).
+# Take the End away and the Clear cuts to the floor's z: nothing declares a
+# floor that serves the part, so nothing is left on one.
+#
+# Two levels (`stepdown=3` over the 5.5 above the skinned floor). Both floor ops are unpinned; the
+# Clear is the offset family, the End is spine.
+units mm
+feed 800
+plunge 300
+rapid_z 5
+clearance_z 25
+spindle 3000
+
+stock Box(w=120, l=100, h=20, x=0, y=0, z=0)
+
+tool T5 Endmill(dia=10.0)
+
+feature Floor Face(z=-6
+    loop
+        10 10
+        110 10
+        110 90
+        10 90
+)
+feature Post ProfileBoss(extent=6
+    50 40
+    50 60
+    70 60
+    70 40
+)
+
+run Clear(tool=T5, profile=Floor, stepover=4.0, stepdown=3, stock_to_leave=0.5)
+run End(tool=T5, surface=Floor, stepover=4.0)
+run Side(tool=T5, surface=Post, comp=control)

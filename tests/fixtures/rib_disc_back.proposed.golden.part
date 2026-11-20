@@ -1,0 +1,18 @@
+# Proposed features recognized from rib_disc.step by sidecar/import_step.py
+# (contract v1 -- see sidecar/CONTRACT.md). Review before use:
+# recognition proposes, it does not machine.
+# imported with --up z- (model z- is machine +Z) -- coordinates are post-rotation
+
+# F9: cylindrical, axis +Z, full revolution, material inside (a standing boss), flat top cap F14, clean base at z=-35.0 (CHECKLIST row 2.4)
+# finish the wall with: run Side(tool=..., surface=F9_Boss, stepover=...)  [stepover is the ring spacing up the wall]
+# the tool rides outside at R + r_tool (convex flank; finish_cylinder's mirror)
+feature F9_Boss CylinderBoss(dia=100.0, extent=35.0, x=0.0, y=0.0, z=-35.0)
+
+# F12: cylindrical, axis +Z, full revolution, material outside (a bore), opens upward; bottom opens through -- a drillable through hole (CHECKLIST row 2.3)
+# consume with: run Form(points=[F12_Hole], tool=..., cycle=Simple)  [the bore carries its own extent, measured down from the stock top]
+# through hole -- drill past extent=20.0 by the tip's point length for full-diameter breakthrough
+# or finish the wall with: run Side(tool=..., surface=F12_Hole, stepover=...)
+feature F12_Hole CylinderBore(dia=10.0, extent=20.0, x=-15.0, y=-30.0)
+
+# F14: planar, normal +Z, topmost planar face (CHECKLIST row 1.1)
+feature F14_Top Plane(z=0.0)

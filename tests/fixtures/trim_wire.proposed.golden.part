@@ -1,0 +1,33 @@
+# Proposed features recognized from trim_wire.step by sidecar/import_step.py
+# (contract v1 -- see sidecar/CONTRACT.md). Review before use:
+# recognition proposes, it does not machine.
+
+# F2: through-trim wall loop F2 F4 F5 F3 on part-bottom anchor F1: straight top edges form a closed 3D wire (z 9.0..12.0), walls descend to the part bottom at z=0.0, material inside the loop (CHECKLIST row 2.8)
+# consume with: run Side(tool=..., surface=F2_Trim)  [an Endmill -- the wall is a flank cut; the wire carries its own Z range]
+# extent=12.0 reaches the part bottom below the wire's highest point; where the wire dips,
+# the pass rides below the bottom -- a through trim, nothing below to cut
+# the wire's XY projection is wound CW: material inside, tool outside (the winding convention, DECISIONS.md -> "Row-2.4 side selector")
+# every segment is a straight line (a curved trim edge refuses instead of tessellating), so the
+# comp=control rule for recognized contours does not bind -- either comp mode is legal
+feature F2_Trim ContourBoss(extent=12.0
+    0.0 0.0 9.0
+    0.0 50.0 9.0
+    30.0 50.0 12.0
+    60.0 50.0 9.0
+    60.0 0.0 9.0
+    30.0 0.0 12.0
+)
+
+# F6: through-trim wall loop F6 F7 F9 F8 on part-bottom anchor F1: straight top edges form a closed 3D wire (z 10.0..11.0), walls descend to the part bottom at z=0.0, material outside the loop (CHECKLIST row 2.7)
+# consume with: run Side(tool=..., surface=F6_Trim)  [an Endmill -- the wall is a flank cut; the wire carries its own Z range]
+# extent=11.0 reaches the part bottom below the wire's highest point; where the wire dips,
+# the pass rides below the bottom -- a through trim, nothing below to cut
+# the wire's XY projection is wound CCW: material outside, tool inside (the winding convention, DECISIONS.md -> "Row-2.4 side selector")
+# every segment is a straight line (a curved trim edge refuses instead of tessellating), so the
+# comp=control rule for recognized contours does not bind -- either comp mode is legal
+feature F6_Trim ContourPocket(extent=11.0
+    10.0 14.0 10.0
+    20.0 14.0 11.0
+    20.0 26.0 11.0
+    10.0 26.0 10.0
+)

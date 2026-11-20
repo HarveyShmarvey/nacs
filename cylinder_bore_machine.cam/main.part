@@ -1,0 +1,26 @@
+# cylinder_bore_machine.cam — the K1 acceptance fixture (DECISIONS.md "K1, the
+# machine…", fork 2A): cylinder_bore.cam's exact-flank bore finishing run on a
+# DECLARED machine. fanuc.machine says `spindle_word integer`, so the
+# tool-change line reads `M03 S3000` and the mid-run speed re-issue reads
+# `S2400`, where the undeclared twin (this file minus its `machine` line) says
+# `S3000.000`/`S2400.000` — and every other byte of the program is identical
+# (the twin test in tests/check_tests.rs pins exactly that). The second run
+# overrides `spindle` so BOTH spindle-word sites — the tool-change block and
+# the bare re-issue — are exercised under the declared format.
+machine fanuc.machine
+
+units mm
+feed 800
+plunge 300
+rapid_z 5
+clearance_z 25
+spindle 3000
+
+stock Box(w=100, l=100, h=20, x=0, y=0, z=0)
+
+tool T5 Endmill(dia=10.0)
+
+feature Bore CylinderBore(dia=40.0, extent=12.0, x=50.0, y=50.0)
+
+run Side(tool=T5, surface=Bore, stepover=5.0)
+run Side(tool=T5, surface=Bore, stepover=5.0, spindle=2400)

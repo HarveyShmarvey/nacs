@@ -1,0 +1,21 @@
+# spline_funnel_shank.cam: the wide-shank tool-body fixture. The same funnel
+# as spline_funnel.cam, finished by the same 6 mm ball, but the tool line
+# declares the body above the flutes: 3 mm of flutes on a 20 mm unrelieved bar.
+# The body-foul advisory should see the bar buried in the wall; the program
+# itself must not change (tests/check_tests.rs).
+units mm
+feed 600
+plunge 200
+rapid_z 5
+clearance_z 40
+spindle 4000
+
+stock Box(w=100, l=80, h=40, x=0, y=0, z=0)
+
+tool T10 Ballmill(dia=6.0, flute_len=3.0, shank_dia=20.0, stickout=30.0, flute_count=2)
+
+# Mouth circle of radius 13 in the stock-top plane, funneling down the
+# freeform meridian to the radius-5 tip at depth 18.
+feature Vortex SplineRevolveFunnel(file="meridian.spline", x=50, y=40)
+
+run Copy(tool=T10, surface=Vortex, stepover=3.0)

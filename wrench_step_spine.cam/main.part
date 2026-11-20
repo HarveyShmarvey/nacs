@@ -1,0 +1,36 @@
+# wrench_step_spine.cam — wrench_step_offset.cam with `pattern=spine` on both faces (Phase
+# 30; DECISIONS.md → "Phase 30 slice 2: mow…", its name until Phase 35). The headland case spine was aimed
+# at: seven open edges the rows run off, and ONE closed arc against the raised
+# ring, which gets one shore pass its own length — not a lap of the whole
+# outline.
+#
+# wrench_step_offset.cam — the wrench at TWO Z levels, so the part has a closed edge.
+#
+# wrench_offset.cam is a pure lawn-mowing instance: every edge of its face is open, the
+# tool may run off all of them, and offset / zigzag / oneway are being compared
+# on a part that cannot tell them apart.
+#
+# Here the BOX END stands proud. The ring (centre 28,30 — outer r20, opening r12)
+# is finished at z=3. Everything else — shank and open end — is finished at z=0,
+# 3mm lower. The lower face's boundary is then MIXED:
+#
+#     the shank's two long edges, and the open end's jaw outline   OPEN
+#     the arc where it butts the raised ring (46.735,37) -> (48,30) -> (46.735,23)
+#                                                                  CLOSED
+#
+# One closed edge out of eight. That is the headland case: the tool may run off
+# seven sides into scrap and must stay off the eighth.
+units mm
+feed 800
+plunge 300
+rapid_z 5
+clearance_z 25
+spindle 3000
+
+# The bar, 4mm proud of the raised ring's top.
+stock Box(w=262, l=60, h=12, x=0, y=0, z=4)
+
+tool T5 Endmill(dia=10.0)
+
+run End(tool=T5, surface=BoxTop, stepover=5.0, pattern=spine)
+run End(tool=T5, surface=Deck, stepover=5.0, pattern=spine)

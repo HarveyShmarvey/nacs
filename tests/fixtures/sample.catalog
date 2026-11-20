@@ -1,0 +1,101 @@
+# sample.catalog — a small shop wall for `nacs --assembly-report`.
+#
+# The grammar is the .patch reader's, grown record openers: `cutter <name>` /
+# `holder <name>` open a record, keyword-value lines follow, the record closes
+# at the next opener or end of file. `#` comments anywhere. All dimensions are
+# ABSOLUTE mm — a catalog states real hardware. `modulus` is GPa and
+# `compliance` is mm per kN at the nose; neither is a length, neither scales.
+#
+# This file is a SEARCH SPACE, never a gauging source: the report proposes an
+# assembly, and the chosen tool's actuals still arrive by declaration in the
+# .cam program.
+#
+# Two optional fields carry the V3 remainders: `type` on a cutter names which
+# feeds-table row it looks up (default Endmill, which is what the stiffness
+# model actually describes), and `grip lo..hi` on a holder states the shank
+# diameters it can really hold.
+#
+# `flute_count` (V4) is the last field between a record and a COMPLETE tool
+# line: a count, not a length, and the one thing K3's chip-load identity
+# (F = RPM x z x f_z) cannot be evaluated without. It is optional like the
+# rest — a record without it still declares, the declaration just cannot ask
+# for `feed=derive`.
+
+cutter 1/8-carbide
+dia 3.175
+flute_len 12.7
+shank_dia 3.175
+overall_len 38.1
+modulus 600
+flute_count 3
+cost 18
+
+cutter 1/4-carbide
+dia 6.35
+flute_len 19.05
+shank_dia 6.35
+overall_len 63.5
+modulus 600
+flute_count 4
+cost 26
+
+cutter 3/8-carbide
+dia 9.525
+flute_len 25.4
+shank_dia 9.525
+overall_len 76.2
+modulus 600
+flute_count 4
+cost 38
+
+# A necked reach tool: the relieved section buys clearance and costs bending.
+cutter 1/4-reach
+dia 6.35
+flute_len 12.7
+neck_dia 5.8
+neck_len 25.4
+shank_dia 6.35
+overall_len 76.2
+modulus 600
+flute_count 3
+cost 41
+
+# A fat, stiff standard holder — the nose that never enters a pocket.
+holder er32-standard
+nose_dia 40.0
+nose_len 22.0
+body_dia 63.0
+gauge_len 60.0
+compliance 2.0
+cost 120
+
+# The slim extended nose this item exists to find: less nominal stiffness,
+# but it follows the tool into an opening and shortens stickout.
+holder slim-nose
+nose_dia 14.0
+nose_len 45.0
+body_dia 50.0
+gauge_len 90.0
+compliance 3.5
+# A slim extended nose is built around small collets: it reaches, but it
+# cannot hold a 3/8 shank. `grip` is optional — er32-standard above declares
+# none, so it still considers every cutter exactly as it always has.
+grip 3.0..8.0
+cost 260
+
+# The wall's ball, and the reason it is here: a curved cavity is finished by a
+# ball or not at all (`validate`: "Finish operation requires a Ballmill tool or
+# a custom tool profile"), so a shop wall with no ball on it cannot answer a
+# funnel at all. `type` is the field V3 gave the record; the shipped feeds
+# table has no Ballmill row, so this cutter's rows report `rpm n/a` — the
+# honest omission, per row, exactly where a reader can see which number is
+# missing.
+cutter 1/4-ball
+dia 6.35
+type Ballmill
+flute_len 12.7
+shank_dia 6.35
+overall_len 63.5
+modulus 600
+flute_count 2
+cost 33
