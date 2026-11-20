@@ -35,7 +35,10 @@ if [ ! -x sidecar/.venv/bin/python ]; then
         uv venv --python 3.11 --seed sidecar/.venv
         uv pip install --python sidecar/.venv/bin/python -r sidecar/requirements.txt
     else
-        echo "setup: no python3.11 and no uv — the sidecar is not installed, and the tests that import a STEP file will fail" >&2
+        # Fail here: carrying on would end in "done" with no sidecar, and the
+        # session-start hook would report a clean setup.
+        echo "setup: no python3.11 and no uv, so the sidecar cannot be installed and the tests that import a STEP file would fail. Install one of them and run this again." >&2
+        exit 1
     fi
 fi
 # The CAD library loads desktop libraries; say so here, not in a failed test.
