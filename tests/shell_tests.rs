@@ -161,13 +161,15 @@ fn settle(h: &mut Harness<'static, ViewApp>) {
     // while it runs, which the harness reads as immediate; a settle that
     // meets one waits for it (Phase 53 slice 1: plate's Clear made the
     // table slower than 64 steps) instead of calling the window unsettled.
-    for _ in 0..200 {
+    // A minute, because an import starts the sidecar's Python, and on a
+    // cold CI runner that alone has taken more than ten seconds.
+    for _ in 0..1200 {
         if h.try_run().is_ok() {
             return;
         }
         std::thread::sleep(std::time::Duration::from_millis(50));
     }
-    panic!("the window did not settle in ten seconds");
+    panic!("the window did not settle in a minute");
 }
 
 /// The FIRST node whose label STARTS with `prefix` — an Outline row's text
