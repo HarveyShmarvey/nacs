@@ -3111,10 +3111,8 @@ pub fn reference_options(p: &Part, key: &str) -> Option<Vec<String>> {
     }
 }
 
-/// Whether the second part file declares features — the seventh write's
-/// refusal (DESIGN.md §1): with feature declarations in `geometry.part`,
-/// a created feature appended to `main.part` would land beside a
-/// different home, and the window does not pick files for the author.
+/// Whether the second part file declares features. A project that keeps
+/// features in `geometry.part` gets its new ones there too.
 pub fn second_file_declares_features(p: &crate::parse::Part) -> bool {
     p.feature_lines.iter().any(|(_, file, _, _)| *file == 1)
 }

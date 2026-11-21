@@ -4225,17 +4225,14 @@ impl ViewApp {
             self.edit_note = Some("Not written — that feature is already in the project".to_string());
             return;
         }
-        // The same question create faced, the same answer (DESIGN.md §1,
-        // amendment 2026-09-03): with the feature declarations in
-        // geometry.part, an append to main.part lands beside a different
-        // home, and the window does not pick files for the author.
-        if view::second_file_declares_features(&self.part) {
-            self.edit_note = Some(
-                "Not written — geometry.part carries the feature declarations, so the destination is ambiguous; declare it there by hand".to_string(),
-            );
+        let file = self.feature_home();
+        // A rejection is a line of main.part; taking it out and writing
+        // the feature to geometry.part would be two writes and two undos.
+        if file != 0 && !rejected_as.is_empty() {
+            self.edit_note = Some(format!("Not written — {} is rejected: take the rejection back first (Reject again), then accept", row.id));
             return;
         }
-        let Some(path) = self.part.sources.first().cloned() else {
+        let Some(path) = self.part.sources.get(file).cloned() else {
             self.edit_note = Some("Not written — this project has no file on disk to append to".to_string());
             return;
         };
@@ -4247,6 +4244,7 @@ impl ViewApp {
                 let ids: Vec<&str> = rejected_as.iter().map(String::as_str).collect();
                 let cleared = if ids.is_empty() { before.clone() } else { crate::review::without_rejection(&before, &ids).unwrap_or_else(|_| before.clone()) };
                 let after = view::append_statement(&cleared, &statement);
+                self.reparse_with(file, &after)?;
                 crate::theme::write_atomically(&path, &after)?;
                 Ok((before, after))
             });
@@ -4361,11 +4359,8 @@ impl ViewApp {
             self.edit_note = Some("Not written — nothing to accept: every proposal is in the project, rejected, or repeats one".to_string());
             return;
         }
-        if view::second_file_declares_features(&self.part) {
-            self.edit_note = Some("Not written — geometry.part carries the feature declarations, so the destination is ambiguous; declare them there by hand".to_string());
-            return;
-        }
-        let Some(path) = self.part.sources.first().cloned() else {
+        let file = self.feature_home();
+        let Some(path) = self.part.sources.get(file).cloned() else {
             self.edit_note = Some("Not written — this project has no file on disk to append to".to_string());
             return;
         };
@@ -4379,7 +4374,7 @@ impl ViewApp {
                 for s in &statements {
                     after = view::append_statement(&after, s);
                 }
-                self.reparse_with(0, &after)?;
+                self.reparse_with(file, &after)?;
                 crate::theme::write_atomically(&path, &after)?;
                 Ok((before, after))
             });
@@ -4889,6 +4884,12 @@ impl ViewApp {
     /// or a meridian — handed to the parser as part text, it would refuse
     /// every write on that project (found while building the seventh
     /// write, which reads the same seam).
+    /// Which part file a new feature is written to: geometry.part when the
+    /// project already declares features there, main.part otherwise.
+    fn feature_home(&self) -> usize {
+        usize::from(view::second_file_declares_features(&self.part) && self.part.sources.len() > 1)
+    }
+
     fn reparse_with(&self, file: usize, after: &str) -> Result<(), String> {
         let (main, geom) = if file == 0 {
             let geom_src = self
@@ -5410,12 +5411,10 @@ impl ViewApp {
     /// The seventh write (DESIGN.md §1): the form's answers through the
     /// wizard's one home, the whole project re-parsed in memory with the
     /// statement appended, then the accept path — `append_statement`, the
-    /// atomic write, the undo stack, the reload. Two refusals are the
-    /// window's own because the parser cannot make them loudly: a name
+    /// atomic write, the undo stack, the reload. One refusal is the
+    /// window's own because the parser cannot make it loudly: a name
     /// the project already declares (the name-keyed map would silently
-    /// shadow one of the two), and a project whose `geometry.part`
-    /// carries the feature declarations (the destination is ambiguous,
-    /// and the window does not pick files).
+    /// shadow one of the two). A feature is written to `feature_home`.
     fn create_feature(&mut self) {
         let Some(form) = &self.new_form else { return };
         if let NewHead::Project(k) = form.head {
@@ -5469,12 +5468,6 @@ impl ViewApp {
                     ));
                     return;
                 }
-                if view::second_file_declares_features(&self.part) {
-                    self.edit_note = Some(
-                        "Not written — geometry.part carries the feature declarations, so the destination is ambiguous; declare it there by hand".to_string(),
-                    );
-                    return;
-                }
                 crate::template::feature_statement(spec.variant, &name, &answers)
             }
             // The eighth write: a duplicate number is the parser's own loud
@@ -5490,7 +5483,10 @@ impl ViewApp {
                 .ok_or_else(|| "no skeleton picked".to_string())
                 .and_then(|s| crate::template::fill_skeleton(s, &answers)),
         };
-        let Some(path) = self.part.sources.first().cloned() else {
+        // A feature goes where the project keeps its features; a tool or a
+        // run line is main.part's.
+        let file = if matches!(form.head, NewHead::Feature(_)) { self.feature_home() } else { 0 };
+        let Some(path) = self.part.sources.get(file).cloned() else {
             self.edit_note = Some("Not written — this project has no file on disk to append to".to_string());
             return;
         };
@@ -5500,18 +5496,8 @@ impl ViewApp {
                 Some(at) => view::insert_run_line_at(&before, &self.part.op_lines, at, statement),
                 None => view::append_statement(&before, statement),
             };
-            // The one parser, in memory, on the whole project as it
-            // would be — geometry.part by NAME, never whatever file
-            // happens to sit second in the source list.
-            let geom = self
-                .part
-                .sources
-                .get(1)
-                .filter(|g| g.file_name().is_some_and(|n| n == "geometry.part"))
-                .and_then(|g| std::fs::read_to_string(g).ok());
-            let base = std::path::Path::new(&self.project_path);
-            let base = if base.is_dir() { Some(base) } else { base.parent() };
-            crate::parse::parse_project_with_base(&after, geom.as_deref(), base)?;
+            // The one parser, in memory, on the whole project as it would be.
+            self.reparse_with(file, &after)?;
             crate::theme::write_atomically(&path, &after)?;
             Ok((before, after))
         };
