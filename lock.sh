@@ -1,6 +1,7 @@
 #!/bin/sh
 # lock.sh — the merge gate: both feature configs, the headless shell tests, a smoke run.
-# Run once before a PR goes up, not after every edit. Takes a while; that is the point of keeping it out of the loop.
+# CI runs these same legs on every push, in parallel, on Linux and Windows; that run is the gate.
+# Run this by hand only when there is no CI to ask (offline, or before the first push of a new repo).
 set -eu
 export PATH="$HOME/.cargo/bin:$PATH"
 cd "$(dirname "$0")"
