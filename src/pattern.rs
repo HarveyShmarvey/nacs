@@ -125,9 +125,8 @@ pub(crate) fn spans(loops: &[Vec<Pt>], v: f64) -> Vec<(f64, f64)> {
 
 /// The edge of loop `l` that `q` lies on, if it lies on one.
 pub(crate) fn locate(l: &[Pt], q: Pt) -> Option<usize> {
-    (0..l.len())
-        .map(|i| (dist_to_polygon(&[l[i], l[(i + 1) % l.len()]], q.x, q.y), i))
-        .min_by(|x, y| x.0.partial_cmp(&y.0).unwrap())
+    // A point at a vertex lies on two edges: the first from the loop's start.
+    crate::tie::first_least((0..l.len()).map(|i| (dist_to_polygon(&[l[i], l[(i + 1) % l.len()]], q.x, q.y), i)), |e| e.0)
         .filter(|(d, _)| *d < ON_LOOP)
         .map(|(_, i)| i)
 }
@@ -153,7 +152,8 @@ pub(crate) fn along_boundary(l: &[Pt], a: Pt, b: Pt) -> Option<(f64, Vec<Pt>)> {
     let fwd: Vec<Pt> = (1..=(ib + n - ia) % n).map(|k| l[(ia + k) % n]).collect();
     let back: Vec<Pt> = (0..(ia + n - ib) % n).map(|k| l[(ia + n - k) % n]).collect();
     let (f, r) = (total(&fwd), total(&back));
-    Some(if f <= r { (f, fwd) } else { (r, back) })
+    // Two ways round of one length: the loop's own direction.
+    Some(if crate::tie::within(f, r) { (f, fwd) } else { (r, back) })
 }
 
 /// A pass shorter than this is not a pass: two crossings of one scan line a
@@ -233,9 +233,10 @@ pub fn plan(zigzag: bool, angle_deg: f64, ccw: &[Vec<Pt>], cw: &[Vec<Pt>], stepo
             let joined = match (&mut open, zigzag) {
                 (Some(chain), true) => {
                     let from = *chain.last().unwrap();
-                    let link = loops.iter().filter_map(|l| along_boundary(l, from, a)).min_by(|x, y| x.0.partial_cmp(&y.0).unwrap());
+                    // Tied boundaries: the first loop as listed.
+                    let link = crate::tie::first_least(loops.iter().filter_map(|l| along_boundary(l, from, a)), |x| x.0);
                     match link {
-                        Some((len, via)) if len <= LINK_STEPS * stepover.max(step) => {
+                        Some((len, via)) if crate::tie::within(len, LINK_STEPS * stepover.max(step)) => {
                             chain.extend(via);
                             chain.push(a);
                             chain.push(b);

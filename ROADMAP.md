@@ -682,9 +682,11 @@ One page. What is built, what is next, and the debts we know about.
    each platform and an `agree` job that compares every fixture's output. The
    engine's math goes through `libm`, printed numbers are snapped before they
    are cut to their decimals, and Stop kills a run's whole process group on
-   Unix. Not done: the close calls inside the engine (which vertex starts a
-   loop, whether a link takes the arc) are the same on every platform now but
-   are still decided by a last bit, not by a written rule.
+   Unix. The close calls inside the engine (which vertex starts a loop,
+   whether a link takes the arc) were decided by a last bit; since 2026-11-20
+   they follow one written rule, `src/tie.rs`: candidates within 1e-6 mm are
+   tied, the first in a stated order wins, and a loop starts at the tied point
+   nearest the tool.
 
 7. **The agent's seat (2026-11-15).** A session on any platform starts ready
    to work: `setup.sh` prepares a Linux box (a cloud session runs it at

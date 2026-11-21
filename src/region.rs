@@ -295,11 +295,11 @@ impl Region {
         // hole), and the offsetter resolves exactly that. The largest loop is
         // the boundary; what it closes over is air the family may cross.
         let whole = || {
-            crate::offset::offset_closed_polyline_verts(&self.outer, -tool_dia)
-                .iter()
-                .map(|l| crate::offset::flatten_loop(l))
-                .filter(|l| l.len() >= 3)
-                .max_by(|a, b| loop_area(a).partial_cmp(&loop_area(b)).unwrap())
+            // Loops of one area: the first the offsetter gave.
+            crate::tie::first_greatest(
+                crate::offset::offset_closed_polyline_verts(&self.outer, -tool_dia).iter().map(|l| crate::offset::flatten_loop(l)).filter(|l| l.len() >= 3),
+                |l| loop_area(l),
+            )
         };
         if self.open_edges() == n {
             return whole().map(Swath::plain);

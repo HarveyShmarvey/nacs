@@ -1003,11 +1003,8 @@ pub fn derive_chamfer_runs(ec: &EdgeChamfer, path: &[crate::offset::OffsetVertex
     }
     let one_run = bounds.len() == 1;
     let nearest = |q: Pt| -> usize {
-        path.iter()
-            .enumerate()
-            .map(|(k, v)| (k, (v.x - q.x).phypot(v.y - q.y)))
-            .min_by(|a, b| a.1.partial_cmp(&b.1).expect("finite").then(a.0.cmp(&b.0)))
-            .map_or(0, |(k, _)| k)
+        // Tied vertices: the first from the path's start.
+        crate::tie::first_least(path.iter().enumerate().map(|(k, v)| (k, (v.x - q.x).phypot(v.y - q.y))), |c| c.1).map_or(0, |(k, _)| k)
     };
     // The indices from `from` to `to` round a ring of `len`, inclusive; a
     // single run goes all the way round and closes on its own start.

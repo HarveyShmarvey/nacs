@@ -246,14 +246,14 @@ pub fn clip_to(subject: &[Pt], window: &[Pt]) -> Vec<Vec<Pt>> {
         return Vec::new();
     }
     let result = closed_ccw(subject).boolean(&closed_ccw(window), BooleanOp::And);
-    let mut pieces: Vec<(f64, Vec<Pt>)> = result
+    let pieces: Vec<(f64, Vec<Pt>)> = result
         .pos_plines
         .iter()
         .map(|r| (r.pline.area().abs(), r.pline.vertex_data.iter().map(|v| Pt { x: v.x, y: v.y }).collect::<Vec<Pt>>()))
         .filter(|(_, pts)| pts.len() >= 3)
         .collect();
-    pieces.sort_by(|a, b| b.0.partial_cmp(&a.0).unwrap());
-    pieces.into_iter().map(|(_, pts)| crate::ops::clear::make_ccw(&pts)).collect()
+    // Pieces of one area: in the order the boolean gave them.
+    crate::tie::greatest_first(pieces, |p| p.0).into_iter().map(|(_, pts)| crate::ops::clear::make_ccw(&pts)).collect()
 }
 
 /// Two overlapping closed polygons as one — the crate's boolean, the other way
@@ -291,13 +291,13 @@ pub fn subtract(a: &[Pt], b: &[Pt]) -> Option<Vec<Pt>> {
     if !result.neg_plines.is_empty() {
         return None;
     }
-    result
+    let pieces = result
         .pos_plines
         .iter()
         .map(|r| (r.pline.area().abs(), r.pline.vertex_data.iter().map(|v| Pt { x: v.x, y: v.y }).collect::<Vec<Pt>>()))
-        .filter(|(_, pts)| pts.len() >= 3)
-        .max_by(|x, y| x.0.partial_cmp(&y.0).unwrap())
-        .map(|(_, pts)| crate::ops::clear::make_ccw(&pts))
+        .filter(|(_, pts)| pts.len() >= 3);
+    // Pieces of one area: the first the boolean gave.
+    crate::tie::first_greatest(pieces, |p| p.0).map(|(_, pts)| crate::ops::clear::make_ccw(&pts))
 }
 
 /// One closed polygon with another cut out of it — EVERY piece left, CCW,
@@ -314,14 +314,14 @@ pub fn subtract_all(a: &[Pt], b: &[Pt]) -> Vec<Vec<Pt>> {
         pl
     };
     let result = closed(a).boolean(&closed(b), BooleanOp::Not);
-    let mut pieces: Vec<(f64, Vec<Pt>)> = result
+    let pieces: Vec<(f64, Vec<Pt>)> = result
         .pos_plines
         .iter()
         .map(|r| (r.pline.area().abs(), r.pline.vertex_data.iter().map(|v| Pt { x: v.x, y: v.y }).collect::<Vec<Pt>>()))
         .filter(|(_, pts)| pts.len() >= 3)
         .collect();
-    pieces.sort_by(|x, y| y.0.partial_cmp(&x.0).unwrap());
-    pieces.into_iter().map(|(_, pts)| crate::ops::clear::make_ccw(&pts)).collect()
+    // Pieces of one area: in the order the boolean gave them.
+    crate::tie::greatest_first(pieces, |p| p.0).into_iter().map(|(_, pts)| crate::ops::clear::make_ccw(&pts)).collect()
 }
 
 /// The whole family, OUTERMOST FIRST: levels from `d0` inward in `stepover`

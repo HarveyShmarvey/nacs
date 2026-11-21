@@ -346,7 +346,8 @@ fn straight(allowed: &[Vec<Pt>], a: Pt, b: Pt) -> bool {
 fn link(allowed: &[Vec<Pt>], a: Pt, b: Pt) -> Option<(f64, Vec<Pt>)> {
     let across = straight(allowed, a, b).then(|| (len(a, b), Vec::new()));
     let round = allowed.iter().filter_map(|l| along(l, a, b)).map(|via| (path_len(&[&[a], &via[..], &[b]].concat()), via));
-    across.into_iter().chain(round).min_by(|x, y| x.0.partial_cmp(&y.0).unwrap())
+    // Tied ways: straight across, then the boundaries as listed.
+    crate::tie::first_least(across.into_iter().chain(round), |x| x.0)
 }
 
 /// The stretches of the allowed boundary that run ALONG something standing, in
@@ -554,13 +555,15 @@ fn polylines(
         let start_of = |sh: &Vec<Pt>, from: Option<Pt>| -> (usize, f64) {
             let closed = sh.len() > 2 && len(sh[0], *sh.last().unwrap()) < ON_LOOP;
             match (closed, from) {
-                (true, Some(f)) => (0..sh.len() - 1).map(|i| (i, len(f, sh[i]))).min_by(|x, y| x.1.partial_cmp(&y.1).unwrap()).unwrap(),
-                (false, Some(f)) if either_way && len(f, *sh.last().unwrap()) < len(f, sh[0]) => (usize::MAX, len(f, *sh.last().unwrap())),
+                // Tied vertices: the first from the pass's own start.
+                (true, Some(f)) => crate::tie::first_least((0..sh.len() - 1).map(|i| (i, len(f, sh[i]))), |x| x.1).unwrap(),
+                (false, Some(f)) if either_way && crate::tie::clearly_less(len(f, *sh.last().unwrap()), len(f, sh[0])) => (usize::MAX, len(f, *sh.last().unwrap())),
                 (_, Some(f)) => (0, len(f, sh[0])),
                 _ => (0, 0.0),
             }
         };
-        let (i, (k, _)) = set.iter().enumerate().map(|(i, sh)| (i, start_of(sh, from))).min_by(|x, y| x.1 .1.partial_cmp(&y.1 .1).unwrap()).unwrap();
+        // Tied passes: the first as the set lists them.
+        let (i, (k, _)) = crate::tie::first_least(set.iter().enumerate().map(|(i, sh)| (i, start_of(sh, from))), |x| x.1 .1).unwrap();
         let mut sh = set.remove(i);
         if k == usize::MAX {
             sh.reverse();
@@ -569,7 +572,7 @@ fn polylines(
             sh.rotate_left(k);
             sh.push(sh[0]);
         }
-        let joined = from.and_then(|f| link(allowed, f, sh[0])).filter(|(d, _)| *d <= ask.lift_cost);
+        let joined = from.and_then(|f| link(allowed, f, sh[0])).filter(|(d, _)| crate::tie::within(*d, ask.lift_cost));
         // Under a ceiling a link that would exceed it is not a link (Phase
         // 62 slice 1): the pass is lifted to instead.
         let joined = match joined {
@@ -641,7 +644,8 @@ pub fn rails(ask: &Ask) -> Vec<Vec<Pt>> {
                 // in opposite directions, across a dead end's tip included,
                 // while a wide region's own corner, just round the bend, runs
                 // at right angles and is nobody's partner.
-                let partner = segs
+                // Tied partners: the first segment as listed.
+                let facing_points = segs
                     .iter()
                     .filter_map(|(_, _, c, d)| {
                         let (ex, ey) = (d.x - c.x, d.y - c.y);
@@ -649,8 +653,8 @@ pub fn rails(ask: &Ask) -> Vec<Vec<Pt>> {
                         let facing = (ex * tx + ey * ty) / seg.sqrt() <= -RAIL_OPPOSED;
                         let tt = (((q.x - c.x) * ex + (q.y - c.y) * ey) / seg).clamp(0.0, 1.0);
                         facing.then_some(Pt { x: c.x + ex * tt, y: c.y + ey * tt })
-                    })
-                    .min_by(|x, y| len(q, *x).partial_cmp(&len(q, *y)).unwrap());
+                    });
+                let partner = crate::tie::first_least(facing_points, |x| len(q, *x));
                 let centre = partner.filter(|p| len(q, *p) <= reach).map(|p| Pt { x: (q.x + p.x) / 2.0, y: (q.y + p.y) / 2.0 });
                 let centre = centre.filter(|c| inside(allowed, *c) && !kept.iter().any(|rl| dist_to_polygon(rl, c.x, c.y) < RAIL_SAME));
                 match centre {
@@ -755,16 +759,24 @@ fn walk(ask: &Ask, frame: Frame, allowed: &[Vec<Pt>], rails: Vec<Vec<Pt>>, strok
                 }
                 for flip in [false, true] {
                     if let Some((d, via)) = link(allowed, from, ends(s, flip).0) {
-                        if d <= ask.lift_cost.min(LINK_STEPS * ask.stepover) {
+                        if crate::tie::within(d, ask.lift_cost.min(LINK_STEPS * ask.stepover)) {
                             cands.push((d, i, flip, via));
                         }
                     }
                 }
             }
         }
-        cands.sort_by(|x, y| x.0.partial_cmp(&y.0).unwrap());
+        // The shortest link that holds. Tied links: the first as gathered,
+        // which is stroke order and each stroke's own direction first.
         let had = !cands.is_empty();
-        let best = cands.into_iter().find(|(_, i, flip, via)| holds(&chains, here.expect("a candidate link has a chain in hand"), via, ends(&left[*i], *flip).0));
+        let mut best = None;
+        while let Some(k) = crate::tie::first_least(0..cands.len(), |k| cands[*k].0) {
+            let c = cands.remove(k);
+            if holds(&chains, here.expect("a candidate link has a chain in hand"), &c.3, ends(&left[c.1], c.2).0) {
+                best = Some(c);
+                break;
+            }
+        }
         let kind = if first_row { FIRST } else { ROWS };
         match best {
             Some((_, i, flip, via)) => {
@@ -999,7 +1011,7 @@ fn par_map<T: Send, F: Fn(usize) -> T + Sync>(n: usize, f: F) -> Vec<T> {
 pub fn plan(ask: &Ask) -> Option<Plan> {
     let (rail, shore) = (rails(ask), shores(ask));
     let cover = Cover::of(&[rail.clone(), shore.clone()].concat(), ask.r);
-    let cheaper = |p: &Plan, b: &Option<Plan>| b.as_ref().is_none_or(|b| p.cost < b.cost - 1e-6);
+    let cheaper = |p: &Plan, b: &Option<Plan>| b.as_ref().is_none_or(|b| crate::tie::clearly_less(p.cost, b.cost));
     // The single combs: every direction, every phase, both ways — or the
     // one direction the person set.
     let dirs = match ask.angle {
@@ -1020,7 +1032,7 @@ pub fn plan(ask: &Ask) -> Option<Plan> {
         let mut single: Option<(Plan, (f64, bool))> = None;
         for p in ps {
             if let Some(pl) = planned.next().expect("one plan per candidate") {
-                if single.as_ref().is_none_or(|(b, _)| pl.cost < b.cost - 1e-6) {
+                if single.as_ref().is_none_or(|(b, _)| crate::tie::clearly_less(pl.cost, b.cost)) {
                     single = Some((pl, *p));
                 }
             }
@@ -1108,6 +1120,11 @@ pub fn directions(floor: &[Vec<Pt>], tool_dia: f64) -> Vec<f64> {
         }
     }
     let mut ranked: Vec<usize> = (0..180).filter(|d| *d != 0 && *d != 90 && bins[*d] > 0.0).collect();
-    ranked.sort_by(|a, b| bins[*b].partial_cmp(&bins[*a]).unwrap());
-    [0.0, 90.0].into_iter().chain(ranked.into_iter().take(3).map(|d| d as f64)).collect()
+    // The three longest. Tied directions: the smaller angle.
+    let mut top: Vec<usize> = Vec::new();
+    while top.len() < 3 {
+        let Some(k) = crate::tie::first_greatest(0..ranked.len(), |k| bins[ranked[*k]]) else { break };
+        top.push(ranked.remove(k));
+    }
+    [0.0, 90.0].into_iter().chain(top.into_iter().map(|d| d as f64)).collect()
 }
