@@ -726,10 +726,8 @@ fn finish_profile_chamfer_runs(
                 op.feature_name, op.tool_num, why
             ))?;
             let q = runs[0].edge[0];
-            let k = b.iter().enumerate()
-                .map(|(k, v)| (k, (v.x - q.x).phypot(v.y - q.y)))
-                .min_by(|a, c| a.1.partial_cmp(&c.1).expect("finite").then(a.0.cmp(&c.0)))
-                .map_or(0, |(k, _)| k);
+            // Tied vertices: the first from the path's start.
+            let k = crate::tie::first_least(b.iter().enumerate().map(|(k, v)| (k, (v.x - q.x).phypot(v.y - q.y))), |c| c.1).map_or(0, |(k, _)| k);
             b.rotate_left(k);
             bare = run_way(op, b, true);
             &bare
@@ -1414,11 +1412,8 @@ fn turned(op: &Operation, room: Option<&EntryRoom>, path: Vec<OffsetVertex>, voi
 /// A sibling loop turned to begin at its vertex nearest `at`, so the two
 /// heads of a control-comp pass keep one start; returns how far it turned.
 fn follow(v: &mut [OffsetVertex], at: Pt) -> usize {
-    let k = (0..v.len()).min_by(|&a, &b| {
-        let da = (v[a].x - at.x).phypot(v[a].y - at.y);
-        let db = (v[b].x - at.x).phypot(v[b].y - at.y);
-        da.partial_cmp(&db).expect("finite").then(a.cmp(&b))
-    }).unwrap_or(0);
+    // Tied vertices: the first from the loop's start.
+    let k = crate::tie::first_least(0..v.len(), |&k| (v[k].x - at.x).phypot(v[k].y - at.y)).unwrap_or(0);
     v.rotate_left(k);
     k
 }

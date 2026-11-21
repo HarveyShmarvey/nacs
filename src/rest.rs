@@ -259,10 +259,8 @@ fn simplified(l: &[Pt]) -> Vec<Pt> {
     if l.len() < 4 {
         return l.to_vec();
     }
-    let far = (1..l.len()).max_by(|&i, &j| {
-        let d = |k: usize| (l[k].x - l[0].x).phypot(l[k].y - l[0].y);
-        d(i).partial_cmp(&d(j)).unwrap()
-    }).unwrap();
+    // Tied vertices: the first from the loop's start.
+    let far = crate::tie::first_greatest(1..l.len(), |&k| (l[k].x - l[0].x).phypot(l[k].y - l[0].y)).unwrap();
     let mut out = Vec::new();
     let mut ring: Vec<Pt> = l.to_vec();
     ring.push(l[0]);

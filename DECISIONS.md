@@ -67,6 +67,16 @@ computes Z = -0.5625 give or take the last bit, and that bit chose `-0.562` or
 goldens moved by a last digit. CI's `agree` job fails if Windows and Linux
 write a different program for any fixture.
 
+**A close call has a written rule (2026-11-20).** Where the engine picks the
+nearest, shortest or cheapest of several candidates, any within 1e-6 mm of the
+best are tied and the first in a stated order wins; a length within 1e-6 mm of
+a limit is within it (`src/tie.rs`, each caller names its order). A loop's
+start is the exception with a reason: parallel loops are equally near all
+along a straight run, so among tied start points the one nearest where the
+tool already stands wins. Cutting length, descents and lifts are unchanged on
+every fixture; 32 goldens moved by where loops start, and rapid travel over
+the corpus fell 8%.
+
 **"It's a wall now."** Features are declared as exact analytical primitives.
 Imported CAD is a canvas; recognition proposes primitives and never machines
 a mesh. The declared feature is the authority, the part model is context.

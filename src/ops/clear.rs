@@ -1435,7 +1435,9 @@ fn region_pocket_family(
             // from the loop inside it than its edges are.
             let nearest = (k > 0)
                 .then(|| {
-                    flat[k - 1].iter().map(|deep| nearest_between(lp, deep)).min_by(|a, b| a.0.partial_cmp(&b.0).unwrap())
+                    // Tied deeper loops: the one whose point is nearest the tool.
+                    let tool = out.loops.last().map(|l: &Vec<Pt>| l[0]);
+                    crate::tie::first_least_then(flat[k - 1].iter().map(|deep| nearest_between(lp, deep, tool)), |n| n.0, |n| from_tool(tool, n.2))
                 })
                 .flatten();
             let beside_air = nearest.filter(|&(d, _, _)| d <= stepover + PLUNGE_BESIDE_AIR_TOL);
@@ -1574,14 +1576,12 @@ fn lead_in_from_air(op: &Operation, family: &mut IslandedFamily, blank: &[Pt], g
         if family.ramps[i] != Entry::Ramp {
             continue;
         }
-        let best = air
-            .iter()
-            .map(|a| (*a, nearest_on_loop(&family.loops[i], *a)))
-            .filter(|(a, (d, _, at))| {
-                let steps = ((d / 0.5).ceil() as usize).max(1);
-                (0..=steps).map(|k| k as f64 / steps as f64).all(|t| allowed(Pt { x: a.x + t * (at.x - a.x), y: a.y + t * (at.y - a.y) }))
-            })
-            .min_by(|x, y| x.1 .0.partial_cmp(&y.1 .0).unwrap());
+        // Tied air points: the first as `air` lists them.
+        let reachable = air.iter().map(|a| (*a, nearest_on_loop(&family.loops[i], *a, None))).filter(|(a, (d, _, at))| {
+            let steps = ((d / 0.5).ceil() as usize).max(1);
+            (0..=steps).map(|k| k as f64 / steps as f64).all(|t| allowed(Pt { x: a.x + t * (at.x - a.x), y: a.y + t * (at.y - a.y) }))
+        });
+        let best = crate::tie::first_least(reachable, |c| c.1 .0);
         if let Some((from, (_, edge, at))) = best {
             family.loops[i] = start_loop_at(family.loops[i].clone(), edge, at);
             family.ramps[i] = Entry::Lead(from);
@@ -1611,7 +1611,9 @@ pub(crate) fn enter_beside_cut_air(ordered: Vec<Vec<Pt>>, stepover: f64) -> (Vec
             ramps.push(Entry::Plunge(None));
             continue;
         }
-        let nearest = loops.iter().map(|earlier| nearest_between(&lp, earlier)).min_by(|a, b| a.0.partial_cmp(&b.0).unwrap());
+        // Tied earlier loops: the one whose point is nearest the tool.
+        let tool = loops.last().map(|l| l[0]);
+        let nearest = crate::tie::first_least_then(loops.iter().map(|earlier| nearest_between(&lp, earlier, tool)), |n| n.0, |n| from_tool(tool, n.2));
         let beside_air = nearest.filter(|&(d, _, _)| d <= stepover + PLUNGE_BESIDE_AIR_TOL);
         ramps.push(match beside_air { None => Entry::Ramp, Some((d, _, _)) => Entry::Plunge(Some(d)) });
         loops.push(match beside_air {
@@ -1620,6 +1622,12 @@ pub(crate) fn enter_beside_cut_air(ordered: Vec<Vec<Pt>>, stepover: f64) -> (Vec
         });
     }
     (loops, ramps)
+}
+
+/// How far `q` is from where the tool stands; nothing to choose by when the
+/// tool has no position yet.
+fn from_tool(tool: Option<Pt>, q: Pt) -> f64 {
+    tool.map_or(0.0, |t| (q.x - t.x).phypot(q.y - t.y))
 }
 
 /// `lp` re-started at `at`, a point on the edge leaving vertex `edge`: the
@@ -1642,10 +1650,15 @@ fn start_loop_at(mut lp: Vec<Pt>, edge: usize, at: Pt) -> Vec<Pt> {
 /// vertices measured against `other`'s edges — because either loop may be the
 /// sparse one: a square's corners are each √2 stepovers from the square inside
 /// it (the pocket's first build), and from the square OUTSIDE it (the face's).
-fn nearest_between(lp: &[Pt], other: &[Pt]) -> (f64, usize, Pt) {
-    let by_distance = |a: &(f64, usize, Pt), b: &(f64, usize, Pt)| a.0.partial_cmp(&b.0).unwrap();
-    let dropped = other.iter().map(|q| nearest_on_loop(lp, *q)).min_by(by_distance).expect("loops have vertices");
-    let own = lp.iter().enumerate().map(|(i, q)| (nearest_on_loop(other, *q).0, i, *q)).min_by(by_distance).expect("loops have vertices");
+///
+/// Parallel loops are equally near all along a straight run, so the point is
+/// a tie many times over. Tied points: the one nearest `tool`, where the tool
+/// stands after the loop before (a closed loop ends where it starts), so the
+/// move between loops is the short one; with no tool position, or tied on
+/// that too, the first by vertex order.
+fn nearest_between(lp: &[Pt], other: &[Pt], tool: Option<Pt>) -> (f64, usize, Pt) {
+    let dropped = crate::tie::first_least_then(other.iter().map(|q| nearest_on_loop(lp, *q, tool)), |n| n.0, |n| from_tool(tool, n.2)).expect("loops have vertices");
+    let own = crate::tie::first_least_then(lp.iter().enumerate().map(|(i, q)| (nearest_on_loop(other, *q, None).0, i, *q)), |n| n.0, |n| from_tool(tool, n.2)).expect("loops have vertices");
     // Parallel loops tie all along their length — to the last float bit on a
     // straight run, to a chord's sagitta around an arc — so the dropped point
     // wins anything closer than the flattening can tell apart, and the start
@@ -1655,9 +1668,11 @@ fn nearest_between(lp: &[Pt], other: &[Pt]) -> (f64, usize, Pt) {
 
 /// The closest point of a closed loop to `q`: its distance, the index of the
 /// edge it lies on (from that vertex to the next), and the point.
-fn nearest_on_loop(lp: &[Pt], q: Pt) -> (f64, usize, Pt) {
+fn nearest_on_loop(lp: &[Pt], q: Pt, tool: Option<Pt>) -> (f64, usize, Pt) {
     let n = lp.len();
-    (0..n)
+    // Tied edges (a corner's two sides, or one vertex two edges share): the
+    // point nearest the tool, then the first edge from the loop's start.
+    let edges = (0..n)
         .map(|i| {
             let (a, b) = (lp[i], lp[(i + 1) % n]);
             let (ex, ey) = (b.x - a.x, b.y - a.y);
@@ -1665,9 +1680,8 @@ fn nearest_on_loop(lp: &[Pt], q: Pt) -> (f64, usize, Pt) {
             let t = if len2 > 0.0 { (((q.x - a.x) * ex + (q.y - a.y) * ey) / len2).clamp(0.0, 1.0) } else { 0.0 };
             let at = Pt { x: a.x + t * ex, y: a.y + t * ey };
             ((q.x - at.x).phypot(q.y - at.y), i, at)
-        })
-        .min_by(|a, b| a.0.partial_cmp(&b.0).unwrap())
-        .expect("a loop has edges")
+        });
+    crate::tie::first_least_then(edges, |e| e.0, |e| from_tool(tool, e.2)).expect("a loop has edges")
 }
 
 /// A deeper loop stands exactly one stepover from the loop outside it, as
@@ -2262,7 +2276,7 @@ pub(crate) fn emit_loop_blocks_ramped(
         let planned = match ramps {
             Some(e) => e[i],
             None if is_first_loop => Entry::Ramp,
-            None => Entry::Plunge(prev.map(|pl| nearest_between(poly, pl).0)),
+            None => Entry::Plunge(prev.map(|pl| nearest_between(poly, pl, None).0)),
         };
         // The key makes every entry one kind (ROADMAP item 2, slice 4); the
         // sentence names it where it changed one. A lead needs air in reach,
@@ -2721,5 +2735,24 @@ mod tests {
             (closest - 5.0).abs() < 1e-6,
             "a finishing pocket must sit exactly r = 5.0 off the boundary, measured {closest}"
         );
+    }
+
+    // A square inside a square is equally near it at every point of four
+    // straight runs. The start is the tied point nearest the tool, wherever
+    // the tool is, and the first by vertex order when the tool has no place.
+    #[test]
+    fn a_loop_starts_at_the_tied_point_nearest_the_tool() {
+        use crate::parse::Pt;
+        let square = |h: f64| vec![Pt { x: -h, y: -h }, Pt { x: h, y: -h }, Pt { x: h, y: h }, Pt { x: -h, y: h }];
+        let (outer, inner) = (square(20.0), square(15.0));
+        let start = |tool: Option<Pt>| {
+            let (d, _, at) = super::nearest_between(&outer, &inner, tool);
+            assert!((d - 5.0).abs() < 1e-9, "the loops stand 5 apart, measured {d}");
+            (at.x, at.y)
+        };
+        assert_eq!(start(Some(Pt { x: 30.0, y: 14.0 })), (20.0, 15.0));
+        assert_eq!(start(Some(Pt { x: -30.0, y: -14.0 })), (-20.0, -15.0));
+        assert_eq!(start(Some(Pt { x: -14.0, y: 30.0 })), (-15.0, 20.0));
+        assert_eq!(start(None), (-15.0, -20.0));
     }
 }

@@ -1789,10 +1789,8 @@ pub fn derive_blank_grown(s: &Stock, grow: f64) -> Vec<Pt> {
             if grow.abs() <= 1e-12 {
                 return points.clone();
             }
-            crate::offset::offset_closed_polyline_verts(points, -grow)
-                .into_iter()
-                .map(|lp| crate::offset::flatten_loop(&lp))
-                .max_by(|a, b| signed_area(a).abs().total_cmp(&signed_area(b).abs()))
+            // Loops of one area: the first the offsetter gave.
+            crate::tie::first_greatest(crate::offset::offset_closed_polyline_verts(points, -grow).into_iter().map(|lp| crate::offset::flatten_loop(&lp)), |lp| signed_area(lp).abs())
                 .unwrap_or_else(|| points.clone())
         }
     }

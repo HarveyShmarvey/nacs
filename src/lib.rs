@@ -1,4 +1,5 @@
 pub mod math;
+pub mod tie;
 pub mod parse;
 pub mod gcode;
 pub mod ops;
