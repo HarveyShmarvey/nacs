@@ -275,9 +275,7 @@ One page. What is built, what is next, and the debts we know about.
    up=z-` under it; the schedule writes the `given` lines and the mouth
    chamfers; the program is 682 lines, nothing on stderr, `--check` exit 0
    — slice 11's hand-composed back program, with nothing typed but the
-   tools. Debts: the lint that names the earlier program's voids no
-   `given` names here prints `op 2 on '' (?)` for a drill with points; a
-   Profile blank turned over wants its outline mirrored.
+   tools. Debt: a Profile blank turned over wants its outline mirrored.
 
    Slice 13 (2026-11-02): the rings as arcs. The per-op word `compress=arcs`
    already wrote a bore's or a round boss's wall rings as one G02/G03 each;
@@ -703,7 +701,9 @@ Paid in November 2026: the unbounded chord (a stretch open to the air says
 so and bounds no tool); the re-entry plunge (`entry=ramp` was already the
 cure, and the default stays a plunge said by its sentence, ruled 2026-11-10);
 the inside-corner over-claim (the declared model claims a floor only as its
-tool reaches it, `DECISIONS.md`).
+tool reaches it, `DECISIONS.md`); the advisory on an earlier program's void
+no `given` names, which said `on '' (?)` for a drill visiting points and
+spoke of its first hole only, and now names each hole.
 
 ## Not planned
 
