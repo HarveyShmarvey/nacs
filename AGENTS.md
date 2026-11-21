@@ -41,12 +41,16 @@ Run it:
 ```sh
 cargo run -- plate.cam              # G-code on stdout
 cargo run -- --view plate.cam       # the window
-cargo test                          # the loop
-./lock.sh                           # before a merge
+cargo test                          # everything, about 15 minutes
+cargo test --test given_from_tests  # the loop: the file you touched
+./lock.sh                           # the whole gate by hand; CI runs it for you
 ```
 
 Every push runs `./lock.sh` on Linux and Windows (`.github/workflows/lock.yml`);
-a branch merges when both are green. `rust-toolchain.toml` pins the compiler.
+a branch merges when both are green. That run is the gate and takes about
+17 minutes. Push, then read it with `gh pr checks --watch`. Do not run
+`./lock.sh` first: it is the same tests, slower (30 minutes on Windows, over
+an hour in a cloud session). `rust-toolchain.toml` pins the compiler.
 
 On Windows run scripts from Git Bash. If a window is open on
 `target/debug/nacs.exe`, build with `CARGO_TARGET_DIR=target/agent`. Never
@@ -81,7 +85,8 @@ branch per change, one PR, the human merges. If you want the user to check
 something in the window, run it yourself first and say exactly what to click
 and what they should see.
 
-**Tests.** `cargo test` while working. `./lock.sh` once before the PR goes up.
+**Tests.** While working, run the test files for what you touched. Then push
+and let CI run the lock; report its result, not a local one.
 Every new op ships with a fixture and a golden. A test asserts behaviour, not
 prose; do not add tests that pin documentation text or count fixtures. When
 you change output on purpose, regenerate the goldens in the same commit and
