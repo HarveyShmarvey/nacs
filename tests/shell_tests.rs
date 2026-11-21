@@ -2545,7 +2545,13 @@ fn the_frame_cost_under_a_fine_stepover_is_measured() {
 /// kind and source.
 #[test]
 fn the_output_log_is_one_line_an_event_and_saves_beside_the_project() {
-    let (mut h, project) = open_copy("plate.cam");
+    let (copy, project) = open_copy("plate.cam");
+    drop(copy);
+    // The layer on, and its list pinned open, where the hint is read.
+    let mut ws = Workspace::default();
+    ws.layout.layers.engagement = true;
+    ws.layout.layers_pinned = true;
+    let mut h = open_path(&project, ws, false);
     settle(&mut h);
     h.key_press(egui::Key::Num3);
     settle(&mut h);
@@ -2557,6 +2563,9 @@ fn the_output_log_is_one_line_an_event_and_saves_beside_the_project() {
     settle(&mut h);
     let undo = h.state().output_lines().iter().filter(|l| l.contains("Nothing to undo")).count();
     assert_eq!(undo, 1, "z acted with the dock just opened, and its refusal is one line: {:?}", h.state().output_lines());
+    let hint = "select an operation or a feature with a floor";
+    assert!(h.query_all_by_label_contains(hint).count() > 0, "the Engagement layer's hint stands in the window");
+    assert!(!h.state().output_lines().iter().any(|l| l.contains(hint)), "and never in the log: {:?}", h.state().output_lines());
     h.get_by_label("Save").click();
     settle(&mut h);
     let file = std::fs::read_to_string(project.join("plate.log")).expect("the log is beside the project");
