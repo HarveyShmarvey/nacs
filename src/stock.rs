@@ -1860,12 +1860,25 @@ pub fn given_from_findings(p: &Part) -> Vec<crate::parse::Finding> {
     let top = p.stock.z;
     // Once per earlier FEATURE, at its first op that reaches: a bore the
     // earlier program cleared and then wall-finished is one void here.
-    let mut said: Vec<&str> = Vec::new();
+    // A visit to points names no feature: each hole it drilled is a void of
+    // its own, named by the point whose axis its removal stands on.
+    let mut said: Vec<String> = Vec::new();
     for (k, op) in gf.part.operations.iter().enumerate() {
-        if said.contains(&op.feature_name.as_str()) {
-            continue;
-        }
+        let holes = if op.at_points() { subjects(&gf.part, op) } else { Vec::new() };
         for r in removals_for(&*gf.part, op).unwrap_or_default() {
+            let name = if op.at_points() {
+                let Some(lp) = r.section.outlines(&gf.part.stock).into_iter().find(|lp| !lp.is_empty()) else { continue };
+                let n = lp.len() as f64;
+                let (x, y) = lp.iter().fold((0.0, 0.0), |a, q| (a.0 + q.x / n, a.1 + q.y / n));
+                let near = |s: &&Subject| s.at.is_some_and(|at| (at.x - x).abs() < 1e-6 && (at.y - y).abs() < 1e-6);
+                let Some(hole) = holes.iter().find(near) else { continue };
+                hole.name.as_str()
+            } else {
+                op.feature_name.as_str()
+            };
+            if said.iter().any(|s| s == name) {
+                continue;
+            }
             let Ok(t) = turn_removal(&r, gf.up) else { continue };
             if t.z_top < top - EPS || matches!(t.section, Section::All) {
                 continue;
@@ -1882,19 +1895,20 @@ pub fn given_from_findings(p: &Part) -> Vec<crate::parse::Finding> {
                 if !t.removes(cx, cy, z, EPS) || !named.material_at(cx, cy, z) {
                     continue;
                 }
-                let feature = gf.part.features.get(&op.feature_name).map_or("?", |f| f.kind());
+                let feature = gf.part.features.get(name).map_or("?", |f| f.kind());
+                let word = if op.at_points() { "at" } else { "on" };
                 out.push(
                     Finding::feature(
                         FindingFamily::Containment,
-                        &op.feature_name,
+                        name,
                         format!(
-                            "{}'s op [{}] on '{}' ({}) reaches this face at ({:.3}, {:.3}) and no `given` here names it — the stock model reads its air all the same, but no op of this program can dress a void it has no noun for; restate it in this frame and give it, or leave it",
-                            gf.project, k, op.feature_name, feature, cx, cy
+                            "{}'s op [{}] {} '{}' ({}) reaches this face at ({:.3}, {:.3}) and no `given` here names it — the stock model reads its air all the same, but no op of this program can dress a void it has no noun for; restate it in this frame and give it, or leave it",
+                            gf.project, k, word, name, feature, cx, cy
                         ),
                     )
                     .with_place([cx, cy, top]),
                 );
-                said.push(op.feature_name.as_str());
+                said.push(name.to_string());
                 break;
             }
         }

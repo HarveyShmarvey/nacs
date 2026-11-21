@@ -433,6 +433,26 @@ fn test_without_a_given_from_the_restatement_is_unread_as_before() {
 }
 
 #[test]
+fn test_the_reverse_advisory_names_each_hole_of_a_visit_to_points() {
+    // A drill visiting points names no feature, so the advisory used to say
+    // `on '' (?)` and, keyed on that empty name, spoke of the first hole only.
+    let front = scratch(
+        "points_front",
+        &format!(
+            "{HEAD}stock Box(w=90, l=50, h=12, x=-45, y=-25, z=12)\ntool T7 Drill(dia=8.0)\n\
+             feature A CylinderBore(dia=8.0, extent=12.0, x=-25.0, y=6.0)\n\
+             feature B CylinderBore(dia=8.0, extent=12.0, x=20.0, y=6.0)\n\
+             run Form(points=[A,B], tool=T7, cycle=Simple)\n"
+        ),
+    );
+    let back = scratch("points_back", &format!("{HEAD}given from {} up=z-\n{BACK_HEAD}", front.to_string_lossy()));
+    let findings = parse::lint(&load(&back.to_string_lossy()));
+    assert_eq!(findings.len(), 2, "{findings:?}");
+    assert!(findings[0].message.contains("op [0] at 'A' (CylinderBore) reaches this face at (-25.000, -6.000)"), "{}", findings[0].message);
+    assert!(findings[1].message.contains("op [0] at 'B' (CylinderBore) reaches this face at (20.000, -6.000)"), "{}", findings[1].message);
+}
+
+#[test]
 fn test_the_reverse_advisory_names_an_unnamed_through_bore_once() {
     // The back names nothing: the two through-bores reach this face and are
     // air to the stock model all the same, so this is advisory — once per
