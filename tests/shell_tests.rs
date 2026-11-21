@@ -2397,6 +2397,48 @@ fn a_created_feature_is_selected_with_its_card_editable() {
     let _ = std::fs::remove_dir_all(project.parent().unwrap());
 }
 
+/// plate.cam keeps a feature in geometry.part. A feature made in the form
+/// is written there, beside it, main.part is left alone, and z takes it
+/// back. (Until 2026-11-21 the window refused: "the destination is
+/// ambiguous; declare it there by hand".)
+#[test]
+fn a_feature_made_in_a_project_with_a_geometry_file_is_written_there() {
+    let (mut h, project) = open_copy("plate.cam");
+    settle(&mut h);
+    let main_before = std::fs::read_to_string(project.join("main.part")).unwrap();
+    let geom_before = std::fs::read_to_string(project.join("geometry.part")).unwrap();
+    h.get_by_label("New feature…").click();
+    settle(&mut h);
+    let head = h.query_all_by_label("New feature").next().expect("the form opened").rect().top();
+    h.query_all_by_role(Role::ComboBox).find(|n| n.rect().top() > head).expect("the variant menu").click();
+    settle(&mut h);
+    h.get_by_label("Plane").click();
+    settle(&mut h);
+    // The form's fields, top to bottom: the name, then the Plane's z.
+    for (i, text) in ["Deck", "-5"].into_iter().enumerate() {
+        for typing in [false, true] {
+            let mut fields: Vec<_> = h.query_all_by_role(Role::TextInput).filter(|n| n.rect().top() > head).collect();
+            fields.sort_by(|a, b| a.rect().top().total_cmp(&b.rect().top()));
+            if typing { fields[i].type_text(text) } else { fields[i].focus() }
+            h.step();
+        }
+    }
+    h.get_by_label("Create feature").click();
+    std::thread::sleep(std::time::Duration::from_millis(700));
+    settle(&mut h);
+    settle(&mut h);
+    let geom = std::fs::read_to_string(project.join("geometry.part")).unwrap();
+    // The name field opens prefilled, so the typed word is appended to it.
+    assert!(geom.contains("Deck Plane(z=-5"), "written to geometry.part ({:?}): {geom}", h.state().edit_note());
+    assert_eq!(std::fs::read_to_string(project.join("main.part")).unwrap(), main_before, "main.part untouched");
+    assert!(h.state().feature_names().iter().any(|n| n.ends_with("Deck")), "the project reloaded with it");
+    h.key_press(egui::Key::Z);
+    settle(&mut h);
+    assert_eq!(std::fs::read_to_string(project.join("geometry.part")).unwrap(), geom_before, "z undoes it");
+    drop(h);
+    let _ = std::fs::remove_dir_all(project.parent().unwrap());
+}
+
 /// A project at `project` (a directory holding `main.part`) opened the way
 /// `nacs --view` opens it, on `workspace`, rendered when `pixels`.
 fn open_path(project: &std::path::Path, workspace: Workspace, pixels: bool) -> Harness<'static, ViewApp> {
