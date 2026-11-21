@@ -71,6 +71,7 @@ fn main() {
     let mut assembly_report = false;
     let mut tool_line = false;
     let mut show_outline = false;
+    let mut show_job = false;
     let mut show_schedule = false;
     let mut show_view = false;
     let mut serve_mcp = false;
@@ -125,6 +126,9 @@ fn main() {
             false
         } else if a == "--outline" {
             show_outline = true;
+            false
+        } else if a == "--job" {
+            show_job = true;
             false
         } else if a == "--schedule" {
             show_schedule = true;
@@ -417,13 +421,13 @@ fn main() {
     // modes (the window is an artifact too; it just isn't stdout —
     // --check's artifact is the check result, --mcp's is the session, and
     // --tool-line's is one declaration line).
-    if [check.is_some(), rest_report, time_report, patterns_report, assembly_report, tool_line, show_outline, show_schedule, show_view, serve_mcp, template_feature.is_some(), new_feature.is_some(), theme_check.is_some(), review, accept_list.is_some(), engagement_op.is_some(), arc_request.is_some()]
+    if [check.is_some(), rest_report, time_report, patterns_report, assembly_report, tool_line, show_outline, show_job, show_schedule, show_view, serve_mcp, template_feature.is_some(), new_feature.is_some(), theme_check.is_some(), review, accept_list.is_some(), engagement_op.is_some(), arc_request.is_some()]
         .iter()
         .filter(|f| **f)
         .count()
         > 1
     {
-        eprintln!("error: --check, --view, --outline, --schedule, --template, --new, --rest-report, --time-report, --patterns, --assembly-report, --tool-line, --theme-check, --review, --accept and --mcp are one artifact each — pick one");
+        eprintln!("error: --check, --view, --outline, --job, --schedule, --template, --new, --rest-report, --time-report, --patterns, --assembly-report, --tool-line, --theme-check, --review, --accept and --mcp are one artifact each — pick one");
         process::exit(2);
     }
     // `--theme` dresses the window and nothing else — passed anywhere
@@ -543,6 +547,10 @@ fn main() {
             if show_view {
                 view_mode_empty(&path_arg, msg.clone(), theme_arg, frame_native);
             }
+            // The job's steps answer on a folder with nothing in it: step 1.
+            if show_job && !std::path::Path::new(&path_arg).join("main.part").exists() {
+                job_mode(&path_arg, &nacs::view::empty_project_part(std::path::Path::new(&path_arg)), false, Some("no main.part yet"));
+            }
             // An unreadable path has no check result to render, in any mode.
             eprintln!("{}", msg);
             process::exit(1);
@@ -599,6 +607,10 @@ fn main() {
     if show_outline {
         print!("{}", outline::report(&part));
         return;
+    }
+    if show_job {
+        let refusal = nacs::check_result::check_result(&part).refusal;
+        job_mode(&path_arg, &part, true, refusal.as_deref());
     }
     // The run lines for every feature no run names yet (ROADMAP item 1,
     // slice 10): the project's own tools, picked by rule, each line parsed
@@ -710,6 +722,29 @@ fn view_mode(part: parse::Part, title: &str, theme: Option<String>, frame_native
 fn view_mode(_part: parse::Part, _title: &str, _theme: Option<String>, _frame_native: Option<bool>) {
     eprintln!("error: this nacs was built without the frontend feature (--no-default-features); rebuild with default features to open --view");
     process::exit(1);
+}
+
+/// `--job`: the six steps from model to program and which is next, read
+/// off the project folder as the window's guide reads them.
+fn job_mode(dir: &str, part: &nacs::parse::Part, has_file: bool, refusal: Option<&str>) -> ! {
+    let d = std::path::Path::new(dir);
+    let d = if d.is_file() { d.parent().unwrap_or(d) } else { d };
+    // The import's report, where this build can read one.
+    #[cfg(any(feature = "frontend", feature = "agent"))]
+    let (model, waiting) = match std::fs::read_to_string(d.join("report.json")).ok().and_then(|t| nacs::review::read(&t).ok()) {
+        Some(report) => {
+            let rejected = std::fs::read_to_string(d.join("main.part")).map(|t| nacs::review::rejected_ids(&t)).unwrap_or_default();
+            let rows = nacs::review::rows(&report, part, &rejected);
+            let dups = nacs::view::duplicate_proposals(&rows);
+            (Some(report.source.clone()), nacs::view::proposals_waiting(&rows, &dups))
+        }
+        None => (None, 0),
+    };
+    #[cfg(not(any(feature = "frontend", feature = "agent")))]
+    let (model, waiting): (Option<String>, usize) = (None, 0);
+    let stock_waiting = std::fs::read_to_string(d.join("proposed_stock.part")).ok().and_then(|t| nacs::view::stock_proposal(&t, part).ok()).is_some_and(|s| !s.in_project);
+    print!("{}", nacs::view::job_report(&nacs::view::job_steps(part, has_file, model.as_deref(), stock_waiting, waiting, refusal)));
+    process::exit(0)
 }
 
 /// `--new`: the wizard's terminal voice (Phase 19, slice 2). The one home
@@ -1293,6 +1328,7 @@ fn usage_text() -> String {
         "    --view [--theme <name|file.json>] [--frame own|native]",
         "                                             open the window on the project (no path: the last one opened)",
         "    --outline                                stock, features and operations in run order",
+        "    --job                                    the six steps from model to program, and which is next",
         "    --check[=json]                           validate and lint; nothing printed means nothing found",
         "Measure",
         "    --time-report                            the cut-time model, per operation and whole",

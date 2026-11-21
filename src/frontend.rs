@@ -2920,6 +2920,7 @@ impl ViewApp {
             // No heading row (Phase 52 slice 1): the tab carries the word
             // and its count; the view's body starts here.
             ui.separator();
+            self.job_guide(ui);
             // `auto_shrink` off: egui stores a panel's size as its content's
             // rect, so a scroll area that shrink-wraps its content makes the
             // wall snap to the tree's width every frame (the live run's
@@ -6148,6 +6149,66 @@ impl ViewApp {
         }
     }
 
+    /// The job's steps as the window knows them: `view::job_steps` on the
+    /// loaded project, report and proposals.
+    fn job_steps(&self) -> Vec<view::JobStep> {
+        // One stat a frame; the window repaints on input and twice a second.
+        let has_file = self.part.sources.first().is_some_and(|p| p.is_file());
+        let model = match &self.report {
+            Some(Ok(r)) => Some(r.source.as_str()),
+            _ => None,
+        };
+        let stock_waiting = matches!(&self.stock_proposal, Some(Ok(s)) if !s.in_project);
+        let waiting = view::proposals_waiting(&self.review_rows, &self.review_dups);
+        view::job_steps(&self.part, has_file, model, stock_waiting, waiting, self.check_result.refusal.as_deref())
+    }
+
+    /// The job guide at the top of the sidebar, over every tab, until the
+    /// operations are scheduled: the six steps in order, the next one with
+    /// its sentence and its button.
+    fn job_guide(&mut self, ui: &mut egui::Ui) {
+        let steps = self.job_steps();
+        let next = steps.iter().position(|s| s.state == view::StepState::Next);
+        // A project with its operations scheduled has no use for a guide:
+        // the sidebar is the Outline's, and Write program is on the band.
+        if next.is_none_or(|i| i + 1 == steps.len()) {
+            return;
+        }
+        let title = match next {
+            Some(i) => format!("Job: step {} of {}, {}", i + 1, steps.len(), steps[i].name),
+            None => "Job".to_string(),
+        };
+        let mut act: Option<&'static str> = None;
+        egui::CollapsingHeader::new(egui::RichText::new(title).strong()).id_salt("job.guide").default_open(true).show(ui, |ui| {
+            for (i, s) in steps.iter().enumerate() {
+                let head = format!("{}  {}", i + 1, s.name);
+                match s.state {
+                    view::StepState::Done => {
+                        ui.add(egui::Label::new(egui::RichText::new(format!("{head}  · {}", s.says)).weak()).truncate());
+                    }
+                    view::StepState::Later => {
+                        ui.label(egui::RichText::new(head).weak());
+                    }
+                    view::StepState::Next => {
+                        ui.label(egui::RichText::new(head).strong());
+                        ui.indent(("job.next", i), |ui| {
+                            ui.add(egui::Label::new(egui::RichText::new(&s.says).small()).wrap());
+                            if let Some((label, id)) = &s.act {
+                                if ui.button(label).clicked() {
+                                    act = Some(id);
+                                }
+                            }
+                        });
+                    }
+                }
+            }
+        });
+        ui.separator();
+        if let Some(id) = act {
+            self.act(id);
+        }
+    }
+
     /// Whether the last reload failed and its note stands (Phase 50 slice 7).
     fn reload_failed(&self) -> bool {
         self.project_note.as_deref().is_some_and(|n| n.starts_with("Not reloaded"))
@@ -6201,7 +6262,7 @@ impl ViewApp {
         }
         let mut go: Option<usize> = None;
         let mut section = "";
-        let pending = self.review_rows.iter().enumerate().filter(|(i, r)| r.statement.is_some() && !r.in_project && !r.rejected && self.review_dups.get(*i).copied().flatten().is_none()).count();
+        let pending = view::proposals_waiting(&self.review_rows, &self.review_dups);
         if !self.part.features.is_empty() && ui.small_button("Schedule operations").on_hover_text("Add an operation for every feature that has none, with tools from this project. z undoes.").clicked() {
             self.act("schedule");
         }

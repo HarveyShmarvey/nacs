@@ -61,7 +61,7 @@ pub struct Schedule {
 }
 
 /// Is `name` already named by a run, as its surface or one of its points?
-fn consumed(p: &Part, name: &str) -> bool {
+pub fn consumed(p: &Part, name: &str) -> bool {
     p.operations.iter().any(|op| {
         op.feature_name == name || op.drill_points.as_ref().is_some_and(|pts| pts.iter().any(|q| q == name))
     })
