@@ -4083,6 +4083,102 @@ pub fn legend(theme: &Theme) -> Vec<([u8; 3], &'static str)> {
         .collect()
 }
 
+/// How far along a job step is. The first step not done is `Next`.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub enum StepState {
+    Done,
+    Next,
+    Later,
+}
+
+/// One step of the job, in the order a part is programmed: what it is
+/// called, where it stands, one sentence, and the act that moves it on
+/// (the button's words and the act's id).
+#[derive(Clone, Debug, PartialEq)]
+pub struct JobStep {
+    pub name: &'static str,
+    pub state: StepState,
+    pub says: String,
+    pub act: Option<(String, &'static str)>,
+}
+
+/// The proposals in the Review that an Accept all would write.
+pub fn proposals_waiting(rows: &[ReviewRow], dups: &[Option<usize>]) -> usize {
+    rows.iter().enumerate().filter(|(i, r)| r.statement.is_some() && !r.in_project && !r.rejected && dups.get(*i).copied().flatten().is_none()).count()
+}
+
+/// The job as six steps, model to program, so the window can say what
+/// comes next. `has_file` is whether main.part is on disk; `model` the
+/// imported file's name; `stock_waiting` a proposed blank not yet accepted;
+/// `waiting` the count from `proposals_waiting`.
+pub fn job_steps(part: &Part, has_file: bool, model: Option<&str>, stock_waiting: bool, waiting: usize, refusal: Option<&str>) -> Vec<JobStep> {
+    let features = part.features.len();
+    let unscheduled = part.features.keys().filter(|name| !crate::schedule::consumed(part, name)).count();
+    let plural = |n: usize, one: &str, many: &str| if n == 1 { format!("1 {one}") } else { format!("{n} {many}") };
+    // (name, done, what a done step says, what an open one says, its act)
+    let mut rows: Vec<(&'static str, bool, String, String, Option<(String, &'static str)>)> = vec![
+        (
+            "Model",
+            model.is_some() || features > 0,
+            model.map(str::to_string).unwrap_or_else(|| "none imported; the features are declared by hand".to_string()),
+            "import a STEP file, or drop one on the window".to_string(),
+            Some(("Import STEP…".to_string(), "import.step")),
+        ),
+        if stock_waiting {
+            ("Stock", false, String::new(), "a blank is proposed: read it in Review, then Accept into project".to_string(), Some(("Show the proposed stock".to_string(), "sidebar.review")))
+        } else {
+            ("Stock", has_file, crate::outline::stock_row(&part.stock).trim_start_matches("stock").trim().to_string(), "declare the blank the part is cut from".to_string(), Some(("New project…".to_string(), "project.new")))
+        },
+        if waiting > 0 {
+            ("Features", false, String::new(), format!("{} in Review: accept them all, or one at a time", plural(waiting, "proposal waits", "proposals wait")), Some((format!("Accept all ({waiting})"), "review.accept_all")))
+        } else {
+            ("Features", features > 0, plural(features, "feature", "features"), "declare what is to be cut".to_string(), Some(("New feature…".to_string(), "feature.new")))
+        },
+        ("Tools", !part.tools.is_empty(), plural(part.tools.len(), "tool", "tools"), "no cutter is declared, and an operation needs one".to_string(), Some(("New tool…".to_string(), "tool.new"))),
+        (
+            "Operations",
+            !part.operations.is_empty() && unscheduled == 0,
+            plural(part.operations.len(), "operation", "operations"),
+            format!("{} no operation yet", plural(unscheduled, "feature has", "features have")),
+            Some(("Schedule operations".to_string(), "schedule")),
+        ),
+    ];
+    // The program is never "done": it is ready to write, or refused.
+    rows.push(match refusal {
+        Some(why) => ("Program", false, String::new(), format!("refused: {why}"), Some(("Show the problems".to_string(), "sidebar.problems"))),
+        None => ("Program", false, String::new(), "ready to write beside the project as a .nc file".to_string(), Some(("Write program".to_string(), "program.write"))),
+    });
+    let mut next_given = false;
+    rows.into_iter()
+        .map(|(name, done, done_says, open_says, act)| {
+            if done {
+                JobStep { name, state: StepState::Done, says: done_says, act: None }
+            } else if !next_given {
+                next_given = true;
+                JobStep { name, state: StepState::Next, says: open_says, act }
+            } else {
+                JobStep { name, state: StepState::Later, says: String::new(), act: None }
+            }
+        })
+        .collect()
+}
+
+/// The job steps as text, one a line: what `nacs --job` prints.
+pub fn job_report(steps: &[JobStep]) -> String {
+    let mut out = String::new();
+    for (i, s) in steps.iter().enumerate() {
+        let state = match s.state {
+            StepState::Done => "done",
+            StepState::Next => "next",
+            StepState::Later => "later",
+        };
+        let act = s.act.as_ref().map(|(label, id)| format!("  [{label}: {id}]")).unwrap_or_default();
+        out.push_str(format!("{} {:<11}{:<6}{}{}", i + 1, s.name, state, s.says, act).trim_end());
+        out.push('\n');
+    }
+    out
+}
+
 /// The empty viewport's sentence (DESIGN.md §5.5, 2026-09-17): a project
 /// with no operation draws a stock box and nothing else, and says where
 /// the first operation comes from. `None` while there is something to draw.

@@ -1492,14 +1492,15 @@ fn an_import_into_an_empty_folder_is_reviewed_into_a_project() {
     let mut ready = false;
     for _ in 0..50 {
         settle(&mut h);
-        if h.query_by_label_contains("Accept all (").is_some() && h.query_all_by_label_contains("· in project").next().is_some() {
+        if h.query_all_by_label_contains("Accept all (").next().is_some() && h.query_all_by_label_contains("· in project").next().is_some() {
             ready = true;
             break;
         }
         std::thread::sleep(std::time::Duration::from_millis(100));
     }
     assert!(ready, "the project reloaded with the stock in it: {:?}", h.state().output_lines());
-    h.query_by_label_contains("Accept all (").expect("the button").click();
+    // The job guide and the Review each carry this button; they are one act.
+    h.query_all_by_label_contains("Accept all (").next().expect("the button").click();
     settle(&mut h);
     let text = std::fs::read_to_string(&main).unwrap();
     assert!(text.contains("feature F1_Profile ProfileBoss(z=20.0, extent=20.0"), "{text}");
@@ -2629,4 +2630,69 @@ fn a_key_under_more_keys_is_typed_where_it_stands() {
     assert!(text.contains("peck_increment=25"), "both characters reached the field and Enter wrote them: {text}");
     drop(h);
     let _ = std::fs::remove_dir_all(project.parent().unwrap());
+}
+
+/// The job guide walks a new user from an empty folder to a program: at
+/// each step its button is the next thing to do. Shoots every step.
+#[test]
+fn the_job_guide_leads_from_an_empty_folder_to_a_program() {
+    #[cfg(windows)]
+    const VENV_PYTHON: &str = "sidecar/.venv/Scripts/python.exe";
+    #[cfg(not(windows))]
+    const VENV_PYTHON: &str = "sidecar/.venv/bin/python";
+    if !std::path::Path::new(VENV_PYTHON).is_file() {
+        eprintln!("skipped: no sidecar venv at {VENV_PYTHON}");
+        return;
+    }
+    redirect_config_home();
+    let root = std::env::temp_dir().join(format!("nacs-shell-job-{}", std::process::id()));
+    let _ = std::fs::remove_dir_all(&root);
+    let project = root.join("mypart.cam");
+    let path = project.to_string_lossy().into_owned();
+    let part = view::empty_project_part(&project);
+    let cr = nacs::check_result::CheckResult { refusal: Some("no main.part yet".to_string()), findings: Vec::new(), emitted_moves: None };
+    let mut h = Harness::builder()
+        .with_size(egui::Vec2::new(1200.0, 800.0))
+        .with_max_steps(64)
+        .wgpu()
+        .build_eframe(move |_cc| frontend::harness_app(&part, cr, &path, None, Workspace::default()));
+    settle(&mut h);
+    // Wait until the guide's heading names `step`, up to two minutes (the
+    // import starts the sidecar's Python).
+    fn wait_for(h: &mut Harness<'static, ViewApp>, step: &str) {
+        for _ in 0..1200 {
+            settle(h);
+            if h.query_by_label_contains(step).is_some() {
+                return;
+            }
+            std::thread::sleep(std::time::Duration::from_millis(100));
+        }
+        panic!("the guide never reached {step}; the log: {:?}", h.state().output_lines());
+    }
+    wait_for(&mut h, "Job: step 1 of 6, Model");
+    shot(&mut h, "job-1-model");
+    h.get_by_label("Import STEP…").click();
+    settle(&mut h);
+    let step = std::fs::canonicalize("tests/fixtures/pocket_plate.step").unwrap();
+    let step = step.to_string_lossy().trim_start_matches("\\\\?\\").to_string();
+    let field = h.query_all_by_role(Role::TextInput).min_by(|a, b| a.rect().top().total_cmp(&b.rect().top())).expect("the path field");
+    field.focus();
+    h.step();
+    let field = h.query_all_by_role(Role::TextInput).min_by(|a, b| a.rect().top().total_cmp(&b.rect().top())).expect("the path field");
+    field.type_text(&step);
+    h.step();
+    h.get_by_label("Import").click();
+    wait_for(&mut h, "Job: step 2 of 6, Stock");
+    shot(&mut h, "job-2-stock");
+    h.get_by_label("Show the proposed stock").click();
+    settle(&mut h);
+    h.get_by_label("Accept into project").click();
+    wait_for(&mut h, "Job: step 3 of 6, Features");
+    shot(&mut h, "job-3-features");
+    h.query_all_by_label("Accept all (4)").next().expect("the guide's button").click();
+    wait_for(&mut h, "Job: step 4 of 6, Tools");
+    shot(&mut h, "job-4-tools");
+    assert!(std::fs::read_to_string(project.join("main.part")).unwrap().contains("feature F27_Pocket ProfilePocket"), "the features are in the project");
+    drop(h);
+    let _ = std::fs::remove_dir_all(&root);
 }

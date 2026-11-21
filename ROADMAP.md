@@ -692,6 +692,18 @@ One page. What is built, what is next, and the debts we know about.
    without asking and refuses a merge, and `shots.sh` puts a window PR's
    before and after pictures in the PR itself.
 
+8. **The job has an order (2026-11-21).** A new user could not tell what to
+   do first: the acts existed but nothing said their order. The sidebar now
+   carries a job guide until the operations are scheduled: Model, Stock,
+   Features, Tools, Operations, Program, the next step with one sentence
+   and its button. `nacs --job` prints the same.
+   Still missing, in the order a job meets them: `nacs --view` with no
+   project to remember is an error and not an empty window; a STEP is
+   named by typing its path (no file picker); the imported model is not
+   drawn until its features are accepted; no act places the origin or
+   moves the part inside the stock; Tools is a blank form with no starter
+   cutter; the Review lists every face, not the features.
+
 ## Debts
 
 - **The capture box** on the acrylic window waits on an egui release carrying
