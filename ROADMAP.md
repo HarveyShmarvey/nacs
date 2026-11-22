@@ -697,11 +697,8 @@ One page. What is built, what is next, and the debts we know about.
    carries a job guide until the operations are scheduled: Model, Stock,
    Features, Tools, Operations, Program, the next step with one sentence
    and its button. `nacs --job` prints the same.
-   Still missing, in the order a job meets them: `nacs --view` with no
-   project to remember is an error and not an empty window; a STEP is
-   named by typing its path (no file picker); the imported model is not
-   drawn until its features are accepted; no act places the origin or
-   moves the part inside the stock; Tools is a blank form with no starter
+   Still missing, in the order a job meets them: no act places the
+   origin or moves the part inside the stock; Tools has no starter
    cutter; the Review lists every face, not the features.
    Second pass, from the user's first run on a part of their own
    (2026-11-21): the Stock step accepts the proposed blank in one click;
@@ -715,6 +712,11 @@ One page. What is built, what is next, and the debts we know about.
    declared is still asked for after its feature is cut: the Tools step
    names the tool and keeps its button, and once the tool is declared
    Operations opens again for the one line.
+   Fourth pass (2026-11-22): `nacs --view` with nothing to reopen opens
+   a window with no project, the guide at step 1; importing a STEP there
+   starts `<model>.cam` beside the model. What an import proposes is
+   drawn before any accept: the proposed blank, and the waiting features
+   in dim lines. The empty viewport's sentence wraps.
    Asked for, not built: an options page. First on it, the camera: the
    orbit style (the user's pick is a free turntable) and what it turns
    about (the part's center), each with alternatives.

@@ -822,7 +822,8 @@ pub fn finding_rows(
         });
         rows.push(FindingRow { head, text: text.to_string(), color, annotation, op, feature, place, at, tool, unchecked });
     };
-    if let Some(r) = &v.refusal {
+    // A window with no project open has nothing rejected.
+    if let Some(r) = v.refusal.as_ref().filter(|r| !r.starts_with(NO_PROJECT)) {
         let text = r.strip_prefix("error: ").unwrap_or(r);
         // The one row whose place is read from its sentence (`refusal_place`).
         push("REJECTED".to_string(), text, theme.refusal, None, String::new(), "rejected", refusal_place(text, lift_z), None, None, false);
@@ -5566,6 +5567,10 @@ pub fn dropped_project(paths: &[std::path::PathBuf]) -> Option<std::path::PathBu
 /// file appearing, or being fixed, reloads it. A `main.part` path is its
 /// directory.
 pub fn empty_project_part(project: &std::path::Path) -> Part {
+    // No path at all is a window with no project open: nothing to watch.
+    if project.as_os_str().is_empty() {
+        return Part::default();
+    }
     let dir = if project.extension().is_some_and(|e| e == "part") {
         project.parent().map(|p| p.to_path_buf()).unwrap_or_default()
     } else {
@@ -5584,6 +5589,9 @@ pub fn empty_project_part(project: &std::path::Path) -> Part {
 /// `main.part` — the New project form writes one; a file that does not
 /// parse — the Problems row says where. `None` when a project stands.
 pub fn stance_note(p: &Part, refusal: Option<&str>) -> Option<String> {
+    if p.sources.is_empty() && p.features.is_empty() && p.tools.is_empty() && refusal.is_some_and(|r| r.starts_with(NO_PROJECT)) {
+        return Some("No project open. Import STEP… starts one beside the model; a project folder dropped here opens it".to_string());
+    }
     let main = p.sources.first()?;
     if !main.exists() {
         let dir = main.parent().and_then(|d| d.file_name()).map(|n| n.to_string_lossy().to_string()).unwrap_or_default();
@@ -5593,6 +5601,47 @@ pub fn stance_note(p: &Part, refusal: Option<&str>) -> Option<String> {
         return Some("this project does not parse — the Problems row says where; fix the file and the window reloads".to_string());
     }
     None
+}
+
+/// What the check says in a window opened on no project; `stance_note`
+/// and the job guide read it.
+pub const NO_PROJECT: &str = "no project open";
+
+/// The folder a STEP imported with no project open starts: beside the
+/// model and named for it, `bracket.step` giving `bracket.cam`.
+pub fn home_for_step(step: &std::path::Path) -> std::path::PathBuf {
+    step.with_extension("cam")
+}
+
+/// What an import proposes, drawn before any of it is accepted: the
+/// proposed blank's box and the wireframe of every feature still waiting.
+pub struct Preview {
+    /// Whether the blank itself is still a proposal (then its box is drawn
+    /// in place of the project's).
+    pub stock_waiting: bool,
+    pub stock_bb: [f64; 6],
+    pub edges: Vec<FeatureEdges>,
+    pub fit_bb: [f64; 6],
+}
+
+/// The preview of a proposed blank and the feature statements still
+/// waiting: the project they would make, parsed in memory. A statement the
+/// parser refuses is left out of the picture; its row in the Review says why.
+pub fn proposal_preview(stock_text: &str, statements: &[String], stock_waiting: bool) -> Option<Preview> {
+    let stock_only: String = stock_text.lines().filter(|l| !l.trim().starts_with("given from ")).collect::<Vec<_>>().join("\n");
+    let mut text = crate::template::project_text_from_proposal(&stock_only).ok()?;
+    let mut part = crate::parse::parse(&text).ok()?;
+    for s in statements {
+        let candidate = append_statement(&text, s);
+        if let Ok(p) = crate::parse::parse(&candidate) {
+            text = candidate;
+            part = p;
+        }
+    }
+    let edges = feature_edges(&part);
+    let stock_bb = stock_aabb(&part.stock);
+    let fit_bb = edges_aabb(&edges, stock_bb);
+    Some(Preview { stock_waiting, stock_bb, edges, fit_bb })
 }
 
 /// The program file beside the project (Phase 50 slice 2, the way out):

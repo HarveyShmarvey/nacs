@@ -7302,3 +7302,21 @@ fn the_job_steps_name_the_next_thing_to_do() {
     let steps = job_steps(&plate, &JobFacts { to_schedule: 1, ..on_disk });
     assert_eq!((steps[4].name, steps[4].state, steps[4].act.as_ref().map(|a| a.1)), ("Operations", StepState::Next, Some("schedule")));
 }
+
+#[test]
+fn a_proposal_is_drawn_before_it_is_accepted() {
+    let stock = "# Proposed stock\nstock Box(w=100.0, l=80.0, h=28.0, x=0.0, y=0.0, z=28.0)\n";
+    let hole = "feature H1 CylinderBore(dia=6.0, extent=10.0, x=20, y=20, z=28.0)".to_string();
+    let bad = "feature Nope Nothing(dia=1)".to_string();
+    let p = nacs::view::proposal_preview(stock, &[hole, bad], true).expect("the proposed blank parses");
+    assert_eq!(p.stock_bb, [0.0, 0.0, 0.0, 100.0, 80.0, 28.0]);
+    // The statement the parser refuses is left out; the other is drawn.
+    assert_eq!(p.edges.iter().map(|e| e.name.as_str()).collect::<Vec<_>>(), vec!["H1"]);
+    assert!(!p.edges[0].polylines.is_empty());
+    assert!(nacs::view::proposal_preview("not a stock", &[], true).is_none());
+    // No path is no project: nothing to watch, and the window says so.
+    let none = nacs::view::empty_project_part(std::path::Path::new(""));
+    assert!(none.sources.is_empty());
+    assert!(nacs::view::stance_note(&none, Some(nacs::view::NO_PROJECT)).is_some_and(|n| n.starts_with("No project open")));
+    assert_eq!(nacs::view::home_for_step(std::path::Path::new("a/bracket.step")), std::path::Path::new("a/bracket.cam"));
+}

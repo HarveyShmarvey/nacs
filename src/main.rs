@@ -519,10 +519,9 @@ fn main() {
     if show_view && args.is_empty() {
         match nacs::theme::load_full_workspace().project {
             Some(p) => args.push(p),
-            None => {
-                eprintln!("error: no project to open — nacs --view <project>; from then on the window remembers the last one, and a folder dropped on it opens too");
-                process::exit(2);
-            }
+            // Nothing remembered: the window opens with no project, and
+            // its guide starts at the first step.
+            None => view_mode_empty("", nacs::view::NO_PROJECT.to_string(), theme_arg, frame_native, 0),
         }
     }
     let path_arg = args.into_iter().next().unwrap_or_else(|| {
@@ -545,7 +544,7 @@ fn main() {
             // The window opens anyway (Phase 50 slice 3): a directory with
             // no main.part is the empty stance, the New project form offered.
             if show_view {
-                view_mode_empty(&path_arg, msg.clone(), theme_arg, frame_native);
+                view_mode_empty(&path_arg, msg.clone(), theme_arg, frame_native, 1);
             }
             // The job's steps answer on a folder with nothing in it: step 1.
             if show_job && !std::path::Path::new(&path_arg).join("main.part").exists() {
@@ -559,7 +558,7 @@ fn main() {
             // The window opens anyway (Phase 50 slice 3): the unparsed
             // stance, the error its Problems row, the watch live.
             if show_view {
-                view_mode_empty(&path_arg, format!("parse error: {}", e), theme_arg, frame_native);
+                view_mode_empty(&path_arg, format!("parse error: {}", e), theme_arg, frame_native, 1);
             }
             // In the JSON rendering the check result is the artifact even when the
             // check result is "this does not parse": the same one-line error the
@@ -1377,20 +1376,24 @@ fn usage_text() -> String {
 /// a directory with no `main.part`, or a file that does not parse — the
 /// empty stance, the reason the Problems row, the watch following the
 /// files so the file appearing or being fixed reloads it. Exits 1 at
-/// close, as a rejected open always has.
+/// close, as a rejected open always has; a window asked for with no
+/// project at all was not rejected, and exits 0.
 #[cfg(feature = "frontend")]
-fn view_mode_empty(path_arg: &str, reason: String, theme: Option<String>, frame_native: Option<bool>) -> ! {
-    eprintln!("{}", reason);
+fn view_mode_empty(path_arg: &str, reason: String, theme: Option<String>, frame_native: Option<bool>, code: i32) -> ! {
+    if code != 0 {
+        eprintln!("{}", reason);
+    }
     let part = nacs::view::empty_project_part(std::path::Path::new(path_arg));
     let cr = nacs::check_result::CheckResult { refusal: Some(reason), findings: Vec::new(), emitted_moves: None };
     if let Err(e) = nacs::frontend::run(part, cr, path_arg, theme, frame_native) {
         eprintln!("error: {}", e);
+        process::exit(1);
     }
-    process::exit(1);
+    process::exit(code);
 }
 
 #[cfg(not(feature = "frontend"))]
-fn view_mode_empty(_path_arg: &str, _reason: String, _theme: Option<String>, _frame_native: Option<bool>) -> ! {
+fn view_mode_empty(_path_arg: &str, _reason: String, _theme: Option<String>, _frame_native: Option<bool>, _code: i32) -> ! {
     eprintln!("error: this nacs was built without the frontend feature (--no-default-features); rebuild with default features to open --view");
     process::exit(1);
 }

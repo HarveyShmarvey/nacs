@@ -492,27 +492,6 @@ fn test_init_writes_a_project_that_parses_and_never_writes_over_one() {
 }
 
 #[test]
-fn test_view_with_no_path_and_no_last_project_is_a_usage_error() {
-    // `nacs --view` alone reopens the last project the window saved; with
-    // no workspace file at all it says so and exits 2 — before any window.
-    // The config dir is pointed at an empty scratch so the box's own
-    // workspace file is never read.
-    let cfg = std::env::temp_dir().join(format!("nacs_cfg_{}", std::process::id()));
-    let _ = fs::remove_dir_all(&cfg);
-    fs::create_dir_all(&cfg).expect("scratch");
-    let out = Command::new(env!("CARGO_BIN_EXE_nacs"))
-        .arg("--view")
-        .env("APPDATA", &cfg)
-        .env("XDG_CONFIG_HOME", &cfg)
-        .env("HOME", &cfg)
-        .output()
-        .expect("run");
-    assert_eq!(out.status.code(), Some(2));
-    assert!(String::from_utf8_lossy(&out.stderr).contains("no project to open"));
-    let _ = fs::remove_dir_all(&cfg);
-}
-
-#[test]
 fn test_reference_errors_say_where_and_what_is_declared() {
     // Phase 50 slice 7: the three reference refusals carry the run line
     // and the declared names; a missing stock line says so instead of

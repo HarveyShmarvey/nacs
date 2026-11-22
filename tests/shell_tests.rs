@@ -2805,3 +2805,63 @@ fn the_job_guide_says_what_is_left_uncut_for_want_of_a_tool() {
     drop(h);
     let _ = std::fs::remove_dir_all(&root);
 }
+
+/// `nacs --view` with nothing to open: the window stands with no project,
+/// the guide at its first step. Importing a model starts the project in a
+/// folder beside the model, and the proposal is drawn before any accept.
+#[test]
+fn a_window_with_no_project_starts_one_beside_the_imported_model() {
+    #[cfg(windows)]
+    const VENV_PYTHON: &str = "sidecar/.venv/Scripts/python.exe";
+    #[cfg(not(windows))]
+    const VENV_PYTHON: &str = "sidecar/.venv/bin/python";
+    if !std::path::Path::new(VENV_PYTHON).is_file() {
+        eprintln!("skipped: no sidecar venv at {VENV_PYTHON}");
+        return;
+    }
+    redirect_config_home();
+    let root = std::env::temp_dir().join(format!("nacs-shell-nohome-{}", std::process::id()));
+    let _ = std::fs::remove_dir_all(&root);
+    std::fs::create_dir_all(&root).unwrap();
+    let step = root.join("bracket.step");
+    std::fs::copy("tests/fixtures/pocket_plate.step", &step).unwrap();
+    let part = view::empty_project_part(std::path::Path::new(""));
+    let cr = nacs::check_result::CheckResult { refusal: Some(view::NO_PROJECT.to_string()), findings: Vec::new(), emitted_moves: None };
+    let mut h = Harness::builder()
+        .with_size(egui::Vec2::new(1200.0, 800.0))
+        .with_max_steps(64)
+        .wgpu()
+        .build_eframe(move |_cc| frontend::harness_app(&part, cr, "", None, Workspace::default()));
+    settle(&mut h);
+    assert!(h.query_by_label_contains("Job: step 1 of 6, Model").is_some(), "the guide at its first step");
+    shot(&mut h, "start-no-project");
+    h.get_by_label("Import STEP…").click();
+    settle(&mut h);
+    for typing in [false, true] {
+        let field = h.query_all_by_role(Role::TextInput).min_by(|a, b| a.rect().top().total_cmp(&b.rect().top())).expect("the path field");
+        if typing { field.type_text(&step.to_string_lossy()) } else { field.focus() }
+        h.step();
+    }
+    h.get_by_label("Import").click();
+    let wait_for = |h: &mut Harness<'static, ViewApp>, step: &str| {
+        for _ in 0..1200 {
+            settle(h);
+            if h.query_by_label_contains(step).is_some() {
+                return;
+            }
+            std::thread::sleep(std::time::Duration::from_millis(100));
+        }
+        panic!("the guide never reached {step}; the log: {:?}", h.state().output_lines());
+    };
+    wait_for(&mut h, "Job: step 2 of 6, Stock");
+    let project = root.join("bracket.cam");
+    assert!(project.join("report.json").is_file(), "the project is the folder beside the model, named for it");
+    assert!(!project.join("main.part").exists(), "nothing written before Accept");
+    // The model is on screen already: the proposed blank and features.
+    shot(&mut h, "start-proposal-drawn");
+    h.get_by_label("Accept the proposed stock").click();
+    wait_for(&mut h, "Job: step 3 of 6, Features");
+    shot(&mut h, "start-features-waiting");
+    drop(h);
+    let _ = std::fs::remove_dir_all(&root);
+}

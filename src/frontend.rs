@@ -35,7 +35,7 @@ pub fn run(
 ) -> Result<(), String> {
     // The window's title is the path it was opened on, and that path is
     // also what it follows (DESIGN.md §1): one string, two readers.
-    let title = project_path;
+    let title = if project_path.is_empty() { "nacs" } else { project_path };
     name_the_gpu_driver();
     // The active theme: `--theme` wins, else the workspace file's `theme`
     // line, else the built-in palette. A chosen theme is loaded through
@@ -899,6 +899,8 @@ fn build(
         review_dups: Vec::new(),
         schedule_notes: Vec::new(),
         schedule_lines: 0,
+        preview: None,
+        pending_title: None,
         guide_shown: false,
         suppressed: scan_suppressed(part),
         field_edit: Vec::new(),
@@ -1590,6 +1592,10 @@ pub struct ViewApp {
     schedule_notes: Vec<String>,
     /// How many run lines the scheduler would add now.
     schedule_lines: usize,
+    /// What the import proposes and the project does not hold yet, drawn dim.
+    preview: Option<view::Preview>,
+    /// The window title a project switch asked for, sent on the next frame.
+    pending_title: Option<String>,
     /// The job guide has been on screen in this window.
     guide_shown: bool,
     /// The `# run` lines of the project's source files (DESIGN.md §5.2,
@@ -2479,7 +2485,7 @@ impl ViewApp {
     fn workspace_snapshot(&self) -> crate::theme::Workspace {
         crate::theme::Workspace {
             layout: self.layout.clone(),
-            project: Some(self.project_path.clone()),
+            project: (!self.project_path.is_empty()).then(|| self.project_path.clone()),
             theme: self.theme_choice.clone(),
             keys: self.raw_keys.clone(),
             shell: self.shell.clone(),
@@ -4114,6 +4120,10 @@ impl ViewApp {
             return;
         }
         self.git_read_at = Some(std::time::Instant::now());
+        // No project open: no folder whose branch to name.
+        if self.project_path.is_empty() {
+            return;
+        }
         let given = std::path::PathBuf::from(&self.project_path);
         let dir = if given.is_dir() { given } else { given.parent().map(|p| p.to_path_buf()).unwrap_or_default() };
         let (tx, rx) = std::sync::mpsc::channel();
@@ -4126,6 +4136,10 @@ impl ViewApp {
     /// The review's watch (DESIGN.md §5.2): the report beside the project,
     /// re-read when its mtime moves — including into or out of existence.
     fn poll_report(&mut self) {
+        // No project open: nothing beside it to read.
+        if self.project_path.is_empty() {
+            return;
+        }
         let mtime = std::fs::metadata(&self.report_path).and_then(|m| m.modified()).ok();
         let first = self.report.is_none() && self.report_mtime.is_none() && self.review_rows.is_empty();
         if mtime == self.report_mtime && !first {
@@ -4144,6 +4158,9 @@ impl ViewApp {
     /// The proposed stock's watch: `proposed_stock.part` beside the report,
     /// re-read when its mtime moves — into or out of existence.
     fn poll_stock_proposal(&mut self) {
+        if self.project_path.is_empty() {
+            return;
+        }
         let path = self.stock_proposal_path();
         let mtime = std::fs::metadata(&path).and_then(|m| m.modified()).ok();
         if mtime == self.stock_mtime && (mtime.is_some() || self.stock_text.is_none()) {
@@ -4190,6 +4207,28 @@ impl ViewApp {
         self.schedule_lines = schedule.lines.len();
         self.schedule_notes = schedule.notes;
         self.stock_proposal = self.stock_text.as_deref().map(|text| view::stock_proposal(text, &self.part));
+        // The picture of what is proposed and not yet accepted.
+        let stock_waiting = matches!(self.stock_proposal, Some(Ok(ref s)) if !s.in_project);
+        let waiting: Vec<String> = self
+            .review_rows
+            .iter()
+            .enumerate()
+            .filter(|(i, r)| !r.in_project && !r.rejected && self.review_dups.get(*i).copied().flatten().is_none())
+            .filter_map(|(_, r)| r.statement.clone())
+            .collect();
+        let had = self.preview.is_some();
+        self.preview = match &self.stock_text {
+            Some(text) if stock_waiting || !waiting.is_empty() => view::proposal_preview(text, &waiting, stock_waiting),
+            _ => None,
+        };
+        // A model just imported is framed once; after that the camera is the user's.
+        if let (false, Some(p)) = (had, &self.preview) {
+            if p.stock_waiting {
+                self.fit_bb = p.fit_bb;
+                self.fitted = false;
+                self.tween = None;
+            }
+        }
         if let view::Selection::Review(i) = self.selection {
             if i >= self.review_rows.len() {
                 self.selection = view::Selection::None;
@@ -4602,6 +4641,15 @@ impl ViewApp {
             self.edit_note = Some("Not imported — no sidecar in reach: run the window from the repo root, or set NACS_SIDECAR to the sidecar directory".to_string());
             return;
         };
+        // No project open: the import starts one beside the model.
+        if self.project_path.is_empty() {
+            let home = view::home_for_step(&step);
+            if let Err(e) = std::fs::create_dir_all(&home) {
+                self.edit_note = Some(format!("Not imported — cannot make {}: {e}", home.display()));
+                return;
+            }
+            self.set_project(home);
+        }
         let given = std::path::Path::new(&self.project_path);
         let dir = if given.extension().is_some_and(|e| e == "part") { given.parent().map(|p| p.to_path_buf()).unwrap_or_default() } else { given.to_path_buf() };
         let setup = self.import_setup.clone();
@@ -4629,6 +4677,9 @@ impl ViewApp {
     /// succeeds. The observed mtime is kept either way, so a broken file is
     /// read once per change, not once per frame.
     fn poll_project(&mut self, ctx: &egui::Context) {
+        if let Some(title) = self.pending_title.take() {
+            ctx.send_viewport_cmd(egui::ViewportCommand::Title(title));
+        }
         // A reload runs on a worker (ROADMAP item 3 slice 2): the load and
         // the check are the program's whole planning, seconds under a fine
         // stepover, and until 2026-11-07 they ran here, on the frame, so the
@@ -4698,6 +4749,12 @@ impl ViewApp {
     /// file's texts) and any form are dropped, the workspace remembers it,
     /// and the next poll loads it — or lands it in a stance.
     fn switch_project(&mut self, project: std::path::PathBuf, ctx: &egui::Context) {
+        self.set_project(project);
+        ctx.request_repaint();
+    }
+
+    /// The switch itself, for a caller with no frame in hand.
+    fn set_project(&mut self, project: std::path::PathBuf) {
         let path = project.to_string_lossy().to_string();
         self.project_path = path.clone();
         self.report_path = (if project.extension().is_some_and(|e| e == "part") { project.parent().map(|d| d.to_path_buf()).unwrap_or_default() } else { project.clone() }).join("report.json");
@@ -4712,7 +4769,7 @@ impl ViewApp {
         self.edit_note = None;
         self.project_switch = true;
         self.project_reload = true;
-        ctx.send_viewport_cmd(egui::ViewportCommand::Title(path));
+        self.pending_title = Some(path);
         if let Err(reason) = crate::theme::save_workspace(&self.workspace_snapshot()) {
             startup_say(format!("workspace not saved: {reason}"));
         }
@@ -5580,6 +5637,10 @@ impl ViewApp {
     /// undo stack. Refused by name over a `main.part` that stands.
     fn create_project(&mut self, kind: usize) {
         let Some(form) = &self.new_form else { return };
+        if self.project_path.is_empty() {
+            self.edit_note = Some("Not written — no project folder is open: import a STEP file, or drop a folder on the window".to_string());
+            return;
+        }
         let kind_word = crate::template::PROJECT_STOCK_KINDS[kind];
         let keys = crate::template::project_keys(kind_word).unwrap_or_default();
         let answers: Vec<(String, String)> = keys
@@ -7194,8 +7255,12 @@ impl ViewApp {
             egui::pos2(center.x + x, center.y - y) // +y up → screen y down
         };
 
-        // The stock: 12 edges, the quiet reference everything sits in.
-        let bb = view::stock_aabb(&self.part.stock);
+        // The stock: 12 edges, the quiet reference everything sits in. A
+        // blank still proposed is drawn in its place.
+        let bb = match &self.preview {
+            Some(p) if p.stock_waiting => p.stock_bb,
+            _ => view::stock_aabb(&self.part.stock),
+        };
         let corner = |k: usize| -> egui::Pos2 {
             to_screen([
                 bb[if k & 1 == 0 { 0 } else { 3 }],
@@ -7230,6 +7295,13 @@ impl ViewApp {
         for (wi, edge) in self.edges.iter().enumerate() {
             if layers.outlines && sel_feature != Some(wi) {
                 draw_edge(edge, edge_stroke);
+            }
+        }
+        // What the import proposes and the project does not hold yet, dim.
+        if let (Some(p), true) = (&self.preview, layers.outlines) {
+            let proposed_stroke = egui::Stroke::new(1.0, rgb(self.theme.wire).gamma_multiply(0.55));
+            for edge in &p.edges {
+                draw_edge(edge, proposed_stroke);
             }
         }
 
@@ -7555,8 +7627,14 @@ impl ViewApp {
         // The two stances without a program (DESIGN.md §1, Phase 50 slice
         // 3) speak first: no main.part, or a file that does not parse.
         let stance = view::stance_note(&self.part, self.check_result.refusal.as_deref());
-        if let Some(note) = stance.as_deref().or_else(|| view::empty_viewport_note(self.part.operations.len(), self.part.features.len())) {
-            painter.text(center, egui::Align2::CENTER_CENTER, note, egui::FontId::proportional(14.0), rgb(self.theme.text));
+        if let Some(p) = &self.preview {
+            // A proposal has the middle of the view; its one line sits above it.
+            let note = if p.stock_waiting { "Proposed from the model. Nothing is in the project until it is accepted" } else { "Dim lines are proposed features, not yet accepted" };
+            painter.text(rect.center_top() + egui::vec2(0.0, 14.0), egui::Align2::CENTER_TOP, note, egui::FontId::proportional(13.0), rgb(self.theme.text));
+        } else if let Some(note) = stance.as_deref().or_else(|| view::empty_viewport_note(self.part.operations.len(), self.part.features.len())) {
+            // Wrapped to the viewport, so a narrow one does not cut the sentence.
+            let galley = painter.layout(note.to_string(), egui::FontId::proportional(14.0), rgb(self.theme.text), (rect.width() - 32.0).max(80.0));
+            painter.galley(center - galley.size() / 2.0, galley, rgb(self.theme.text));
         }
 
         // The Layers list and the view strip live in the band's row over
