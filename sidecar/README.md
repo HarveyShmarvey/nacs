@@ -41,7 +41,7 @@ dependency ledger, same annotation rule as `Cargo.toml`'s.
 ```
 sidecar/.venv/bin/python sidecar/import_step.py <model.step> -o <outdir>/
     [--solid N] [--up {x+,x-,y+,y-,z+,z-}] [--allowance MM]
-    [--given PROJECT --blank WORDS]
+    [--origin X,Y,Z] [--given PROJECT --blank WORDS]
 ```
 
 Writes `<outdir>/report.json` (every face accounted for: proposed primitive
@@ -52,6 +52,8 @@ part; `--up` declares which model axis is up on the machine (a Y-up CAD
 export imports with `--up y+`); `--allowance` says how far the blank stands
 outside the model, so bores at the model's top are placed and the rim is
 proposed as a boss to bring to size (the engine passes 1 unless told);
+`--origin` names the point that becomes 0,0,0 (the engine passes
+`mid,mid,max`, the blank's centre and top, unless told; `CONTRACT.md`);
 `--given` with `--blank` is the second setup: the engine hands over the
 earlier program's blank turned over as the stock words, the sidecar measures
 the blank's margins instead of taking an allowance, proposes the stock with

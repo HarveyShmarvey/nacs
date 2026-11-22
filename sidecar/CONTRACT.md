@@ -12,7 +12,7 @@ contract v1…"); this file is the spec.
 ```
 sidecar/.venv/bin/python sidecar/import_step.py <model.step> -o <outdir>/
     [--solid N] [--up {x+,x-,y+,y-,z+,z-}] [--allowance MM]
-    [--given PROJECT --blank WORDS]
+    [--origin X,Y,Z] [--given PROJECT --blank WORDS]
 ```
 
 argv + files, nothing else. No stdin protocol, no long-running process, no
@@ -50,6 +50,20 @@ machine that only the human knows, so they are declared, never guessed:
   The header of `proposed.part` and the report's `allowance` field say
   the import was made with it; without it both files are byte for byte
   what they were.
+- `--origin X,Y,Z` — the point that becomes 0,0,0. The sidecar moves the
+  model there after the `--up` turn and before recognition, so every
+  reported coordinate and proposed feature is measured from it. Each
+  component is `model` (that axis keeps the model's own zero), a number (a
+  model coordinate, after `--up`), `min`, `mid` or `max` of the blank (the
+  model's box grown by `--allowance` on the sides and the top; a prism is
+  its own blank and is not grown), or `part-min`, `part-mid` or `part-max`
+  of the model. `mid,mid,max` is the blank's centre and its top. Without
+  the flag nothing moves and both files are byte for byte what they were.
+  The report carries `origin` (the words) and `origin_at` (the model point);
+  the headers of `proposed.part` and `proposed_stock.part` say both.
+  `import_stock.py` takes the same flag and must be given the same words.
+  Beside `--blank` it is an error unless every component is `model`: the
+  second setup keeps the origin its blank is written in.
 - `--given PROJECT --blank WORDS` (ROADMAP item 1, slice 12) — the second
   setup. The engine, which has the earlier program, computes its blank
   turned as `--up` says (`z+` or `z-`; a quarter turn is refused, since a

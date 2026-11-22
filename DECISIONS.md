@@ -294,6 +294,14 @@ that accounts for every face and a `proposed.part` to review. Rust reads the
 report; the only place Rust runs Python is `nacs --import`. The engine builds
 and tests with the sidecar absent.
 
+**The origin is chosen at import (2026-11-22).** The sidecar moves the model
+so the chosen point is 0,0,0 before it reads anything (`--origin x,y,z`),
+so the numbers in the file are the numbers on the machine and the grammar
+and the G-code are unchanged. Unless told it is the blank's centre and its
+top; any point can be typed, and `model` keeps the CAD origin. A project
+has no origin statement. One that shifts the program at emit time stays
+open for setups this does not cover.
+
 **Recognition proposes, a person accepts.** Unsupported faces are named with
 their `CHECKLIST.md` row. Nothing recognised is machined until it is written
 into the project as text.

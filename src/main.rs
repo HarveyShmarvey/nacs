@@ -237,6 +237,15 @@ fn main() {
         }
         import_allowance = Some(args.remove(pos));
     }
+    let mut import_origin: Option<String> = None;
+    while let Some(pos) = args.iter().position(|a| a == "--origin") {
+        args.remove(pos);
+        if pos >= args.len() {
+            eprintln!("error: --origin needs x,y,z (mid,mid,max is the stock's center and top; model,model,model keeps the model's own)");
+            process::exit(2);
+        }
+        import_origin = Some(args.remove(pos));
+    }
     let mut init_spec: Option<String> = None;
     while let Some(pos) = args.iter().position(|a| a == "--init") {
         args.remove(pos);
@@ -533,7 +542,7 @@ fn main() {
         init_mode(&spec, &path_arg);
     }
     if let Some(step) = import_step {
-        import_mode(&step, import_up.as_deref(), import_solid.as_deref(), import_allowance.as_deref(), import_given.as_deref(), &path_arg);
+        import_mode(&step, import_up.as_deref(), import_solid.as_deref(), import_allowance.as_deref(), import_given.as_deref(), import_origin.as_deref(), &path_arg);
     }
     // The program string is built completely before anything is printed, so a
     // failure never leaves partial G-code on stdout (AGENTS.md error convention).
@@ -723,31 +732,31 @@ fn view_mode(_part: parse::Part, _title: &str, _theme: Option<String>, _frame_na
     process::exit(1);
 }
 
-/// `--job`: the six steps from model to program and which is next, read
+/// `--job`: the seven steps from model to program and which is next, read
 /// off the project folder as the window's guide reads them.
 fn job_mode(dir: &str, part: &nacs::parse::Part, has_file: bool, refusal: Option<&str>) -> ! {
     let d = std::path::Path::new(dir);
     let d = if d.is_file() { d.parent().unwrap_or(d) } else { d };
     // The import's report, where this build can read one.
     #[cfg(any(feature = "frontend", feature = "agent"))]
-    let (model, waiting) = match std::fs::read_to_string(d.join("report.json")).ok().and_then(|t| nacs::review::read(&t).ok()) {
+    let (model, waiting, origin) = match std::fs::read_to_string(d.join("report.json")).ok().and_then(|t| nacs::review::read(&t).ok()) {
         Some(report) => {
             let rejected = std::fs::read_to_string(d.join("main.part")).map(|t| nacs::review::rejected_ids(&t)).unwrap_or_default();
             let rows = nacs::review::rows(&report, part, &rejected);
             let dups = nacs::view::duplicate_proposals(&rows);
-            (Some(report.source.clone()), nacs::view::proposals_waiting(&rows, &dups))
+            (Some(report.source.clone()), nacs::view::proposals_waiting(&rows, &dups), report.origin.clone())
         }
-        None => (None, 0),
+        None => (None, 0, None),
     };
     #[cfg(not(any(feature = "frontend", feature = "agent")))]
-    let (model, waiting): (Option<String>, usize) = (None, 0);
+    let (model, waiting, origin): (Option<String>, usize, Option<String>) = (None, 0, None);
     let stock_waiting = std::fs::read_to_string(d.join("proposed_stock.part")).ok().and_then(|t| nacs::view::stock_proposal(&t, part).ok()).is_some_and(|s| !s.in_project);
     let schedule = if has_file { nacs::schedule::for_project(part).unwrap_or_default() } else { Default::default() };
     let (notes, to_schedule) = (schedule.notes, schedule.lines.len());
     let program = nacs::view::program_file_path(d);
     let stamp = |p: &std::path::Path| std::fs::metadata(p).and_then(|m| m.modified()).ok();
     let program_file = (program.is_file() && stamp(&program) >= stamp(&d.join("main.part"))).then(|| program.file_name().unwrap_or_default().to_string_lossy().into_owned());
-    let facts = nacs::view::JobFacts { has_file, model, stock_waiting, waiting, notes, refusal: refusal.map(str::to_string), program_file, to_schedule };
+    let facts = nacs::view::JobFacts { has_file, model, stock_waiting, waiting, notes, refusal: refusal.map(str::to_string), program_file, to_schedule, origin };
     print!("{}", nacs::view::job_report(&nacs::view::job_steps(part, &facts)));
     process::exit(0)
 }
@@ -1333,7 +1342,7 @@ fn usage_text() -> String {
         "    --view [--theme <name|file.json>] [--frame own|native]",
         "                                             open the window on the project (no path: the last one opened)",
         "    --outline                                stock, features and operations in run order",
-        "    --job                                    the six steps from model to program, and which is next",
+        "    --job                                    the seven steps from model to program, and which is next",
         "    --check[=json]                           validate and lint; nothing printed means nothing found",
         "Measure",
         "    --time-report                            the cut-time model, per operation and whole",
@@ -1350,9 +1359,11 @@ fn usage_text() -> String {
         "                                             a boundary arc through two points, as loop text",
         "    --init '<Box|Cylinder> key=value...' <dir>   write a new project's main.part, every value shown",
         "Import",
-        "    --import <model.step> [--up <axis>] [--solid N] [--allowance <mm>] [--given <project>] <dir>
+        "    --import <model.step> [--up <axis>] [--solid N] [--allowance <mm>] [--origin <x,y,z>] [--given <project>] <dir>
                                              run the sidecar into the project directory (report.json beside main.part);
                                              the blank stands 1 mm outside the model unless --allowance says (0: cut to size);
+                                             X0 Y0 is the blank's center and Z0 its top unless --origin says: per axis model,
+                                             a number, min, mid, max (of the blank) or part-min, part-mid, part-max;
                                              --given names the program before this one: the blank is its stock turned over, the given from line written",
         "    --review <report.json>                   the sidecar's proposals, as the window reviews them",
         "    --accept F1,F6,... <report.json>         print the accepted proposals as .part text",
@@ -1439,11 +1450,14 @@ fn init_mode(spec: &str, dir_arg: &str) -> ! {
 /// axis's shape exit 2) — then run and waited for, its summary on stderr,
 /// `report.json` beside the project. A directory with no main.part yet is
 /// told what it still needs.
-fn import_mode(step: &str, up: Option<&str>, solid: Option<&str>, allowance: Option<&str>, given: Option<&str>, dir_arg: &str) -> ! {
+fn import_mode(step: &str, up: Option<&str>, solid: Option<&str>, allowance: Option<&str>, given: Option<&str>, origin: Option<&str>, dir_arg: &str) -> ! {
     // The allowance unsaid is the setup's own default, one home (view.rs).
     let mut setup = nacs::view::ImportSetup { up: up.map(str::to_string), solid: solid.unwrap_or("").to_string(), given: given.unwrap_or("").to_string(), ..Default::default() };
     if let Some(a) = allowance {
         setup.allowance = a.to_string();
+    }
+    if let Some(o) = origin {
+        setup.origin = o.to_string();
     }
     if let Err(e) = setup.args() {
         eprintln!("error: {e}");

@@ -433,7 +433,7 @@ fn the_outline_is_five_groups_with_doors_on_their_headers() {
     let fields = h.query_all_by_role(Role::TextInput).count();
     h.get_by_label("New target…").click();
     settle(&mut h);
-    assert_eq!(h.query_all_by_role(Role::TextInput).count(), fields + 4, "the path field, and the solid, allowance and given fields under it");
+    assert_eq!(h.query_all_by_role(Role::TextInput).count(), fields + 5, "the path field, the solid, allowance and given fields under it, and the origin's");
     assert!(h.query_by_label("Import").is_some());
     // The native dialog's door, where the platform has one (slice 9) — the
     // dialog itself is the system's and is not opened here.
@@ -1384,12 +1384,12 @@ fn new_stock_on_a_project_not_yet_made_makes_it() {
     assert_eq!(h.state().layout().sidebar.tab, nacs::theme::SidebarTab::Review, "the Review in front");
     assert!(matches!(h.state().selection(), Selection::ProposedStock), "the stock row selected: {:?}", h.state().selection());
     assert!(h.query_all_by_label("Stock  Profile of 6 points").next().is_some(), "the row (and the card's head)");
-    assert!(h.query_all_by_label_contains("stock Profile(h=20.0, z=20.0").next().is_some(), "the card shows the statement");
+    assert!(h.query_all_by_label_contains("stock Profile(h=20.0, z=0.0").next().is_some(), "the card shows the statement");
     h.get_by_label("Accept into project").click();
     settle(&mut h);
     let text = std::fs::read_to_string(&main).unwrap_or_else(|e| panic!("main.part made: {e} — {log}"));
-    assert!(text.contains("rapid_z 25.000\nclearance_z 45.000\n"), "the planes above the model's top: {text}");
-    assert!(text.contains("stock Profile(h=20.0, z=20.0"), "the model's stock: {text}");
+    assert!(text.contains("rapid_z 5.000\nclearance_z 25.000\n"), "the planes above the model's top: {text}");
+    assert!(text.contains("stock Profile(h=20.0, z=0.0"), "the model's stock: {text}");
     assert!(h.state().output_lines().join(" | ").contains("main.part made from the model: a stock Profile of 6 points"), "said: {log}");
     // The reload rides the project poll, a tick behind the write; the row
     // then reads in project, off the program.
@@ -1486,7 +1486,7 @@ fn an_import_into_an_empty_folder_is_reviewed_into_a_project() {
     settle(&mut h);
     let main = project.join("main.part");
     let text = std::fs::read_to_string(&main).expect("main.part made from the stock");
-    assert!(text.contains("stock Profile(h=20.0, z=20.0"), "{text}");
+    assert!(text.contains("stock Profile(h=20.0, z=0.0"), "{text}");
     assert!(!text.contains("feature "), "no feature yet: {text}");
     // The reload, then every proposal in one write.
     let mut ready = false;
@@ -1503,8 +1503,8 @@ fn an_import_into_an_empty_folder_is_reviewed_into_a_project() {
     h.query_all_by_label_contains("Accept all (").next().expect("the button").click();
     settle(&mut h);
     let text = std::fs::read_to_string(&main).unwrap();
-    assert!(text.contains("feature F1_Profile ProfileBoss(z=20.0, extent=20.0"), "{text}");
-    assert!(text.contains("feature F8_Top Plane(z=20.0)"), "{text}");
+    assert!(text.contains("feature F1_Profile ProfileBoss(z=0.0, extent=20.0"), "{text}");
+    assert!(text.contains("feature F8_Top Plane(z=0.0)"), "{text}");
     assert!(nacs::parse::load_project(&project.to_string_lossy()).is_ok(), "the project parses");
     drop(h);
     let _ = std::fs::remove_dir_all(&root);
@@ -2107,7 +2107,7 @@ fn an_import_of_a_round_part_proposes_the_bounding_cylinder() {
     h.get_by_label("Accept into project").click();
     settle(&mut h);
     let text = std::fs::read_to_string(project.join("main.part")).expect("main.part made from the stock");
-    assert!(text.contains("stock Cylinder(dia=122.0, h=31.0, x=0.0, y=0.0, z=31.0)"), "{text}");
+    assert!(text.contains("stock Cylinder(dia=122.0, h=31.0, x=0.0, y=0.0, z=0.0)"), "{text}");
     assert!(text.contains("# the smallest blank the model fits"), "the sidecar's words ride into the project: {text}");
     let mut ready = false;
     for _ in 0..50 {
@@ -2236,7 +2236,7 @@ fn an_assembly_is_imported_once_its_solid_is_named_in_the_field() {
         // The setup row under the path reads solid, allowance, given from
         // the left; the solid field is its first.
         let path_top = path_field(h).rect().min.y;
-        h.query_all_by_role(Role::TextInput).filter(|n| n.rect().min.y > path_top + 1.0).min_by(|a, b| a.rect().min.x.total_cmp(&b.rect().min.x)).expect("the solid field leads the setup row")
+        h.query_all_by_role(Role::TextInput).filter(|n| n.rect().min.y > path_top + 1.0).min_by(|a, b| (a.rect().min.y.round(), a.rect().min.x).partial_cmp(&(b.rect().min.y.round(), b.rect().min.x)).unwrap()).expect("the solid field leads the first setup row")
     }
     path_field(&h).focus();
     h.step();
@@ -2711,7 +2711,7 @@ fn the_job_guide_leads_from_an_empty_folder_to_a_program() {
         }
         panic!("the guide never reached {step}; the log: {:?}", h.state().output_lines());
     }
-    wait_for(&mut h, "Job: step 1 of 6, Model");
+    wait_for(&mut h, "Job: step 1 of 7, Model");
     shot(&mut h, "job-1-model");
     h.get_by_label("Import STEP…").click();
     settle(&mut h);
@@ -2724,16 +2724,16 @@ fn the_job_guide_leads_from_an_empty_folder_to_a_program() {
     field.type_text(&step);
     h.step();
     h.get_by_label("Import").click();
-    wait_for(&mut h, "Job: step 2 of 6, Stock");
+    wait_for(&mut h, "Job: step 3 of 7, Stock");
     shot(&mut h, "job-2-stock");
     // Before the stock is accepted there is no main.part, so the Review
     // does not offer Accept all yet: the guide's button is the one way on.
     assert!(h.query_all_by_label_contains("Accept all (").next().is_none(), "no Accept all before the stock");
     h.get_by_label("Accept the proposed stock").click();
-    wait_for(&mut h, "Job: step 3 of 6, Features");
+    wait_for(&mut h, "Job: step 4 of 7, Features");
     shot(&mut h, "job-3-features");
     h.query_all_by_label("Accept all (4)").next().expect("the guide's button").click();
-    wait_for(&mut h, "Job: step 4 of 6, Tools");
+    wait_for(&mut h, "Job: step 5 of 7, Tools");
     shot(&mut h, "job-4-tools");
     assert!(std::fs::read_to_string(project.join("main.part")).unwrap().contains("feature F27_Pocket ProfilePocket"), "the features are in the project");
     // Tools: the form opens on an Endmill with its number filled in; the
@@ -2750,11 +2750,11 @@ fn the_job_guide_leads_from_an_empty_folder_to_a_program() {
     // Create sits right under the one required answer, above the optional ones.
     shot(&mut h, "job-4b-tool-form");
     h.get_by_label("Create tool").click();
-    wait_for(&mut h, "Job: step 5 of 6, Operations");
+    wait_for(&mut h, "Job: step 6 of 7, Operations");
     shot(&mut h, "job-5-operations");
     // Operations: one click schedules them, and the Outline lists them.
     h.query_all_by_label("Schedule operations").next().expect("the guide's button").click();
-    wait_for(&mut h, "Job: step 6 of 6, Program");
+    wait_for(&mut h, "Job: step 7 of 7, Program");
     assert_eq!(h.state().layout().sidebar.tab, SidebarTab::Outline, "the Outline in front, where the operations are listed");
     shot(&mut h, "job-6-program");
     // Program: the guide's own button, whatever the center shows.
@@ -2833,7 +2833,7 @@ fn a_window_with_no_project_starts_one_beside_the_imported_model() {
         .wgpu()
         .build_eframe(move |_cc| frontend::harness_app(&part, cr, "", None, Workspace::default()));
     settle(&mut h);
-    assert!(h.query_by_label_contains("Job: step 1 of 6, Model").is_some(), "the guide at its first step");
+    assert!(h.query_by_label_contains("Job: step 1 of 7, Model").is_some(), "the guide at its first step");
     shot(&mut h, "start-no-project");
     h.get_by_label("Import STEP…").click();
     settle(&mut h);
@@ -2842,6 +2842,9 @@ fn a_window_with_no_project_starts_one_beside_the_imported_model() {
         if typing { field.type_text(&step.to_string_lossy()) } else { field.focus() }
         h.step();
     }
+    // The origin is asked for beside the path, the common answer already in.
+    assert_eq!(h.state().import_setup().origin, "mid,mid,max");
+    shot(&mut h, "origin-import-form");
     h.get_by_label("Import").click();
     let wait_for = |h: &mut Harness<'static, ViewApp>, step: &str| {
         for _ in 0..1200 {
@@ -2853,14 +2856,18 @@ fn a_window_with_no_project_starts_one_beside_the_imported_model() {
         }
         panic!("the guide never reached {step}; the log: {:?}", h.state().output_lines());
     };
-    wait_for(&mut h, "Job: step 2 of 6, Stock");
+    wait_for(&mut h, "Job: step 3 of 7, Stock");
     let project = root.join("bracket.cam");
     assert!(project.join("report.json").is_file(), "the project is the folder beside the model, named for it");
     assert!(!project.join("main.part").exists(), "nothing written before Accept");
-    // The model is on screen already: the proposed blank and features.
+    // The model is on screen already: the proposed blank and features,
+    // measured from the origin asked for, which the guide says back.
+    assert!(std::fs::read_to_string(project.join("proposed_stock.part")).unwrap().contains("x=-51.0, y=-41.0, z=0.0)"), "the blank's center and top are zero");
+    assert!(h.query_all_by_label_contains("X0 Y0 at the stock's center, Z0 at the stock's top").next().is_some(), "the guide's Origin row");
+    assert!(h.query_by_label("Change the origin…").is_some(), "and it can still be changed");
     shot(&mut h, "start-proposal-drawn");
     h.get_by_label("Accept the proposed stock").click();
-    wait_for(&mut h, "Job: step 3 of 6, Features");
+    wait_for(&mut h, "Job: step 4 of 7, Features");
     shot(&mut h, "start-features-waiting");
     drop(h);
     let _ = std::fs::remove_dir_all(&root);

@@ -3042,7 +3042,110 @@ def select_solid(step_path, solid_sel):
     return solids[solid_sel - 1], solid_sel, n
 
 
-def recognize(step_path, solid_sel=None, up="z+", allowance=0.0, blank=None, given=None):
+VERTICAL_TOL = 1e-3
+
+
+def prism_outline(faces, bb):
+    """The plan outline of a prism, or (None, why it is not one)."""
+    top = None
+    for f in faces:
+        pnt, n = face_normal(f)
+        if f.geomType() == "PLANE" and n.Z() > COS_TOL:
+            if top is None or pnt.Z() > top[0]:
+                top = (pnt.Z(), f)
+        elif f.geomType() == "PLANE" and n.Z() < -COS_TOL:
+            continue
+        elif abs(n.Z()) <= VERTICAL_TOL:
+            continue
+        else:
+            return None, (f"a face is neither flat on top, flat on the bottom nor "
+                          f"vertical (normal z {n.Z():.3f})")
+    if top is None:
+        return None, "it has no flat +Z face to take an outline from"
+    z_top, face = top
+    if abs(z_top - bb.zmax) > 1e-3:
+        return None, (f"its topmost flat face (z {fmt(z_top)}) is below the solid's "
+                      f"top (z {fmt(bb.zmax)})")
+    outer = face_loops(face)[0]  # CCW, chorded through the one tolerance
+    if signed_area(outer) <= 0.0:
+        outer = list(reversed(outer))
+    # The top's outline must be the WHOLE plan silhouette: a boss standing on
+    # the blank's top has a smaller topmost face, and its outline is not the
+    # blank's (block_bore.step, found on the first run).
+    xs = [x for x, _ in outer]
+    ys = [y for _, y in outer]
+    if (abs(min(xs) - bb.xmin) > 1e-3 or abs(max(xs) - bb.xmax) > 1e-3
+            or abs(min(ys) - bb.ymin) > 1e-3 or abs(max(ys) - bb.ymax) > 1e-3):
+        return None, (f"its topmost flat face (z {fmt(z_top)}) spans x {fmt(min(xs))}.."
+                      f"{fmt(max(xs))}, y {fmt(min(ys))}..{fmt(max(ys))} of a solid "
+                      f"spanning x {fmt(bb.xmin)}..{fmt(bb.xmax)}, y {fmt(bb.ymin)}.."
+                      f"{fmt(bb.ymax)}, so something stands on its top")
+    return outer, None
+
+
+ORIGIN_WORDS = ("min", "mid", "max")
+
+
+def parse_origin(text):
+    """--origin's three components, x,y,z. Each is `model` (the model's own
+    zero on that axis), a number (a model coordinate, after --up), min, mid
+    or max of the blank, or part-min, part-mid or part-max of the model."""
+    parts = [p.strip() for p in text.split(",")]
+    if len(parts) != 3:
+        raise ValueError(f"--origin `{text}` is not three components x,y,z, "
+                         "e.g. mid,mid,max")
+    for p in parts:
+        word = p[5:] if p.startswith("part-") else p
+        if p == "model" or word in ORIGIN_WORDS:
+            continue
+        try:
+            float(p)
+        except ValueError:
+            raise ValueError(f"--origin component `{p}` is not model, a number, min, "
+                             "mid, max, part-min, part-mid or part-max") from None
+    return parts
+
+
+def origin_point(parts, bb, grow):
+    """The model point (after --up) that becomes 0,0,0. `grow` is how far
+    the blank stands outside the model: on the sides and the top, never
+    under it."""
+    lo, hi = (bb.xmin, bb.ymin, bb.zmin), (bb.xmax, bb.ymax, bb.zmax)
+    blo = (bb.xmin - grow, bb.ymin - grow, bb.zmin)
+    bhi = (bb.xmax + grow, bb.ymax + grow, bb.zmax + grow)
+    out = []
+    for k, p in enumerate(parts):
+        of_part = p.startswith("part-")
+        word = p[5:] if of_part else p
+        a, b = (lo[k], hi[k]) if of_part else (blo[k], bhi[k])
+        if p == "model":
+            v = 0.0
+        elif word in ORIGIN_WORDS:
+            v = {"min": a, "mid": (a + b) / 2.0, "max": b}[word]
+        else:
+            v = float(p)
+        # The kernel's box carries float noise; the origin is a clean number.
+        out.append(round(v, 6) + 0.0)
+    return tuple(out)
+
+
+def place_origin(solid, origin, allowance):
+    """The solid moved so the origin's point is 0,0,0, and that point. A
+    prism is its own blank (import_stock.py), so nothing is grown for it."""
+    bb = solid.BoundingBox()
+    outer, _ = prism_outline(solid.Faces(), bb)
+    at = origin_point(origin, bb, 0.0 if outer is not None else allowance)
+    if any(c != 0.0 for c in at):
+        solid = solid.translate(cq.Vector(-at[0], -at[1], -at[2]))
+    return solid, at
+
+
+def origin_note(origin, at):
+    return (f"# imported with --origin {','.join(origin)}: the model's point "
+            f"({fmt(at[0])}, {fmt(at[1])}, {fmt(at[2])}) is 0,0,0 here")
+
+
+def recognize(step_path, solid_sel=None, up="z+", allowance=0.0, blank=None, given=None, origin=None):
     solid, solid_sel, n_solids = select_solid(step_path, solid_sel)
     meta = {}
     if allowance > 0.0:
@@ -3061,6 +3164,12 @@ def recognize(step_path, solid_sel=None, up="z+", allowance=0.0, blank=None, giv
         axis, degrees = UP_ROTATIONS[up]
         solid = solid.rotate((0, 0, 0), axis, degrees)
         meta["up"] = up
+    if origin is not None:
+        # After the turn and before anything reads the geometry, as --up is:
+        # every reported coordinate is measured from the chosen zero.
+        solid, at = place_origin(solid, origin, allowance)
+        meta["origin"] = ",".join(origin)
+        meta["origin_at"] = at
     faces = solid.Faces()
 
     # The reference height for the topmost-plane check, from its own pass so
@@ -3316,6 +3425,8 @@ def build_outputs(step_path, entries, proposals, n_faces, meta):
         if "up" in meta:
             lines.append(f"# imported with --up {meta['up']} (model {meta['up']} "
                          "is machine +Z) -- coordinates are post-rotation")
+        if "origin" in meta:
+            lines.append(origin_note(meta["origin"].split(","), meta["origin_at"]))
         if "given" in meta:
             lines += textwrap.wrap(
                 f"imported with --given {meta['given']}: the blank is the earlier "
@@ -3355,9 +3466,24 @@ def main():
     ap.add_argument("--given", metavar="PROJECT", default=None,
                     help="the earlier program's project as `given from` will name it; "
                          "with --blank")
+    ap.add_argument("--origin", metavar="X,Y,Z", default=None,
+                    help="the point that becomes 0,0,0: per axis `model`, a number "
+                         "(a model coordinate), min, mid or max of the blank, or "
+                         "part-min, part-mid or part-max of the model; e.g. "
+                         "mid,mid,max is the blank's centre and its top "
+                         "(default: the model's own origin)")
     args = ap.parse_args()
     if args.allowance < 0.0:
         sys.exit(f"error: --allowance {args.allowance} is below zero")
+    origin = None
+    if args.origin is not None:
+        try:
+            origin = parse_origin(args.origin)
+        except ValueError as e:
+            sys.exit(f"error: {e}")
+        if args.blank is not None and origin != ["model"] * 3:
+            sys.exit("error: --origin with --blank: the second setup keeps the origin "
+                     "the given blank is written in")
     blank = None
     if (args.blank is None) != (args.given is None):
         sys.exit("error: --blank and --given go together: the earlier program's blank "
@@ -3374,7 +3500,7 @@ def main():
     try:
         solid, entries, proposals, meta = recognize(args.step, args.solid,
                                                     args.up, args.allowance,
-                                                    blank, args.given)
+                                                    blank, args.given, origin)
         n_faces = len(solid.Faces())
         report_text, part_text = build_outputs(args.step, entries, proposals,
                                                n_faces, meta)

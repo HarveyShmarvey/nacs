@@ -84,6 +84,8 @@ pub struct Report {
     pub solid: Option<String>,
     pub solids_total: Option<u64>,
     pub up: Option<String>,
+    /// The `--origin` words the import was made with, when it had any.
+    pub origin: Option<String>,
 }
 
 /// One answer of the review: an accepted face, and — optionally — the
@@ -233,6 +235,7 @@ pub fn read(text: &str) -> Result<Report, String> {
         solid: opt_str(obj, "solid", ctx)?,
         solids_total,
         up: opt_str(obj, "up", ctx)?,
+        origin: opt_str(obj, "origin", ctx)?,
     })
 }
 

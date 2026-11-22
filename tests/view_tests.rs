@@ -2943,12 +2943,12 @@ fn test_the_tool_stands_at_the_end_of_the_move_the_block_names() {
 fn test_the_stock_from_a_model_replaces_the_stock_statement_and_nothing_else() {
     let dir = std::path::Path::new("plate.cam");
     let sidecar = std::path::Path::new("sidecar");
-    let (python, args) = view::stock_command(sidecar, std::path::Path::new("tests/fixtures/l_plate.step"), dir, &view::ImportSetup { up: Some("z-".into()), solid: String::new(), allowance: String::new(), given: String::new() }).unwrap();
+    let (python, args) = view::stock_command(sidecar, std::path::Path::new("tests/fixtures/l_plate.step"), dir, &view::ImportSetup { up: Some("z-".into()), solid: String::new(), allowance: String::new(), given: String::new(), origin: String::new() }).unwrap();
     assert!(python.to_string_lossy().contains("python"), "{}", python.display());
     assert!(args[0].ends_with("import_stock.py") && args[1].ends_with("l_plate.step") && args[2] == "-o" && args[4..] == ["--up".to_string(), "z-".to_string()], "{args:?}");
     // The setup unsaid proposes the blank 1 mm outside the model (slice 11).
     let (_, args) = view::stock_command(sidecar, std::path::Path::new("tests/fixtures/l_plate.step"), dir, &view::ImportSetup::default()).unwrap();
-    assert_eq!(args[4..], ["--allowance".to_string(), "1".to_string()], "{args:?}");
+    assert_eq!(args[4..6], ["--allowance".to_string(), "1".to_string()], "{args:?}");
     assert!(view::stock_command(sidecar, std::path::Path::new("tests/fixtures/l_plate.stp.txt"), dir, &view::ImportSetup::default()).unwrap_err().contains("not a STEP file"));
     // The runner's verb builds the same spec, or says why not.
     let spec = view::runner_command("stock tests/fixtures/l_plate.step", dir, std::path::Path::new("nacs.exe"), Some(sidecar), None);
@@ -6702,32 +6702,32 @@ fn test_the_import_command_is_judged_before_it_runs() {
     assert!(python.ends_with(if cfg!(windows) { "Scripts\\python.exe" } else { "bin/python" }), "{}", python.display());
     std::fs::create_dir_all(python.parent().unwrap()).unwrap();
     std::fs::write(&python, "").unwrap();
-    let (prog, args) = import_command(&sidecar, &step, &dir, &view::ImportSetup { up: Some("y+".into()), solid: String::new(), allowance: String::new(), given: String::new() }).unwrap();
+    let (prog, args) = import_command(&sidecar, &step, &dir, &view::ImportSetup { up: Some("y+".into()), solid: String::new(), allowance: String::new(), given: String::new(), origin: String::new() }).unwrap();
     assert_eq!(prog, python);
     assert_eq!(args[0], sidecar.join("import_step.py").to_string_lossy());
     assert_eq!(args[1], step.to_string_lossy());
     assert_eq!(args[2], "-o");
     assert!(args[3].ends_with(std::path::MAIN_SEPARATOR), "the sidecar wants the directory with its separator: {}", args[3]);
     assert_eq!(&args[4..], ["--up", "y+"]);
-    assert!(import_command(&sidecar, &step, &dir, &view::ImportSetup { up: Some("up".into()), solid: String::new(), allowance: String::new(), given: String::new() }).unwrap_err().contains("not an axis"));
+    assert!(import_command(&sidecar, &step, &dir, &view::ImportSetup { up: Some("up".into()), solid: String::new(), allowance: String::new(), given: String::new(), origin: String::new() }).unwrap_err().contains("not an axis"));
     assert!(import_command(&sidecar, &scratch.join("x.part"), &dir, &none).unwrap_err().contains("not a STEP file"));
     assert!(import_command(&sidecar, &scratch.join("missing.step"), &dir, &none).unwrap_err().contains("cannot read"));
     // The setup's two words (ROADMAP item 1, slice 4): the solid as S2 or 2,
     // refused when it is not a solid's number; the runner's line spells both.
     let none = String::new();
-    let both = view::ImportSetup { up: Some("y+".into()), solid: " S2 ".into(), allowance: none.clone(), given: String::new() };
+    let both = view::ImportSetup { up: Some("y+".into()), solid: " S2 ".into(), allowance: none.clone(), given: String::new(), origin: String::new() };
     assert_eq!(both.args().unwrap(), ["--up", "y+", "--solid", "2"]);
-    assert_eq!(view::ImportSetup { up: None, solid: "1".into(), allowance: none.clone(), given: String::new() }.args().unwrap(), ["--solid", "1"]);
-    assert!(view::ImportSetup { up: None, solid: "0".into(), allowance: none.clone(), given: String::new() }.args().unwrap_err().contains("not a solid's number"));
-    assert!(view::ImportSetup { up: None, solid: "two".into(), allowance: none.clone(), given: String::new() }.args().unwrap_err().contains("not a solid's number"));
+    assert_eq!(view::ImportSetup { up: None, solid: "1".into(), allowance: none.clone(), given: String::new(), origin: String::new() }.args().unwrap(), ["--solid", "1"]);
+    assert!(view::ImportSetup { up: None, solid: "0".into(), allowance: none.clone(), given: String::new(), origin: String::new() }.args().unwrap_err().contains("not a solid's number"));
+    assert!(view::ImportSetup { up: None, solid: "two".into(), allowance: none.clone(), given: String::new(), origin: String::new() }.args().unwrap_err().contains("not a solid's number"));
     assert_eq!(view::ImportSetup::from_words(["x.step", "solid=2", "up=y+"].into_iter()), view::ImportSetup { up: Some("y+".into()), solid: "2".into(), ..Default::default() });
     let (_, args) = import_command(&sidecar, &step, &dir, &both).unwrap();
     assert_eq!(&args[4..], ["--up", "y+", "--solid", "2"]);
     // The third word (slice 11): the allowance, 1 mm unless typed, a size
     // in mm or nothing, `0` for a blank cut to size.
-    assert_eq!(view::ImportSetup::default().args().unwrap(), ["--allowance", "1"]);
-    assert_eq!(view::ImportSetup { allowance: " 0.5 ".into(), ..Default::default() }.args().unwrap(), ["--allowance", "0.5"]);
-    assert_eq!(view::ImportSetup::from_words(["x.step", "allowance=0"].into_iter()).args().unwrap(), ["--allowance", "0"]);
+    assert_eq!(view::ImportSetup::default().args().unwrap(), ["--allowance", "1", "--origin", "mid,mid,max"]);
+    assert_eq!(view::ImportSetup { allowance: " 0.5 ".into(), ..Default::default() }.args().unwrap()[..2], ["--allowance", "0.5"]);
+    assert_eq!(view::ImportSetup::from_words(["x.step", "allowance=0"].into_iter()).args().unwrap()[..2], ["--allowance", "0"]);
     assert!(view::ImportSetup { allowance: "-1".into(), ..Default::default() }.args().unwrap_err().contains("not a size in mm"));
     assert!(view::ImportSetup { allowance: "some".into(), ..Default::default() }.args().unwrap_err().contains("not a size in mm"));
     // The fourth word (slice 12): the program before this one. Its blank
@@ -7264,7 +7264,7 @@ fn the_job_steps_name_the_next_thing_to_do() {
     let empty = nacs::view::empty_project_part(std::path::Path::new("nowhere.cam"));
     let none = JobFacts { refusal: Some("no main.part yet".to_string()), ..JobFacts::default() };
     let steps = job_steps(&empty, &none);
-    assert_eq!(steps.len(), 6);
+    assert_eq!(steps.len(), 7);
     assert_eq!((steps[0].name, steps[0].state), ("Model", StepState::Next));
     assert_eq!(steps[0].act.as_ref().map(|a| a.1), Some("import.step"));
     assert!(steps[1..].iter().all(|s| s.state == StepState::Later && s.act.is_none()), "one next step, the rest wait");
@@ -7272,14 +7272,15 @@ fn the_job_steps_name_the_next_thing_to_do() {
     // A model imported, its stock and three features still in Review.
     let steps = job_steps(&empty, &JobFacts { model: Some("m.step".to_string()), stock_waiting: true, waiting: 3, ..none.clone() });
     assert_eq!(steps[0].state, StepState::Done);
-    assert_eq!((steps[1].state, steps[1].act.as_ref().map(|a| a.1)), (StepState::Next, Some("review.accept")));
+    assert_eq!((steps[2].state, steps[2].act.as_ref().map(|a| a.1)), (StepState::Next, Some("review.accept")));
+    assert_eq!((steps[1].name, steps[1].state, steps[1].act.as_ref().map(|a| a.1)), ("Origin", StepState::Done, Some("import.step")), "the origin can still be changed");
 
     // plate.cam is a finished project: only the program is left to write.
     let plate = nacs::parse::load_project("plate.cam").unwrap();
     let on_disk = JobFacts { has_file: true, ..JobFacts::default() };
     let steps = job_steps(&plate, &on_disk);
-    assert!(steps[..5].iter().all(|s| s.state == StepState::Done), "{steps:?}");
-    assert_eq!(steps[5].act.as_ref().map(|a| a.1), Some("program.write"));
+    assert!(steps[..6].iter().all(|s| s.state == StepState::Done), "{steps:?}");
+    assert_eq!(steps[6].act.as_ref().map(|a| a.1), Some("program.write"));
     // Written, every step is done.
     let steps = job_steps(&plate, &JobFacts { program_file: Some("plate.nc".to_string()), ..on_disk.clone() });
     assert!(steps.iter().all(|s| s.state == StepState::Done), "{steps:?}");
@@ -7291,16 +7292,16 @@ fn the_job_steps_name_the_next_thing_to_do() {
         "H1's chamfer waits for a ChamferMill(angle=90): none is declared".to_string(),
     ];
     let steps = job_steps(&plate, &JobFacts { notes: notes.clone(), ..on_disk.clone() });
-    assert_eq!((steps[3].name, steps[3].state, steps[3].act.as_ref().map(|a| a.1)), ("Tools", StepState::Next, Some("tool.new")));
-    assert!(steps[3].says.contains("Drill(dia=3) or Endmill under 3"), "{}", steps[3].says);
+    assert_eq!((steps[4].name, steps[4].state, steps[4].act.as_ref().map(|a| a.1)), ("Tools", StepState::Next, Some("tool.new")));
+    assert!(steps[4].says.contains("Drill(dia=3) or Endmill under 3"), "{}", steps[4].says);
     let steps = job_steps(&plate, &JobFacts { notes: notes[1..].to_vec(), ..on_disk.clone() });
-    assert_eq!((steps[3].state, steps[3].act.as_ref().map(|a| a.1)), (StepState::Done, Some("tool.new")), "done, and the tool can still be added");
-    assert!(steps[3].says.contains("ChamferMill(angle=90)"), "{}", steps[3].says);
+    assert_eq!((steps[4].state, steps[4].act.as_ref().map(|a| a.1)), (StepState::Done, Some("tool.new")), "done, and the tool can still be added");
+    assert!(steps[4].says.contains("ChamferMill(angle=90)"), "{}", steps[4].says);
 
     // With that tool declared the scheduler has a line to add, so
     // Operations opens again.
     let steps = job_steps(&plate, &JobFacts { to_schedule: 1, ..on_disk });
-    assert_eq!((steps[4].name, steps[4].state, steps[4].act.as_ref().map(|a| a.1)), ("Operations", StepState::Next, Some("schedule")));
+    assert_eq!((steps[5].name, steps[5].state, steps[5].act.as_ref().map(|a| a.1)), ("Operations", StepState::Next, Some("schedule")));
 }
 
 #[test]
@@ -7319,4 +7320,23 @@ fn a_proposal_is_drawn_before_it_is_accepted() {
     assert!(none.sources.is_empty());
     assert!(nacs::view::stance_note(&none, Some(nacs::view::NO_PROJECT)).is_some_and(|n| n.starts_with("No project open")));
     assert_eq!(nacs::view::home_for_step(std::path::Path::new("a/bracket.step")), std::path::Path::new("a/bracket.cam"));
+}
+
+#[test]
+fn an_imports_origin_is_three_words_and_a_sentence() {
+    use nacs::view::{origin_says, origin_words, ImportSetup};
+    // Unless told, the stock's center and its top.
+    let args = ImportSetup::default().args().unwrap();
+    assert!(args.windows(2).any(|w| w == ["--origin", "mid,mid,max"]), "{args:?}");
+    assert_eq!(origin_says("mid,mid,max"), "X0 Y0 at the stock's center, Z0 at the stock's top");
+    assert_eq!(origin_says("model,model,model"), "X0 Y0 Z0 as modeled");
+    // Any point can be typed: a number is a model coordinate.
+    assert_eq!(origin_words("12.5, part-min ,max").unwrap(), ["12.5", "part-min", "max"]);
+    assert_eq!(origin_says("12.5,part-min,part-max"), "X0 Y0 at x 12.5, y part-min, Z0 at the part's top");
+    assert!(origin_words("mid,mid").is_err() && origin_words("mid,mid,up").is_err());
+    assert!(ImportSetup { origin: "mid,top,max".to_string(), ..Default::default() }.args().is_err());
+    // A second setup keeps the origin its given blank is written in.
+    let second = ImportSetup::from_words(["origin=min,min,max", "given=../front.cam"].into_iter());
+    assert_eq!(second.origin, "min,min,max");
+    assert!(!second.args().unwrap().iter().any(|a| a == "--origin"));
 }

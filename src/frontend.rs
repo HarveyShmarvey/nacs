@@ -954,6 +954,7 @@ fn build(
         runner_killed: false,
         runner_focus_pending: false,
         target_path_draft: None,
+        import_form_scroll: false,
         import_setup: view::ImportSetup::default(),
         import_last: None,
         pose_drawn: None,
@@ -1749,6 +1750,8 @@ pub struct ViewApp {
     /// open, the text typed or pasted so far. A dialog is a crate or a
     /// platform call — named for the CLOSE; a path, or a drop, imports.
     target_path_draft: Option<String>,
+    /// The import form just opened: its last row is scrolled into view once.
+    import_form_scroll: bool,
     /// The import's setup as the field holds it (ROADMAP item 1, slice 4):
     /// the up axis and the solid, kept across imports in this window so a
     /// second try changes one word. `import_last` is the path of the import
@@ -2590,6 +2593,7 @@ impl ViewApp {
             // under the Outline's Target header, which is shown.
             "import.step" => {
                 self.target_path_draft = Some(String::new());
+                self.import_form_scroll = true;
                 self.layout.apply(DockAction::ShowTab(SidebarTab::Outline));
             }
             "layout.revert" => {
@@ -3856,6 +3860,40 @@ impl ViewApp {
                 ui.label(egui::RichText::new("given").small().weak()).on_hover_text("the program before this one, for a second setup: its project as the given from line will name it from this folder (../front.cam); the proposed stock is that program's blank turned over and the import writes the given from line beside it (nacs --import --given)");
                 ui.add(egui::TextEdit::singleline(&mut self.import_setup.given).hint_text("none").desired_width(110.0));
             });
+            // The origin: two ready answers, and the words themselves for
+            // any point they do not cover (nacs --import --origin).
+            ui.horizontal(|ui| {
+                let words = view::origin_words(&self.import_setup.origin).ok();
+                let (x, y, z) = match &words {
+                    Some([x, y, z]) => (x.clone(), y.clone(), z.clone()),
+                    None => (String::new(), String::new(), String::new()),
+                };
+                ui.label(egui::RichText::new("X0 Y0").small().weak()).on_hover_text("where the program's X and Y zero is: the model is moved so that point is 0,0");
+                let shown = view::ORIGIN_XY.iter().find(|(_, a, b)| *a == x && *b == y).map(|(says, ..)| *says).unwrap_or("as typed");
+                egui::ComboBox::from_id_salt("import origin xy").selected_text(shown).width(150.0).show_ui(ui, |ui| {
+                    for (says, a, b) in view::ORIGIN_XY {
+                        if ui.selectable_label(shown == says, says).clicked() {
+                            self.import_setup.origin = format!("{a},{b},{}", if z.is_empty() { "max" } else { &z });
+                        }
+                    }
+                });
+                ui.label(egui::RichText::new("Z0").small().weak()).on_hover_text("where the program's Z zero is");
+                let shown = view::ORIGIN_Z.iter().find(|(_, a)| *a == z).map(|(says, _)| *says).unwrap_or("as typed");
+                egui::ComboBox::from_id_salt("import origin z").selected_text(shown).width(110.0).show_ui(ui, |ui| {
+                    for (says, a) in view::ORIGIN_Z {
+                        if ui.selectable_label(shown == says, says).clicked() {
+                            self.import_setup.origin = format!("{},{},{a}", if x.is_empty() { "mid" } else { &x }, if y.is_empty() { "mid" } else { &y });
+                        }
+                    }
+                });
+            });
+            ui.horizontal(|ui| {
+                ui.label(egui::RichText::new("origin").small().weak()).on_hover_text("the origin as words, x,y,z: each is model, a number (a model coordinate), min, mid or max of the stock, or part-min, part-mid or part-max of the part. Type here for a point the two lists do not offer");
+                ui.add(egui::TextEdit::singleline(&mut self.import_setup.origin).hint_text("model,model,model").desired_width(100.0));
+            });
+            if std::mem::take(&mut self.import_form_scroll) {
+                ui.scroll_to_cursor(Some(egui::Align::BOTTOM));
+            }
         }
         if go {
             let path = std::path::PathBuf::from(self.target_path_draft.take().unwrap_or_default().trim());
@@ -6242,12 +6280,12 @@ impl ViewApp {
         let program = view::program_file_path(std::path::Path::new(&self.project_path));
         let stamp = |p: &std::path::Path| std::fs::metadata(p).and_then(|m| m.modified()).ok();
         let program_file = (program.is_file() && main.is_some_and(|m| stamp(&program) >= stamp(m))).then(|| Self::file_word(&program));
-        let facts = view::JobFacts { has_file, model, stock_waiting, waiting, notes: self.schedule_notes.clone(), refusal: self.check_result.refusal.clone(), program_file, to_schedule: self.schedule_lines };
+        let facts = view::JobFacts { has_file, model, stock_waiting, waiting, notes: self.schedule_notes.clone(), refusal: self.check_result.refusal.clone(), program_file, to_schedule: self.schedule_lines, origin: self.report.as_ref().and_then(|r| r.as_ref().ok()).and_then(|r| r.origin.clone()) };
         view::job_steps(&self.part, &facts)
     }
 
     /// The job guide at the top of the sidebar, over every tab, until the
-    /// operations are scheduled: the six steps in order, the next one with
+    /// operations are scheduled: the seven steps in order, the next one with
     /// its sentence and its button.
     fn job_guide(&mut self, ui: &mut egui::Ui) {
         let steps = self.job_steps();
@@ -7295,6 +7333,22 @@ impl ViewApp {
         for (wi, edge) in self.edges.iter().enumerate() {
             if layers.outlines && sel_feature != Some(wi) {
                 draw_edge(edge, edge_stroke);
+            }
+        }
+        // The program's zero: three short arms at 0,0,0, a fixed size on screen.
+        if self.preview.is_some() || self.part.stock.h > 0.0 {
+            let o = to_screen([0.0, 0.0, 0.0]);
+            if rect.contains(o) {
+                let stroke = egui::Stroke::new(1.5, rgb(self.theme.text));
+                for (axis, name) in [([1.0, 0.0, 0.0], "X0"), ([0.0, 1.0, 0.0], "Y0"), ([0.0, 0.0, 1.0], "Z0")] {
+                    let d = to_screen(axis) - o;
+                    if d.length() > 1e-6 {
+                        let tip = o + d.normalized() * 14.0;
+                        painter.line_segment([o, tip], stroke);
+                        painter.text(o + d.normalized() * 22.0, egui::Align2::CENTER_CENTER, name, egui::FontId::proportional(9.0), stroke.color);
+                    }
+                }
+                painter.circle_filled(o, 2.5, stroke.color);
             }
         }
         // What the import proposes and the project does not hold yet, dim.

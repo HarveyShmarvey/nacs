@@ -2228,7 +2228,7 @@ pub fn nacs_exe() -> Result<std::path::PathBuf, String> {
 /// house's own verbs as processes, not a shell). `nacs <flags>` runs this
 /// binary on this project (the project's path appended; `--reference`,
 /// `--help` and `--init` take none; `--view` and `--mcp` are refused — a
-/// window inside the window is not a run); `import <file.step> [up=…] [solid=N] [allowance=…] [given=…]`
+/// window inside the window is not a run); `import <file.step> [up=…] [solid=N] [allowance=…] [origin=…] [given=…]`
 /// runs the sidecar as the drop does; `git <read-only verb>` runs git on
 /// the project's repository — status, log, diff, show, branch, remote,
 /// fetch — the writing verbs are slice 3's. Anything else is refused by
@@ -2271,7 +2271,7 @@ pub fn runner_command(line: &str, project_dir: &std::path::Path, nacs: &std::pat
             RunSpec { program: python, args, cwd: project_dir.to_path_buf(), echo, via: None }
         }
         "import" => {
-            let Some(step) = rest.first() else { return Err("import takes a STEP file: import <file.step> [up=z-] [solid=N] [allowance=1] [given=../front.cam]".to_string()) };
+            let Some(step) = rest.first() else { return Err("import takes a STEP file: import <file.step> [up=z-] [solid=N] [allowance=1] [origin=mid,mid,max] [given=../front.cam]".to_string()) };
             let setup = ImportSetup::from_words(rest.iter().copied());
             let Some(sidecar) = sidecar else { return Err("no sidecar in reach: run the window from the repo root, or set NACS_SIDECAR to the sidecar directory".to_string()) };
             let (python, args) = import_command(sidecar, &absolute(std::path::Path::new(step)), project_dir, &setup)?;
@@ -4127,6 +4127,8 @@ pub struct JobFacts {
     pub program_file: Option<String>,
     /// How many run lines the scheduler would add now.
     pub to_schedule: usize,
+    /// The origin the model was imported with, as the report says it.
+    pub origin: Option<String>,
 }
 
 /// The tools the scheduler's notes ask for: first those a whole feature
@@ -4148,7 +4150,7 @@ pub fn tools_wanted(notes: &[String]) -> (Vec<String>, Vec<String>) {
     (needed, extra)
 }
 
-/// The job as six steps, model to program, so the window can say what
+/// The job as seven steps, model to program, so the window can say what
 /// comes next.
 pub fn job_steps(part: &Part, facts: &JobFacts) -> Vec<JobStep> {
     let JobFacts { has_file, stock_waiting, waiting, .. } = *facts;
@@ -4164,8 +4166,19 @@ pub fn job_steps(part: &Part, facts: &JobFacts) -> Vec<JobStep> {
             "Model",
             model.is_some() || features > 0,
             model.map(str::to_string).unwrap_or_else(|| "none imported; the features are declared by hand".to_string()),
-            "import a STEP file, or drop one on the window".to_string(),
+            "import a STEP file, or drop one on the window; its origin is chosen beside the path".to_string(),
             Some(("Import STEP…".to_string(), "import.step")),
+        ),
+        (
+            "Origin",
+            model.is_some() || features > 0,
+            match (&facts.origin, model) {
+                (Some(o), _) => origin_says(o),
+                (None, Some(_)) => "X0 Y0 Z0 as modeled".to_string(),
+                (None, None) => "where the features are written from".to_string(),
+            },
+            String::new(),
+            Some(("Change the origin…".to_string(), "import.step")),
         ),
         if stock_waiting {
             ("Stock", false, String::new(), "a blank is proposed from the model; its text is on the card below".to_string(), Some(("Accept the proposed stock".to_string(), "review.accept")))
@@ -4207,7 +4220,9 @@ pub fn job_steps(part: &Part, facts: &JobFacts) -> Vec<JobStep> {
             if done {
                 // A done Tools step that still leaves a chamfer or a round
                 // uncut keeps its button: the tool can be added at any time.
-                let act = act.filter(|_| name == "Tools" && !extra.is_empty());
+                // So does the origin while nothing is accepted yet: importing
+                // again with another origin costs nothing then.
+                let act = act.filter(|_| (name == "Tools" && !extra.is_empty()) || (name == "Origin" && stock_waiting && model.is_some()));
                 JobStep { name, state: StepState::Done, says: done_says, act }
             } else if !next_given {
                 next_given = true;
@@ -4441,12 +4456,56 @@ pub struct ImportSetup {
     pub solid: String,
     pub allowance: String,
     pub given: String,
+    /// The point that becomes X0 Y0 Z0, as the sidecar's `--origin` takes
+    /// it: `x,y,z`, each `model`, a number, `min`/`mid`/`max` of the blank
+    /// or `part-min`/`part-mid`/`part-max` of the model. A second setup
+    /// (`given`) keeps the origin its blank is written in, so it is not sent.
+    pub origin: String,
 }
 
 impl Default for ImportSetup {
     fn default() -> Self {
-        ImportSetup { up: None, solid: String::new(), allowance: "1".to_string(), given: String::new() }
+        ImportSetup { up: None, solid: String::new(), allowance: "1".to_string(), given: String::new(), origin: ORIGIN_DEFAULT.to_string() }
     }
+}
+
+/// The origin an import takes unless told: the blank's centre in plan and
+/// its top, the point a probing routine finds first.
+pub const ORIGIN_DEFAULT: &str = "mid,mid,max";
+
+/// The ready answers for X0 Y0: what the window says, then the x and y words.
+pub const ORIGIN_XY: [(&str, &str, &str); 6] = [
+    ("the stock's center", "mid", "mid"),
+    ("the stock's X- Y- corner", "min", "min"),
+    ("the stock's X+ Y- corner", "max", "min"),
+    ("the stock's X- Y+ corner", "min", "max"),
+    ("the stock's X+ Y+ corner", "max", "max"),
+    ("as modeled", "model", "model"),
+];
+
+/// The ready answers for Z0.
+pub const ORIGIN_Z: [(&str, &str); 4] = [("the stock's top", "max"), ("the part's top", "part-max"), ("the bottom", "min"), ("as modeled", "model")];
+
+/// An origin's three words, or why it is not one.
+pub fn origin_words(origin: &str) -> Result<[String; 3], String> {
+    let parts: Vec<String> = origin.split(',').map(|p| p.trim().to_string()).collect();
+    let ok = |p: &str| p == "model" || ["min", "mid", "max"].contains(&p.strip_prefix("part-").unwrap_or(p)) || p.parse::<f64>().is_ok_and(f64::is_finite);
+    match <[String; 3]>::try_from(parts) {
+        Ok(words) if words.iter().all(|w| ok(w)) => Ok(words),
+        _ => Err(format!("origin `{origin}` is not x,y,z with each of model, a number, min, mid, max, part-min, part-mid or part-max — mid,mid,max is the stock's center and top")),
+    }
+}
+
+/// An origin in a sentence: "X0 Y0 at the stock's center, Z0 at the stock's
+/// top". Words with no ready answer are said as they are written.
+pub fn origin_says(origin: &str) -> String {
+    let Ok([x, y, z]) = origin_words(origin) else { return format!("origin {origin}") };
+    let xy = ORIGIN_XY.iter().find(|(_, a, b)| *a == x && *b == y).map(|(says, ..)| says.to_string()).unwrap_or_else(|| format!("x {x}, y {y}"));
+    let z = ORIGIN_Z.iter().find(|(_, a)| *a == z).map(|(says, _)| says.to_string()).unwrap_or_else(|| format!("z {z}"));
+    if x == "model" && y == "model" && z == "as modeled" {
+        return "X0 Y0 Z0 as modeled".to_string();
+    }
+    format!("X0 Y0 at {xy}, Z0 at {z}")
 }
 
 /// The six answers to "which way is up": the model's axis that points up
@@ -4477,6 +4536,14 @@ impl ImportSetup {
                 out.extend(["--allowance".to_string(), allowance.to_string()]);
             }
         }
+        let origin = self.origin.trim();
+        if !origin.is_empty() {
+            let words = origin_words(origin)?;
+            // A given blank is written in the earlier program's origin.
+            if self.given.trim().is_empty() {
+                out.extend(["--origin".to_string(), words.join(",")]);
+            }
+        }
         Ok(out)
     }
 
@@ -4492,6 +4559,8 @@ impl ImportSetup {
                 s.allowance = a.to_string();
             } else if let Some(g) = w.strip_prefix("given=") {
                 s.given = g.to_string();
+            } else if let Some(o) = w.strip_prefix("origin=") {
+                s.origin = o.to_string();
             }
         }
         s
@@ -4958,7 +5027,7 @@ pub fn reference_text() -> String {
     }
     o.push_str("**Window ▸ Theme** — the built-in palette, then the themes carried in the binary, then any `<name>.json` in the config folder (`%APPDATA%\\nacs\\themes` on Windows, `~/.config/nacs/themes` elsewhere; a file there wins by name). A pick is `--theme <name>`'s twin and is remembered in the workspace file; a change of `background.appearance` takes effect at the next launch.\n");
     o.push_str("**Window ▸ Switch window frame** — the window wears its own frame by default (Phase 57): the band is the title bar — drag it to move the window, double-click it to maximize or restore — with the caption buttons at its right end; on Windows 11 the corners are rounded and the border takes the theme's `border` colour. The switch puts the system's frame back, live, and is remembered as `frame native` in the workspace file; `--frame native` with `--view` is the switch's twin and is remembered the same way, as a `--theme` pick is.\n");
-    o.push_str("**Output's line** — Enter runs the line in the project's directory, its words into the log above with the exit said last, one run at a time: `nacs <flags>` (this binary on this project; a line that starts with a flag is read as nacs's), `import <file.step> [up=…] [solid=N] [allowance=…] [given=…]` and `stock <file.step> [up=…] [solid=N] [allowance=…] [given=…]` (the sidecar; `given=` names the program before this one, whose blank turned over is the proposed stock), `git <verb>` (status, log, diff, show, branch, remote, fetch, pull, push, commit -m …, switch), and `sh <line>` — everything after `sh`, as typed, handed whole to the shell: the system's (`COMSPEC` on Windows, `/bin/sh` elsewhere) unless `shell <program>` in the workspace file names another, run as `<program> -c <line>`; the log says which under the echo. Anything else is refused by name and nothing runs. ↑ and ↓ on the line walk what was entered since the window opened, newest first — a refused line too, so a typo comes back to fix — and past the newest the line being typed comes back; the window's own memory, written to no file.\n");
+    o.push_str("**Output's line** — Enter runs the line in the project's directory, its words into the log above with the exit said last, one run at a time: `nacs <flags>` (this binary on this project; a line that starts with a flag is read as nacs's), `import <file.step> [up=…] [solid=N] [allowance=…] [origin=…] [given=…]` and `stock <file.step> [up=…] [solid=N] [allowance=…] [given=…]` (the sidecar; `given=` names the program before this one, whose blank turned over is the proposed stock), `git <verb>` (status, log, diff, show, branch, remote, fetch, pull, push, commit -m …, switch), and `sh <line>` — everything after `sh`, as typed, handed whole to the shell: the system's (`COMSPEC` on Windows, `/bin/sh` elsewhere) unless `shell <program>` in the workspace file names another, run as `<program> -c <line>`; the log says which under the echo. Anything else is refused by name and nothing runs. ↑ and ↓ on the line walk what was entered since the window opened, newest first — a refused line too, so a typo comes back to fix — and past the newest the line being typed comes back; the window's own memory, written to no file.\n");
     for (name, _) in crate::theme::SHIPPED_THEMES {
         o.push_str(&format!("- {name}\n"));
     }
