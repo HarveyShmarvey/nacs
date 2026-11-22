@@ -703,6 +703,21 @@ One page. What is built, what is next, and the debts we know about.
    drawn until its features are accepted; no act places the origin or
    moves the part inside the stock; Tools is a blank form with no starter
    cutter; the Review lists every face, not the features.
+   Second pass, from the user's first run on a part of their own
+   (2026-11-21): the Stock step accepts the proposed blank in one click;
+   Accept all waits for the stock; the Tools step stays open until every
+   feature has a cutter and names the ones missing; scheduling puts the
+   Outline in front; the guide stays through Write program and says when
+   the file is written.
+   Third pass (2026-11-21): a form with more than four optional answers
+   puts Create under the required ones, so the tool form's button is
+   never under the fold. A chamfer or edge round whose tool is not
+   declared is still asked for after its feature is cut: the Tools step
+   names the tool and keeps its button, and once the tool is declared
+   Operations opens again for the one line.
+   Asked for, not built: an options page. First on it, the camera: the
+   orbit style (the user's pick is a free turntable) and what it turns
+   about (the part's center), each with alternatives.
 
 ## Debts
 

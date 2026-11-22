@@ -7256,32 +7256,49 @@ fn test_every_act_has_a_short_label_for_the_palette() {
 }
 
 /// The job guide: the first step not done is the next one and carries the
-/// act that moves it on; an empty folder starts at the model, and a
-/// project with features and no cutter stops at Tools.
+/// act that moves it on; an empty folder starts at the model; a project
+/// whose holes have no drill stops at Tools and names it.
 #[test]
 fn the_job_steps_name_the_next_thing_to_do() {
-    use nacs::view::{job_steps, StepState};
+    use nacs::view::{job_steps, JobFacts, StepState};
     let empty = nacs::view::empty_project_part(std::path::Path::new("nowhere.cam"));
-    let steps = job_steps(&empty, false, None, false, 0, Some("no main.part yet"));
+    let none = JobFacts { refusal: Some("no main.part yet".to_string()), ..JobFacts::default() };
+    let steps = job_steps(&empty, &none);
     assert_eq!(steps.len(), 6);
     assert_eq!((steps[0].name, steps[0].state), ("Model", StepState::Next));
     assert_eq!(steps[0].act.as_ref().map(|a| a.1), Some("import.step"));
     assert!(steps[1..].iter().all(|s| s.state == StepState::Later && s.act.is_none()), "one next step, the rest wait");
 
     // A model imported, its stock and three features still in Review.
-    let steps = job_steps(&empty, false, Some("m.step"), true, 3, Some("no main.part yet"));
+    let steps = job_steps(&empty, &JobFacts { model: Some("m.step".to_string()), stock_waiting: true, waiting: 3, ..none.clone() });
     assert_eq!(steps[0].state, StepState::Done);
-    assert_eq!((steps[1].state, steps[1].act.as_ref().map(|a| a.1)), (StepState::Next, Some("sidebar.review")));
+    assert_eq!((steps[1].state, steps[1].act.as_ref().map(|a| a.1)), (StepState::Next, Some("review.accept")));
 
     // plate.cam is a finished project: only the program is left to write.
     let plate = nacs::parse::load_project("plate.cam").unwrap();
-    let steps = job_steps(&plate, true, None, false, 0, None);
+    let on_disk = JobFacts { has_file: true, ..JobFacts::default() };
+    let steps = job_steps(&plate, &on_disk);
     assert!(steps[..5].iter().all(|s| s.state == StepState::Done), "{steps:?}");
     assert_eq!(steps[5].act.as_ref().map(|a| a.1), Some("program.write"));
+    // Written, every step is done.
+    let steps = job_steps(&plate, &JobFacts { program_file: Some("plate.nc".to_string()), ..on_disk.clone() });
+    assert!(steps.iter().all(|s| s.state == StepState::Done), "{steps:?}");
 
-    // The same project with its cutters taken away stops at Tools.
-    let mut bare = plate.clone();
-    bare.tools.clear();
-    let steps = job_steps(&bare, true, None, false, 0, None);
+    // A hole with no drill keeps Tools open and says which tool; a chamfer
+    // with no chamfer mill does not, and is named on the done step.
+    let notes = vec![
+        "H1 waits for a tool: no Drill(dia=3) and no Endmill under 3 is declared".to_string(),
+        "H1's chamfer waits for a ChamferMill(angle=90): none is declared".to_string(),
+    ];
+    let steps = job_steps(&plate, &JobFacts { notes: notes.clone(), ..on_disk.clone() });
     assert_eq!((steps[3].name, steps[3].state, steps[3].act.as_ref().map(|a| a.1)), ("Tools", StepState::Next, Some("tool.new")));
+    assert!(steps[3].says.contains("Drill(dia=3) or Endmill under 3"), "{}", steps[3].says);
+    let steps = job_steps(&plate, &JobFacts { notes: notes[1..].to_vec(), ..on_disk.clone() });
+    assert_eq!((steps[3].state, steps[3].act.as_ref().map(|a| a.1)), (StepState::Done, Some("tool.new")), "done, and the tool can still be added");
+    assert!(steps[3].says.contains("ChamferMill(angle=90)"), "{}", steps[3].says);
+
+    // With that tool declared the scheduler has a line to add, so
+    // Operations opens again.
+    let steps = job_steps(&plate, &JobFacts { to_schedule: 1, ..on_disk });
+    assert_eq!((steps[4].name, steps[4].state, steps[4].act.as_ref().map(|a| a.1)), ("Operations", StepState::Next, Some("schedule")));
 }

@@ -164,7 +164,8 @@ fn propose(p: &Part) -> Schedule {
         }
     }
     let pending: Vec<(&str, &Feature)> = names
-        .into_iter()
+        .iter()
+        .copied()
         .filter(|n| !consumed(p, n))
         .filter_map(|n| p.features.get(n).map(|f| (n, f)))
         .collect();
@@ -190,6 +191,25 @@ fn propose(p: &Part) -> Schedule {
     let ballmill = largest(p, "Ballmill", None);
     let no_endmill = |what: &str| format!("{what} waits for an Endmill: none is declared");
     let no_ballmill = |what: &str| format!("{what} waits for a Ballmill: none is declared");
+
+    // A feature a run already cuts can still lack its chamfer or its edge
+    // round: the Form waits for a tool declared later. Asked for here, so
+    // the note stands until the tool is declared and the line until it is run.
+    for (name, f) in names.iter().filter(|n| consumed(p, n)).filter_map(|n| p.features.get(*n).map(|f| (*n, f))) {
+        let (Feature::CylinderBore { chamfer, edge_round, .. }
+        | Feature::ProfilePocket { chamfer, edge_round, .. }
+        | Feature::ProfileBoss { chamfer, edge_round, .. }
+        | Feature::CylinderBoss { chamfer, edge_round, .. }) = f
+        else {
+            continue;
+        };
+        let formed_by = |is: &dyn Fn(&parse::Tool) -> bool| {
+            p.operations.iter().any(|op| op.op_type == parse::OpType::Form && op.feature_name == name && p.tools.get(&op.tool_num).is_some_and(is))
+        };
+        let chamfer = chamfer.as_ref().filter(|_| !formed_by(&|t| t.chamfer.is_some())).map(|c| c.angle);
+        let round = edge_round.filter(|_| !formed_by(&|t| t.rounder.is_some()));
+        push_forms(p, name, chamfer, round, &mut forms, &mut out.notes);
+    }
 
     for (name, f) in &pending {
         let name = *name;

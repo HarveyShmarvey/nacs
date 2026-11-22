@@ -743,7 +743,13 @@ fn job_mode(dir: &str, part: &nacs::parse::Part, has_file: bool, refusal: Option
     #[cfg(not(any(feature = "frontend", feature = "agent")))]
     let (model, waiting): (Option<String>, usize) = (None, 0);
     let stock_waiting = std::fs::read_to_string(d.join("proposed_stock.part")).ok().and_then(|t| nacs::view::stock_proposal(&t, part).ok()).is_some_and(|s| !s.in_project);
-    print!("{}", nacs::view::job_report(&nacs::view::job_steps(part, has_file, model.as_deref(), stock_waiting, waiting, refusal)));
+    let schedule = if has_file { nacs::schedule::for_project(part).unwrap_or_default() } else { Default::default() };
+    let (notes, to_schedule) = (schedule.notes, schedule.lines.len());
+    let program = nacs::view::program_file_path(d);
+    let stamp = |p: &std::path::Path| std::fs::metadata(p).and_then(|m| m.modified()).ok();
+    let program_file = (program.is_file() && stamp(&program) >= stamp(&d.join("main.part"))).then(|| program.file_name().unwrap_or_default().to_string_lossy().into_owned());
+    let facts = nacs::view::JobFacts { has_file, model, stock_waiting, waiting, notes, refusal: refusal.map(str::to_string), program_file, to_schedule };
+    print!("{}", nacs::view::job_report(&nacs::view::job_steps(part, &facts)));
     process::exit(0)
 }
 

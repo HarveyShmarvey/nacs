@@ -897,6 +897,9 @@ fn build(
         import_busy: None,
         import_rx: None,
         review_dups: Vec::new(),
+        schedule_notes: Vec::new(),
+        schedule_lines: 0,
+        guide_shown: false,
         suppressed: scan_suppressed(part),
         field_edit: Vec::new(),
         pattern_table: None,
@@ -1583,6 +1586,12 @@ pub struct ViewApp {
     import_rx: Option<std::sync::mpsc::Receiver<Result<(String, Result<String, String>), String>>>,
     /// Per review row, the earlier row it repeats (`view::duplicate_proposals`).
     review_dups: Vec<Option<usize>>,
+    /// The scheduler's notes on the project as loaded: what waits for a tool.
+    schedule_notes: Vec<String>,
+    /// How many run lines the scheduler would add now.
+    schedule_lines: usize,
+    /// The job guide has been on screen in this window.
+    guide_shown: bool,
     /// The `# run` lines of the project's source files (DESIGN.md §5.2,
     /// the Outline's Suppressed heading) — read from the files at open and
     /// at every reload, never from the program.
@@ -4177,6 +4186,9 @@ impl ViewApp {
             _ => Vec::new(),
         };
         self.review_dups = view::duplicate_proposals(&self.review_rows);
+        let schedule = crate::schedule::for_project(&self.part).unwrap_or_default();
+        self.schedule_lines = schedule.lines.len();
+        self.schedule_notes = schedule.notes;
         self.stock_proposal = self.stock_text.as_deref().map(|text| view::stock_proposal(text, &self.part));
         if let view::Selection::Review(i) = self.selection {
             if i >= self.review_rows.len() {
@@ -4337,6 +4349,8 @@ impl ViewApp {
                 self.note_written(&path, &said);
                 self.edits.record(view::Edit { path, before, after, stamp });
                 self.edit_note = None;
+                // The Outline lists the operations just written.
+                self.layout.apply(DockAction::ShowTab(SidebarTab::Outline));
             }
             Err(e) => self.edit_note = Some(format!("Not written — {e}")),
         }
@@ -5305,7 +5319,7 @@ impl ViewApp {
                 }
             };
             let is_run = matches!(form.head, NewHead::Run { .. });
-            for (i, ((key, required), buf)) in keys.iter().zip(form.values.iter_mut()).enumerate() {
+            let key_row = |ui: &mut egui::Ui, i: usize, key: &String, required: bool, buf: &mut String| {
                 ui.horizontal(|ui| {
                     ui.label(egui::RichText::new(view::field_label(key, units_mm)).small());
                     // On the run head a reference blank is a menu; on the
@@ -5335,6 +5349,14 @@ impl ViewApp {
                         ui.label(egui::RichText::new("suggested — half the tool's diameter; Create commits it").small().weak());
                     }
                 });
+            };
+            // Optional answers go under the Create button when there are
+            // many (a tool has twelve), so the button is never under the fold.
+            let optional_below = keys.iter().filter(|(_, required)| !required).count() > 4;
+            for (i, ((key, required), buf)) in keys.iter().zip(form.values.iter_mut()).enumerate() {
+                if *required || !optional_below {
+                    key_row(ui, i, key, *required, buf);
+                }
             }
             let spec_points = points;
             if spec_points != crate::template::Points::None {
@@ -5400,6 +5422,13 @@ impl ViewApp {
                     .clicked();
                 cancel = ui.button("Cancel").clicked();
             });
+            if optional_below {
+                for (i, ((key, required), buf)) in keys.iter().zip(form.values.iter_mut()).enumerate() {
+                    if !*required {
+                        key_row(ui, i, key, false, buf);
+                    }
+                }
+            }
         }
         if create {
             self.create_feature();
@@ -6139,14 +6168,21 @@ impl ViewApp {
     /// loaded project, report and proposals.
     fn job_steps(&self) -> Vec<view::JobStep> {
         // One stat a frame; the window repaints on input and twice a second.
-        let has_file = self.part.sources.first().is_some_and(|p| p.is_file());
+        let main = self.part.sources.first();
+        let has_file = main.is_some_and(|p| p.is_file());
         let model = match &self.report {
-            Some(Ok(r)) => Some(r.source.as_str()),
+            Some(Ok(r)) => Some(r.source.clone()),
             _ => None,
         };
         let stock_waiting = matches!(&self.stock_proposal, Some(Ok(s)) if !s.in_project);
         let waiting = view::proposals_waiting(&self.review_rows, &self.review_dups);
-        view::job_steps(&self.part, has_file, model, stock_waiting, waiting, self.check_result.refusal.as_deref())
+        // The program counts as written while its file is not older than
+        // main.part: an edit after the write opens the step again.
+        let program = view::program_file_path(std::path::Path::new(&self.project_path));
+        let stamp = |p: &std::path::Path| std::fs::metadata(p).and_then(|m| m.modified()).ok();
+        let program_file = (program.is_file() && main.is_some_and(|m| stamp(&program) >= stamp(m))).then(|| Self::file_word(&program));
+        let facts = view::JobFacts { has_file, model, stock_waiting, waiting, notes: self.schedule_notes.clone(), refusal: self.check_result.refusal.clone(), program_file, to_schedule: self.schedule_lines };
+        view::job_steps(&self.part, &facts)
     }
 
     /// The job guide at the top of the sidebar, over every tab, until the
@@ -6155,23 +6191,39 @@ impl ViewApp {
     fn job_guide(&mut self, ui: &mut egui::Ui) {
         let steps = self.job_steps();
         let next = steps.iter().position(|s| s.state == view::StepState::Next);
-        // A project with its operations scheduled has no use for a guide:
-        // the sidebar is the Outline's, and Write program is on the band.
-        if next.is_none_or(|i| i + 1 == steps.len()) {
+        // A project opened with its operations already scheduled has no
+        // use for a guide. One the guide has led this far keeps it to the
+        // end, so the last steps do not vanish under the pointer.
+        if next.is_some_and(|i| i + 1 < steps.len()) {
+            self.guide_shown = true;
+        }
+        if !self.guide_shown {
             return;
         }
         let title = match next {
             Some(i) => format!("Job: step {} of {}, {}", i + 1, steps.len(), steps[i].name),
-            None => "Job".to_string(),
+            None => "Job: done".to_string(),
         };
         let mut act: Option<&'static str> = None;
         egui::CollapsingHeader::new(egui::RichText::new(title).strong()).id_salt("job.guide").default_open(true).show(ui, |ui| {
             for (i, s) in steps.iter().enumerate() {
                 let head = format!("{}  {}", i + 1, s.name);
                 match s.state {
-                    view::StepState::Done => {
-                        ui.add(egui::Label::new(egui::RichText::new(format!("{head}  · {}", s.says)).weak()).truncate());
-                    }
+                    view::StepState::Done => match &s.act {
+                        None => {
+                            ui.add(egui::Label::new(egui::RichText::new(format!("{head}  · {}", s.says)).weak()).truncate());
+                        }
+                        // Done, with something left to say and a way on:
+                        // the whole sentence, and the button small.
+                        Some((label, id)) => {
+                            ui.add(egui::Label::new(format!("{head}  · {}", s.says)).wrap());
+                            ui.indent(("job.done", i), |ui| {
+                                if ui.small_button(label).clicked() {
+                                    act = Some(id);
+                                }
+                            });
+                        }
+                    },
                     view::StepState::Later => {
                         ui.label(egui::RichText::new(head).weak());
                     }
@@ -6191,6 +6243,11 @@ impl ViewApp {
         });
         ui.separator();
         if let Some(id) = act {
+            // The guide's accept is the stock's: select it, as its row would.
+            if id == "review.accept" {
+                self.layout.apply(DockAction::ShowTab(SidebarTab::Review));
+                self.set_selection(view::Selection::ProposedStock);
+            }
             self.act(id);
         }
     }
@@ -6252,7 +6309,9 @@ impl ViewApp {
         if !self.part.features.is_empty() && ui.small_button("Schedule operations").on_hover_text("Add an operation for every feature that has none, with tools from this project. z undoes.").clicked() {
             self.act("schedule");
         }
-        if pending > 0 && ui.small_button(format!("Accept all ({pending})")).on_hover_text("Accept every proposal not yet in the project; duplicates are skipped. z undoes.").clicked() {
+        // Not before the stock is accepted: that is what makes main.part.
+        let has_file = self.part.sources.first().is_some_and(|p| p.is_file());
+        if pending > 0 && has_file && ui.small_button(format!("Accept all ({pending})")).on_hover_text("Accept every proposal not yet in the project; duplicates are skipped. z undoes.").clicked() {
             self.act("review.accept_all");
         }
         for (i, row) in self.review_rows.iter().enumerate() {
