@@ -4105,11 +4105,53 @@ pub fn proposals_waiting(rows: &[ReviewRow], dups: &[Option<usize>]) -> usize {
     rows.iter().enumerate().filter(|(i, r)| r.statement.is_some() && !r.in_project && !r.rejected && dups.get(*i).copied().flatten().is_none()).count()
 }
 
+/// What the window or the CLI knows beside the `Part` when it asks for the
+/// job's steps.
+#[derive(Clone, Debug, Default)]
+pub struct JobFacts {
+    /// main.part is on disk.
+    pub has_file: bool,
+    /// The imported model's file name.
+    pub model: Option<String>,
+    /// A proposed blank is not yet accepted.
+    pub stock_waiting: bool,
+    /// The count from `proposals_waiting`.
+    pub waiting: usize,
+    /// The scheduler's notes (`schedule::for_project`): what waits for a tool.
+    pub notes: Vec<String>,
+    /// Why no program is generated, when none is.
+    pub refusal: Option<String>,
+    /// The written program's file name, when it is on disk and not older
+    /// than the project's text.
+    pub program_file: Option<String>,
+}
+
+/// The tools the scheduler's notes ask for: first those a whole feature
+/// waits for, then those only a chamfer, a seat or an edge round waits for.
+/// A note reads "<what> waits for a <tool>: <why>".
+pub fn tools_wanted(notes: &[String]) -> (Vec<String>, Vec<String>) {
+    let (mut needed, mut extra) = (Vec::new(), Vec::new());
+    for note in notes {
+        let Some((what, rest)) = note.split_once(" waits for ") else { continue };
+        let rest = rest.trim_start_matches("an ").trim_start_matches("a ");
+        let (tool, why) = rest.split_once(": ").unwrap_or((rest, ""));
+        // "a tool: no Drill(dia=3) and no Endmill under 3 is declared"
+        let tool = if tool == "tool" { why.trim_end_matches(" is declared").trim_start_matches("no ").replace(" and no ", " or ") } else { tool.to_string() };
+        let list = if what.contains("'s ") { &mut extra } else { &mut needed };
+        if !list.contains(&tool) {
+            list.push(tool);
+        }
+    }
+    (needed, extra)
+}
+
 /// The job as six steps, model to program, so the window can say what
-/// comes next. `has_file` is whether main.part is on disk; `model` the
-/// imported file's name; `stock_waiting` a proposed blank not yet accepted;
-/// `waiting` the count from `proposals_waiting`.
-pub fn job_steps(part: &Part, has_file: bool, model: Option<&str>, stock_waiting: bool, waiting: usize, refusal: Option<&str>) -> Vec<JobStep> {
+/// comes next.
+pub fn job_steps(part: &Part, facts: &JobFacts) -> Vec<JobStep> {
+    let JobFacts { has_file, stock_waiting, waiting, .. } = *facts;
+    let model = facts.model.as_deref();
+    let refusal = facts.refusal.as_deref();
+    let (needed, extra) = tools_wanted(&facts.notes);
     let features = part.features.len();
     let unscheduled = part.features.keys().filter(|name| !crate::schedule::consumed(part, name)).count();
     let plural = |n: usize, one: &str, many: &str| if n == 1 { format!("1 {one}") } else { format!("{n} {many}") };
@@ -4123,16 +4165,22 @@ pub fn job_steps(part: &Part, has_file: bool, model: Option<&str>, stock_waiting
             Some(("Import STEP…".to_string(), "import.step")),
         ),
         if stock_waiting {
-            ("Stock", false, String::new(), "a blank is proposed: read it in Review, then Accept into project".to_string(), Some(("Show the proposed stock".to_string(), "sidebar.review")))
+            ("Stock", false, String::new(), "a blank is proposed from the model; its text is on the card below".to_string(), Some(("Accept the proposed stock".to_string(), "review.accept")))
         } else {
             ("Stock", has_file, crate::outline::stock_row(&part.stock).trim_start_matches("stock").trim().to_string(), "declare the blank the part is cut from".to_string(), Some(("New project…".to_string(), "project.new")))
         },
         if waiting > 0 {
-            ("Features", false, String::new(), format!("{} in Review: accept them all, or one at a time", plural(waiting, "proposal waits", "proposals wait")), Some((format!("Accept all ({waiting})"), "review.accept_all")))
+            ("Features", false, String::new(), format!("{} proposed, listed under Review: accept them all, or pick one and accept it on its card", plural(waiting, "feature is", "features are")), Some((format!("Accept all ({waiting})"), "review.accept_all")))
         } else {
             ("Features", features > 0, plural(features, "feature", "features"), "declare what is to be cut".to_string(), Some(("New feature…".to_string(), "feature.new")))
         },
-        ("Tools", !part.tools.is_empty(), plural(part.tools.len(), "tool", "tools"), "no cutter is declared, and an operation needs one".to_string(), Some(("New tool…".to_string(), "tool.new"))),
+        (
+            "Tools",
+            !part.tools.is_empty() && needed.is_empty(),
+            if extra.is_empty() { plural(part.tools.len(), "tool", "tools") } else { format!("{}; not yet covered: {}", plural(part.tools.len(), "tool", "tools"), extra.join(", ")) },
+            if needed.is_empty() { "no cutter is declared, and an operation needs one".to_string() } else { format!("the features still need: {}", needed.join("; ")) },
+            Some(("New tool…".to_string(), "tool.new")),
+        ),
         (
             "Operations",
             !part.operations.is_empty() && unscheduled == 0,
@@ -4141,10 +4189,10 @@ pub fn job_steps(part: &Part, has_file: bool, model: Option<&str>, stock_waiting
             Some(("Schedule operations".to_string(), "schedule")),
         ),
     ];
-    // The program is never "done": it is ready to write, or refused.
-    rows.push(match refusal {
-        Some(why) => ("Program", false, String::new(), format!("refused: {why}"), Some(("Show the problems".to_string(), "sidebar.problems"))),
-        None => ("Program", false, String::new(), "ready to write beside the project as a .nc file".to_string(), Some(("Write program".to_string(), "program.write"))),
+    rows.push(match (refusal, &facts.program_file) {
+        (Some(why), _) => ("Program", false, String::new(), format!("refused: {why}"), Some(("Show the problems".to_string(), "sidebar.problems"))),
+        (None, Some(file)) => ("Program", true, format!("{file} is written"), String::new(), None),
+        (None, None) => ("Program", false, String::new(), "ready to write beside the project as a .nc file".to_string(), Some(("Write program".to_string(), "program.write"))),
     });
     let mut next_given = false;
     rows.into_iter()

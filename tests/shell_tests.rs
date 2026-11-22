@@ -2726,15 +2726,45 @@ fn the_job_guide_leads_from_an_empty_folder_to_a_program() {
     h.get_by_label("Import").click();
     wait_for(&mut h, "Job: step 2 of 6, Stock");
     shot(&mut h, "job-2-stock");
-    h.get_by_label("Show the proposed stock").click();
-    settle(&mut h);
-    h.get_by_label("Accept into project").click();
+    // Before the stock is accepted there is no main.part, so the Review
+    // does not offer Accept all yet: the guide's button is the one way on.
+    assert!(h.query_all_by_label_contains("Accept all (").next().is_none(), "no Accept all before the stock");
+    h.get_by_label("Accept the proposed stock").click();
     wait_for(&mut h, "Job: step 3 of 6, Features");
     shot(&mut h, "job-3-features");
     h.query_all_by_label("Accept all (4)").next().expect("the guide's button").click();
     wait_for(&mut h, "Job: step 4 of 6, Tools");
     shot(&mut h, "job-4-tools");
     assert!(std::fs::read_to_string(project.join("main.part")).unwrap().contains("feature F27_Pocket ProfilePocket"), "the features are in the project");
+    // Tools: the form opens on an Endmill with its number filled in; the
+    // diameter is the one answer it needs.
+    h.get_by_label("New tool…").click();
+    settle(&mut h);
+    let head = h.query_all_by_label("New tool").next().expect("the tool form opened").rect().top();
+    for typing in [false, true] {
+        let mut fields: Vec<_> = h.query_all_by_role(Role::TextInput).filter(|n| n.rect().top() > head).collect();
+        fields.sort_by(|a, b| a.rect().top().total_cmp(&b.rect().top()));
+        if typing { fields[1].type_text("6") } else { fields[1].focus() }
+        h.step();
+    }
+    // The form is taller than its dock and the button is under the fold:
+    // scrolled into view, as a user scrolls to it.
+    h.get_by_label("Create tool").scroll_to_me();
+    settle(&mut h);
+    h.get_by_label("Create tool").click();
+    wait_for(&mut h, "Job: step 5 of 6, Operations");
+    shot(&mut h, "job-5-operations");
+    // Operations: one click schedules them, and the Outline lists them.
+    h.query_all_by_label("Schedule operations").next().expect("the guide's button").click();
+    wait_for(&mut h, "Job: step 6 of 6, Program");
+    assert_eq!(h.state().layout().sidebar.tab, SidebarTab::Outline, "the Outline in front, where the operations are listed");
+    shot(&mut h, "job-6-program");
+    // Program: the guide's own button, whatever the center shows.
+    h.query_all_by_label("Write program").next().expect("the guide's button").click();
+    wait_for(&mut h, "Job: done");
+    shot(&mut h, "job-7-done");
+    let program = std::fs::read_to_string(project.join("mypart.nc")).expect("the program is written beside the project");
+    assert!(program.contains("G01") || program.contains("G1 "), "it cuts");
     drop(h);
     let _ = std::fs::remove_dir_all(&root);
 }

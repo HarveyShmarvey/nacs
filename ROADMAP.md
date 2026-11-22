@@ -703,6 +703,13 @@ One page. What is built, what is next, and the debts we know about.
    drawn until its features are accepted; no act places the origin or
    moves the part inside the stock; Tools is a blank form with no starter
    cutter; the Review lists every face, not the features.
+   Second pass, from the user's first run on a part of their own
+   (2026-11-21): the Stock step accepts the proposed blank in one click;
+   Accept all waits for the stock; the Tools step stays open until every
+   feature has a cutter and names the ones missing; scheduling puts the
+   Outline in front; the guide stays through Write program and says when
+   the file is written. Found and not fixed: the tool form's Create
+   button is under twelve optional fields and has to be scrolled to.
 
 ## Debts
 
