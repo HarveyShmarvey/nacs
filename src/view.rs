@@ -4124,6 +4124,8 @@ pub struct JobFacts {
     /// The written program's file name, when it is on disk and not older
     /// than the project's text.
     pub program_file: Option<String>,
+    /// How many run lines the scheduler would add now.
+    pub to_schedule: usize,
 }
 
 /// The tools the scheduler's notes ask for: first those a whole feature
@@ -4177,15 +4179,19 @@ pub fn job_steps(part: &Part, facts: &JobFacts) -> Vec<JobStep> {
         (
             "Tools",
             !part.tools.is_empty() && needed.is_empty(),
-            if extra.is_empty() { plural(part.tools.len(), "tool", "tools") } else { format!("{}; not yet covered: {}", plural(part.tools.len(), "tool", "tools"), extra.join(", ")) },
+            if extra.is_empty() { plural(part.tools.len(), "tool", "tools") } else { format!("{}; left uncut for want of: {}", plural(part.tools.len(), "tool", "tools"), extra.join(", ")) },
             if needed.is_empty() { "no cutter is declared, and an operation needs one".to_string() } else { format!("the features still need: {}", needed.join("; ")) },
             Some(("New tool…".to_string(), "tool.new")),
         ),
         (
             "Operations",
-            !part.operations.is_empty() && unscheduled == 0,
+            !part.operations.is_empty() && unscheduled == 0 && facts.to_schedule == 0,
             plural(part.operations.len(), "operation", "operations"),
-            format!("{} no operation yet", plural(unscheduled, "feature has", "features have")),
+            if unscheduled > 0 {
+                format!("{} no operation yet", plural(unscheduled, "feature has", "features have"))
+            } else {
+                format!("{} can be added with the tools now declared", plural(facts.to_schedule, "operation", "operations"))
+            },
             Some(("Schedule operations".to_string(), "schedule")),
         ),
     ];
@@ -4198,7 +4204,10 @@ pub fn job_steps(part: &Part, facts: &JobFacts) -> Vec<JobStep> {
     rows.into_iter()
         .map(|(name, done, done_says, open_says, act)| {
             if done {
-                JobStep { name, state: StepState::Done, says: done_says, act: None }
+                // A done Tools step that still leaves a chamfer or a round
+                // uncut keeps its button: the tool can be added at any time.
+                let act = act.filter(|_| name == "Tools" && !extra.is_empty());
+                JobStep { name, state: StepState::Done, says: done_says, act }
             } else if !next_given {
                 next_given = true;
                 JobStep { name, state: StepState::Next, says: open_says, act }

@@ -2747,10 +2747,8 @@ fn the_job_guide_leads_from_an_empty_folder_to_a_program() {
         if typing { fields[1].type_text("6") } else { fields[1].focus() }
         h.step();
     }
-    // The form is taller than its dock and the button is under the fold:
-    // scrolled into view, as a user scrolls to it.
-    h.get_by_label("Create tool").scroll_to_me();
-    settle(&mut h);
+    // Create sits right under the one required answer, above the optional ones.
+    shot(&mut h, "job-4b-tool-form");
     h.get_by_label("Create tool").click();
     wait_for(&mut h, "Job: step 5 of 6, Operations");
     shot(&mut h, "job-5-operations");
@@ -2765,6 +2763,45 @@ fn the_job_guide_leads_from_an_empty_folder_to_a_program() {
     shot(&mut h, "job-7-done");
     let program = std::fs::read_to_string(project.join("mypart.nc")).expect("the program is written beside the project");
     assert!(program.contains("G01") || program.contains("G1 "), "it cuts");
+    drop(h);
+    let _ = std::fs::remove_dir_all(&root);
+}
+
+/// A chamfer nobody can cut yet (no chamfer mill is declared) is still said
+/// once the operations are scheduled, with the button that adds the tool.
+#[test]
+fn the_job_guide_says_what_is_left_uncut_for_want_of_a_tool() {
+    redirect_config_home();
+    let root = std::env::temp_dir().join(format!("nacs-shell-uncut-{}", std::process::id()));
+    let _ = std::fs::remove_dir_all(&root);
+    let project = root.join("pad.cam");
+    std::fs::create_dir_all(&project).unwrap();
+    std::fs::write(
+        project.join("main.part"),
+        "units mm\nfeed 800\nplunge 300\nrapid_z 5\nclearance_z 25\nspindle 3000\n\
+         stock Box(w=200, l=120, h=30, x=0, y=0, z=0)\n\
+         tool T1 Endmill(dia=10.0)\n\
+         feature Pad ProfileBoss(extent=10.0, chamfer_depth=1.0, chamfer_angle=90.0\n    20 100\n    60 100\n    60 60\n    20 60\n)\n",
+    )
+    .unwrap();
+    let path = project.to_string_lossy().into_owned();
+    let part = nacs::parse::load_project(&path).expect("the project parses");
+    let cr = nacs::check_result::check_result(&part);
+    let mut h = Harness::builder()
+        .with_size(egui::Vec2::new(1200.0, 800.0))
+        .with_max_steps(64)
+        .wgpu()
+        .build_eframe(move |_cc| frontend::harness_app(&part, cr, &path, None, Workspace::default()));
+    settle(&mut h);
+    h.query_all_by_label("Schedule operations").next().expect("the guide's button").click();
+    settle(&mut h);
+    assert!(std::fs::read_to_string(project.join("main.part")).unwrap().contains("run Side(tool=T1, surface=Pad)"), "the wall is scheduled");
+    assert!(h.query_all_by_label_contains("left uncut for want of: ChamferMill(angle=90)").next().is_some(), "the chamfer is still named");
+    shot(&mut h, "job-uncut-chamfer");
+    // The button under that sentence (the Outline has one too) opens the tool form.
+    h.query_all_by_label("New tool…").next().expect("the guide's button").click();
+    settle(&mut h);
+    assert!(h.query_all_by_label("New tool").next().is_some(), "the tool form opened");
     drop(h);
     let _ = std::fs::remove_dir_all(&root);
 }

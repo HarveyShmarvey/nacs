@@ -898,6 +898,7 @@ fn build(
         import_rx: None,
         review_dups: Vec::new(),
         schedule_notes: Vec::new(),
+        schedule_lines: 0,
         guide_shown: false,
         suppressed: scan_suppressed(part),
         field_edit: Vec::new(),
@@ -1587,6 +1588,8 @@ pub struct ViewApp {
     review_dups: Vec<Option<usize>>,
     /// The scheduler's notes on the project as loaded: what waits for a tool.
     schedule_notes: Vec<String>,
+    /// How many run lines the scheduler would add now.
+    schedule_lines: usize,
     /// The job guide has been on screen in this window.
     guide_shown: bool,
     /// The `# run` lines of the project's source files (DESIGN.md §5.2,
@@ -4183,7 +4186,9 @@ impl ViewApp {
             _ => Vec::new(),
         };
         self.review_dups = view::duplicate_proposals(&self.review_rows);
-        self.schedule_notes = crate::schedule::for_project(&self.part).map(|s| s.notes).unwrap_or_default();
+        let schedule = crate::schedule::for_project(&self.part).unwrap_or_default();
+        self.schedule_lines = schedule.lines.len();
+        self.schedule_notes = schedule.notes;
         self.stock_proposal = self.stock_text.as_deref().map(|text| view::stock_proposal(text, &self.part));
         if let view::Selection::Review(i) = self.selection {
             if i >= self.review_rows.len() {
@@ -5314,7 +5319,7 @@ impl ViewApp {
                 }
             };
             let is_run = matches!(form.head, NewHead::Run { .. });
-            for (i, ((key, required), buf)) in keys.iter().zip(form.values.iter_mut()).enumerate() {
+            let key_row = |ui: &mut egui::Ui, i: usize, key: &String, required: bool, buf: &mut String| {
                 ui.horizontal(|ui| {
                     ui.label(egui::RichText::new(view::field_label(key, units_mm)).small());
                     // On the run head a reference blank is a menu; on the
@@ -5344,6 +5349,14 @@ impl ViewApp {
                         ui.label(egui::RichText::new("suggested — half the tool's diameter; Create commits it").small().weak());
                     }
                 });
+            };
+            // Optional answers go under the Create button when there are
+            // many (a tool has twelve), so the button is never under the fold.
+            let optional_below = keys.iter().filter(|(_, required)| !required).count() > 4;
+            for (i, ((key, required), buf)) in keys.iter().zip(form.values.iter_mut()).enumerate() {
+                if *required || !optional_below {
+                    key_row(ui, i, key, *required, buf);
+                }
             }
             let spec_points = points;
             if spec_points != crate::template::Points::None {
@@ -5409,6 +5422,13 @@ impl ViewApp {
                     .clicked();
                 cancel = ui.button("Cancel").clicked();
             });
+            if optional_below {
+                for (i, ((key, required), buf)) in keys.iter().zip(form.values.iter_mut()).enumerate() {
+                    if !*required {
+                        key_row(ui, i, key, false, buf);
+                    }
+                }
+            }
         }
         if create {
             self.create_feature();
@@ -6161,7 +6181,7 @@ impl ViewApp {
         let program = view::program_file_path(std::path::Path::new(&self.project_path));
         let stamp = |p: &std::path::Path| std::fs::metadata(p).and_then(|m| m.modified()).ok();
         let program_file = (program.is_file() && main.is_some_and(|m| stamp(&program) >= stamp(m))).then(|| Self::file_word(&program));
-        let facts = view::JobFacts { has_file, model, stock_waiting, waiting, notes: self.schedule_notes.clone(), refusal: self.check_result.refusal.clone(), program_file };
+        let facts = view::JobFacts { has_file, model, stock_waiting, waiting, notes: self.schedule_notes.clone(), refusal: self.check_result.refusal.clone(), program_file, to_schedule: self.schedule_lines };
         view::job_steps(&self.part, &facts)
     }
 
@@ -6189,9 +6209,21 @@ impl ViewApp {
             for (i, s) in steps.iter().enumerate() {
                 let head = format!("{}  {}", i + 1, s.name);
                 match s.state {
-                    view::StepState::Done => {
-                        ui.add(egui::Label::new(egui::RichText::new(format!("{head}  · {}", s.says)).weak()).truncate());
-                    }
+                    view::StepState::Done => match &s.act {
+                        None => {
+                            ui.add(egui::Label::new(egui::RichText::new(format!("{head}  · {}", s.says)).weak()).truncate());
+                        }
+                        // Done, with something left to say and a way on:
+                        // the whole sentence, and the button small.
+                        Some((label, id)) => {
+                            ui.add(egui::Label::new(format!("{head}  · {}", s.says)).wrap());
+                            ui.indent(("job.done", i), |ui| {
+                                if ui.small_button(label).clicked() {
+                                    act = Some(id);
+                                }
+                            });
+                        }
+                    },
                     view::StepState::Later => {
                         ui.label(egui::RichText::new(head).weak());
                     }

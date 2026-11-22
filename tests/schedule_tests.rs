@@ -127,6 +127,37 @@ fn test_a_given_hole_gets_only_its_mouth_chamfer() {
 }
 
 #[test]
+fn test_a_chamfer_left_for_want_of_its_tool_is_asked_for_until_it_is_run() {
+    let pad = "feature Pad ProfileBoss(extent=10.0, chamfer_depth=1.0, chamfer_angle=90.0
+    20 100
+    60 100
+    60 60
+    20 60
+)
+";
+    let note = "Pad's chamfer waits for a ChamferMill(angle=90): none is declared";
+    // No chamfer mill: the wall is scheduled and the chamfer noted.
+    let src = format!("{HEADER}tool T1 Endmill(dia=10.0)
+{pad}");
+    let (_, s) = schedule_of(&src);
+    assert!(!s.lines.is_empty() && s.notes.iter().any(|n| n == note), "{s:?}");
+    // With the wall's runs written the note still stands.
+    let cut = format!("{src}{}
+", s.lines.join("
+"));
+    let (_, s) = schedule_of(&cut);
+    assert_eq!((s.lines.len(), s.notes.iter().any(|n| n == note)), (0, true), "{s:?}");
+    // The tool declared later gets the one line, and then nothing is left.
+    let tooled = format!("{cut}tool T3 ChamferMill(angle=90.0, gauge_dia=8.0, gauge_z=3.75, dia=12.0, tip_dia=0.5)
+");
+    let (_, s) = schedule_of(&tooled);
+    assert_eq!(s.lines, vec!["run Form(tool=T3, surface=Pad)"], "notes: {:?}", s.notes);
+    let (_, s) = schedule_of(&format!("{tooled}{}
+", s.lines[0]));
+    assert!(s.lines.is_empty() && s.notes.is_empty(), "{s:?}");
+}
+
+#[test]
 fn test_a_counterbore_over_a_drilled_hole_takes_its_wall_pass_alone() {
     // The ⌀10 endmill's wall pass covers the ring from ⌀26 in to ⌀6; the
     // ⌀18 hole below holds the rest. A blind ⌀26 bore keeps its Clear.

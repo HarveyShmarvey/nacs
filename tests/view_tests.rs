@@ -7293,7 +7293,12 @@ fn the_job_steps_name_the_next_thing_to_do() {
     let steps = job_steps(&plate, &JobFacts { notes: notes.clone(), ..on_disk.clone() });
     assert_eq!((steps[3].name, steps[3].state, steps[3].act.as_ref().map(|a| a.1)), ("Tools", StepState::Next, Some("tool.new")));
     assert!(steps[3].says.contains("Drill(dia=3) or Endmill under 3"), "{}", steps[3].says);
-    let steps = job_steps(&plate, &JobFacts { notes: notes[1..].to_vec(), ..on_disk });
-    assert_eq!(steps[3].state, StepState::Done);
+    let steps = job_steps(&plate, &JobFacts { notes: notes[1..].to_vec(), ..on_disk.clone() });
+    assert_eq!((steps[3].state, steps[3].act.as_ref().map(|a| a.1)), (StepState::Done, Some("tool.new")), "done, and the tool can still be added");
     assert!(steps[3].says.contains("ChamferMill(angle=90)"), "{}", steps[3].says);
+
+    // With that tool declared the scheduler has a line to add, so
+    // Operations opens again.
+    let steps = job_steps(&plate, &JobFacts { to_schedule: 1, ..on_disk });
+    assert_eq!((steps[4].name, steps[4].state, steps[4].act.as_ref().map(|a| a.1)), ("Operations", StepState::Next, Some("schedule")));
 }
