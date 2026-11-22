@@ -17,7 +17,8 @@ cargo build
 
 Click an operation in the Outline; its toolpath lights up and its card opens.
 The Program pane is the G-code; **Write program** puts it beside the project
-as `plate.nc`. `nacs --view` alone reopens the last project. `nacs --init
+as `plate.nc`. `nacs --view` alone reopens the last project, or the
+first time opens an empty window whose guide starts at Import STEP. `nacs --init
 'Box w=100 l=60 h=12' job.cam` starts a new one. `GETTING_STARTED.md` walks a
 part from nothing; `REFERENCE.md` is every word of the language.
 
