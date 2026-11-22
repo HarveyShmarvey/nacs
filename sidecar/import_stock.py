@@ -34,58 +34,20 @@ import textwrap
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from import_step import (COS_TOL, UP_ROTATIONS, blank_margins, blank_words,  # noqa: E402
-                         face_loops, face_normal, fmt, parse_blank,
-                         plan_bounding_cylinder, select_solid, signed_area)
+from import_step import (UP_ROTATIONS, blank_margins, blank_words,  # noqa: E402
+                         fmt, origin_note, parse_blank, parse_origin, place_origin,
+                         plan_bounding_cylinder, prism_outline, select_solid)
 
-VERTICAL_TOL = 1e-3
-
-
-def prism_outline(faces, bb):
-    """The plan outline of a prism, or (None, why it is not one)."""
-    top = None
-    for f in faces:
-        pnt, n = face_normal(f)
-        if f.geomType() == "PLANE" and n.Z() > COS_TOL:
-            if top is None or pnt.Z() > top[0]:
-                top = (pnt.Z(), f)
-        elif f.geomType() == "PLANE" and n.Z() < -COS_TOL:
-            continue
-        elif abs(n.Z()) <= VERTICAL_TOL:
-            continue
-        else:
-            return None, (f"a face is neither flat on top, flat on the bottom nor "
-                          f"vertical (normal z {n.Z():.3f})")
-    if top is None:
-        return None, "it has no flat +Z face to take an outline from"
-    z_top, face = top
-    if abs(z_top - bb.zmax) > 1e-3:
-        return None, (f"its topmost flat face (z {fmt(z_top)}) is below the solid's "
-                      f"top (z {fmt(bb.zmax)})")
-    outer = face_loops(face)[0]  # CCW, chorded through the one tolerance
-    if signed_area(outer) <= 0.0:
-        outer = list(reversed(outer))
-    # The top's outline must be the WHOLE plan silhouette: a boss standing on
-    # the blank's top has a smaller topmost face, and its outline is not the
-    # blank's (block_bore.step, found on the first run).
-    xs = [x for x, _ in outer]
-    ys = [y for _, y in outer]
-    if (abs(min(xs) - bb.xmin) > 1e-3 or abs(max(xs) - bb.xmax) > 1e-3
-            or abs(min(ys) - bb.ymin) > 1e-3 or abs(max(ys) - bb.ymax) > 1e-3):
-        return None, (f"its topmost flat face (z {fmt(z_top)}) spans x {fmt(min(xs))}.."
-                      f"{fmt(max(xs))}, y {fmt(min(ys))}..{fmt(max(ys))} of a solid "
-                      f"spanning x {fmt(bb.xmin)}..{fmt(bb.xmax)}, y {fmt(bb.ymin)}.."
-                      f"{fmt(bb.ymax)}, so something stands on its top")
-    return outer, None
-
-
-def propose_stock(step_path, solid_sel=None, up="z+", allowance=0.0, blank=None, given=None):
+def propose_stock(step_path, solid_sel=None, up="z+", allowance=0.0, blank=None, given=None, origin=None):
     """The proposal's text, the statement's kind word and one phrase for the
     summary line."""
     solid, solid_sel, n_solids = select_solid(step_path, solid_sel)
     if UP_ROTATIONS[up] is not None:
         axis, degrees = UP_ROTATIONS[up]
         solid = solid.rotate((0, 0, 0), axis, degrees)
+    origin_at = None
+    if origin is not None:
+        solid, origin_at = place_origin(solid, origin, allowance)
     bb = solid.BoundingBox()
     faces = solid.Faces()
     h = bb.zmax - bb.zmin
@@ -145,6 +107,8 @@ def propose_stock(step_path, solid_sel=None, up="z+", allowance=0.0, blank=None,
         lines.append(f"# solid S{solid_sel} of {n_solids} in the file (--solid {solid_sel})")
     if UP_ROTATIONS[up] is not None:
         lines.append(f"# imported with --up {up} -- coordinates are post-rotation")
+    if origin is not None:
+        lines.append(origin_note(origin, origin_at))
     return "\n".join(lines + statement) + "\n", kind, about
 
 
@@ -163,7 +127,16 @@ def main():
     ap.add_argument("--allowance", type=float, default=0.0, metavar="MM", help="how far the blank stands outside the model, on the sides and the top (default 0: the model's exact extent)")
     ap.add_argument("--blank", metavar="WORDS", default=None, help="the blank as given, the earlier program's turned over: Cylinder(dia=, h=, x=, y=, z=) or Box(w=, l=, h=, x=, y=, z=); with --given")
     ap.add_argument("--given", metavar="PROJECT", default=None, help="the earlier program's project as `given from` will name it; with --blank")
+    ap.add_argument("--origin", metavar="X,Y,Z", default=None, help="the point that becomes 0,0,0, as import_step.py takes it")
     args = ap.parse_args()
+    origin = None
+    if args.origin is not None:
+        try:
+            origin = parse_origin(args.origin)
+        except ValueError as e:
+            sys.exit(f"error: {e}")
+        if args.blank is not None and origin != ["model"] * 3:
+            sys.exit("error: --origin with --blank: the second setup keeps the origin the given blank is written in")
     if args.allowance < 0.0:
         sys.exit(f"error: --allowance {args.allowance} is below zero")
     blank = None
@@ -179,7 +152,7 @@ def main():
         except ValueError as e:
             sys.exit(f"error: {e}")
     try:
-        text, kind, about = propose_stock(args.step, args.solid, args.up, args.allowance, blank, args.given)
+        text, kind, about = propose_stock(args.step, args.solid, args.up, args.allowance, blank, args.given, origin)
     except SystemExit:
         raise
     except Exception as e:  # noqa: BLE001 -- the sidecar's one error shape

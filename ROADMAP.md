@@ -694,11 +694,11 @@ One page. What is built, what is next, and the debts we know about.
 
 8. **The job has an order (2026-11-21).** A new user could not tell what to
    do first: the acts existed but nothing said their order. The sidebar now
-   carries a job guide until the operations are scheduled: Model, Stock,
+   carries a job guide until the operations are scheduled: Model, Origin, Stock,
    Features, Tools, Operations, Program, the next step with one sentence
    and its button. `nacs --job` prints the same.
-   Still missing, in the order a job meets them: no act places the
-   origin or moves the part inside the stock; Tools has no starter
+   Still missing, in the order a job meets them: no act moves the part
+   inside the stock (one allowance, all sides); Tools has no starter
    cutter; the Review lists every face, not the features.
    Second pass, from the user's first run on a part of their own
    (2026-11-21): the Stock step accepts the proposed blank in one click;
@@ -717,6 +717,15 @@ One page. What is built, what is next, and the debts we know about.
    starts `<model>.cam` beside the model. What an import proposes is
    drawn before any accept: the proposed blank, and the waiting features
    in dim lines. The empty viewport's sentence wraps.
+   Fifth pass (2026-11-22): the origin is chosen at import. The form
+   beside the path offers X0 Y0 (the stock's center, a corner, as
+   modeled) and Z0 (the stock's top, the part's top, the bottom, as
+   modeled), and takes any point as typed words; unless told it is the
+   stock's center and top. The guide has an Origin step that says it
+   back and, until something is accepted, a button to change it. The
+   viewport marks 0,0,0. `nacs --import --origin` is the same.
+   Not built: moving the origin after features are accepted (import
+   again), and six separate margins for the part inside the stock.
    Asked for, not built: an options page. First on it, the camera: the
    orbit style (the user's pick is a free turntable) and what it turns
    about (the part's center), each with alternatives.

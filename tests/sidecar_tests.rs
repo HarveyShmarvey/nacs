@@ -2108,3 +2108,46 @@ fn test_a_bevel_is_a_leg_on_the_feature_whose_edge_it_breaks() {
     assert_eq!(program.matches("(--- chamfer edge").count(), 3, "three bevels formed: {program}");
     assert!(nacs::stock::entry_findings(&part, &moves).is_empty(), "every entry licensed");
 }
+
+/// `--origin x,y,z` moves the model so the named point is 0,0,0 before
+/// anything is recognized: both scripts agree, a word reads the blank or
+/// (`part-`) the model, a number is a model coordinate, and a second setup
+/// keeps the origin its given blank is written in. Skips without the venv.
+#[test]
+fn test_the_origin_is_the_point_asked_for_in_both_proposals() {
+    if !Path::new(VENV_PYTHON).exists() {
+        println!("Skipping sidecar origin test: sidecar/.venv not installed (see sidecar/README.md)");
+        return;
+    }
+    let outdir = std::env::temp_dir().join(format!("nacs_sidecar_origin_{}", std::process::id()));
+    let _ = fs::remove_dir_all(&outdir);
+    let step = "tests/fixtures/drilled_plate.step";
+    let both = |origin: &str| {
+        for script in ["sidecar/import_step.py", "sidecar/import_stock.py"] {
+            let out = Command::new(VENV_PYTHON).args([script, step, "--allowance", "1", "--origin", origin, "-o"]).arg(&outdir).output().expect("failed to run the sidecar");
+            assert!(out.status.success(), "{}", String::from_utf8_lossy(&out.stderr));
+        }
+        (fs::read_to_string(outdir.join("proposed_stock.part")).unwrap(), fs::read_to_string(outdir.join("proposed.part")).unwrap())
+    };
+    // The blank's centre and its top.
+    let (stock, part) = both("mid,mid,max");
+    assert!(stock.ends_with("stock Box(w=102.0, l=82.0, h=16.0, x=-51.0, y=-41.0, z=0.0)\n"), "{stock}");
+    assert!(stock.contains("--origin mid,mid,max: the model's point (50.0, 40.0, 16.0) is 0,0,0 here"), "{stock}");
+    assert!(part.contains("\nfeature F9_Bore CylinderBore(dia=16.0, extent=6.0, x=30.0, y=-20.0, z=-1.0)\n"), "{part}");
+    // The blank's corner in plan, the part's own top.
+    let (stock, part) = both("min,min,part-max");
+    assert!(stock.ends_with("x=0.0, y=0.0, z=1.0)\n"), "{stock}");
+    assert!(part.contains("\nfeature F9_Bore CylinderBore(dia=16.0, extent=6.0, x=81.0, y=21.0, z=0.0)\n"), "{part}");
+    // A typed point, an axis left as modeled, the bottom.
+    let (stock, part) = both("10,model,min");
+    assert!(stock.ends_with("x=-11.0, y=-1.0, z=16.0)\n"), "{stock}");
+    assert!(part.contains("x=70.0, y=20.0, z=15.0)\n"), "{part}");
+    // The report says what was asked.
+    let report = fs::read_to_string(outdir.join("report.json")).unwrap();
+    assert!(report.contains("\"origin\": \"10,model,min\""), "{report}");
+    for (args, says) in [(vec!["--origin", "mid,mid"], "not three components"), (vec!["--origin", "mid,mid,up"], "is not model, a number"), (vec!["--origin", "mid,mid,max", "--given", "x", "--blank", "Box(w=1, l=1, h=1, x=0, y=0, z=0)"], "--origin with --blank")] {
+        let out = Command::new(VENV_PYTHON).args(["sidecar/import_step.py", step, "-o"]).arg(&outdir).args(&args).output().expect("failed to run the sidecar");
+        assert!(!out.status.success() && String::from_utf8_lossy(&out.stderr).contains(says), "{args:?}: {}", String::from_utf8_lossy(&out.stderr));
+    }
+    let _ = fs::remove_dir_all(&outdir);
+}
