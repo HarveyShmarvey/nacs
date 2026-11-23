@@ -2042,6 +2042,9 @@ pub fn parse_into(src: &str, p: &mut Part, base_dir: Option<&std::path::Path>) -
                 if p.work_offset.is_some() {
                     return Err(format!("line {}: duplicate 'work_offset' line — the program's one coordinate space rides one register (per-op selection is gated on the multi-datum stock model, by design)", lineno + 1));
                 }
+                // Recorded with the header's lines: the window's header form
+                // rewrites it where it stands.
+                p.header_lines.push(("work_offset".to_string(), 0, lineno, raw.to_string()));
                 // Several registers on the line: the program is run at
                 // each in turn, one part per register (DECISIONS.md "One
                 // program at several work offsets").

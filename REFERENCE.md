@@ -12,6 +12,7 @@ A project is a directory holding `main.part` (and, optionally, `geometry.part`).
 - `spindle <value>` — rpm
 - `rapid_z <value>` — the height every entry rapids to before feeding — above the stock top
 - `clearance_z <value>` — the between-operations retract — above the stock top
+- `work_offset <register>...` — optional: the register the program selects, `G54` to `G59` (`G54` unwritten); several run the program at each, one part a register
 
 ## The stock — the blank, declared first
 
@@ -134,6 +135,7 @@ Every act below is a palette entry (`p`), many a button; a key where one is boun
 - `program.minimap` — show or hide the Program's minimap  (·)
 - `program.copy` — copy the whole program — the text nacs writes to stdout  (·)
 - `program.write` — write the program beside the project as <name>.nc — the text nacs -o writes  (·)
+- `origin.register` — choose the work offset the program selects: open the stock's card, where the header's work_offset takes G54 to G59, or several to run a part in each  (·)
 - `project.new` — new project — write a main.part here, a stock and the header, every value shown first (nacs --init)  (·)
 - `op.move_top` — move the selected operation to the top of the run order — its run line swapped up past each neighbour; z undoes  (·)
 - `op.move_bottom` — move the selected operation to the bottom of the run order — its run line swapped down past each neighbour; z undoes  (·)
@@ -192,6 +194,7 @@ The job's verbs first, then the submenus; every row is an act above, named here 
 - New project… — `project.new`
 - Import STEP… — `import.step`
 - New stock… — `stock.new`
+- Work offset… — `origin.register`
 - Reload project — `project.reload`
 - Write program (.nc) — `program.write`
 - Copy program — `program.copy`

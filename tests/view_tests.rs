@@ -6174,9 +6174,10 @@ fn test_the_header_is_a_form_and_its_write_lands_in_place_or_before_the_stock() 
     let form = view::statement_form(&p, &view::Statement::Header).unwrap();
     assert_eq!(form.head, "header");
     let keys: Vec<&str> = form.fields.iter().map(|f| f.key.as_str()).collect();
-    assert_eq!(keys, vec!["units", "feed", "plunge", "spindle", "rapid_z", "clearance_z"]);
-    assert!(form.fields.iter().all(|f| f.required && f.options.is_none()));
-    assert_eq!(form.fields[1].value.as_deref(), Some("800"));
+    assert_eq!(keys, vec!["work_offset", "units", "feed", "plunge", "spindle", "rapid_z", "clearance_z"]);
+    assert!(form.fields[1..].iter().all(|f| f.required && f.options.is_none()));
+    assert!(!form.fields[0].required, "the register's line can go unwritten");
+    assert_eq!(form.fields[2].value.as_deref(), Some("800"));
     assert_eq!(view::header_write_plan(&p, "feed"), Some(1));
     assert_eq!(view::header_write_plan(&p, "spindle"), Some(5), "a header line after the stock is still that line");
     // A value typed is the new line, in place.
@@ -7285,6 +7286,20 @@ fn the_job_steps_name_the_next_thing_to_do() {
     let pane = view::gcode_view(&several).unwrap();
     let titles: Vec<Option<usize>> = pane.lines.iter().filter(|l| l.text.contains("(--- floor: Top")).map(|l| l.op).collect();
     assert_eq!(titles, [Some(0), Some(0), Some(0)]);
+    // An op's moves are counted once, and the register's word between two
+    // parts belongs to the op that follows it, not to the program's end.
+    let (_, emitted) = gcode::program_with_moves(&several).unwrap();
+    assert_eq!(pane.block_count(0), emitted[0].moves.len());
+    let g55 = pane.lines.iter().position(|l| l.text == "G55").unwrap();
+    assert_eq!(pane.lines[g55].op, Some(0));
+    // The header's form offers the register, G54 where no line says.
+    let form = view::statement_form(&several, &view::Statement::Header).unwrap();
+    assert_eq!((form.fields[0].key.as_str(), form.fields[0].value.as_deref()), ("work_offset", Some("G54 G55 G56")));
+    let plate = nacs::parse::load_project("plate.cam").unwrap();
+    let form = view::statement_form(&plate, &view::Statement::Header).unwrap();
+    assert_eq!(form.fields[0].value.as_deref(), Some("G54"));
+    // The last step says the register before the program is written.
+    assert!(job_steps(&plate, &JobFacts { has_file: true, ..JobFacts::default() })[6].says.contains("it selects G54 (File > Work offset"));
 
     // plate.cam is a finished project: only the program is left to write.
     let plate = nacs::parse::load_project("plate.cam").unwrap();

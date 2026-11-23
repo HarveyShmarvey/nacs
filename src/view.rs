@@ -3241,15 +3241,15 @@ pub fn statement_form(p: &Part, target: &Statement) -> Result<StatementForm, Str
             // the order a file reads — a line the file lacks is a blank the
             // write inserts before the stock line. Every one required: the
             // header law needs every one.
-            let fields = crate::parse::HEADER_KEYS
+            let on_line = |k: &str| p.header_lines.iter().find(|(n, f, ..)| n == k && *f == 0).map(|(_, _, _, t)| header_value(t));
+            let mut fields: Vec<Field> = crate::parse::HEADER_KEYS
                 .iter()
-                .map(|k| Field {
-                    key: k.to_string(),
-                    value: p.header_lines.iter().find(|(n, f, ..)| n == k && *f == 0).map(|(_, _, _, t)| header_value(t)),
-                    required: true,
-                    options: None,
-                })
+                .map(|k| Field { key: k.to_string(), value: on_line(k), required: true, options: None })
                 .collect();
+            // The register the program selects, first: it is the one a
+            // setup changes. Its line is optional, and the field shows G54
+            // when the file does not write one.
+            fields.insert(0, Field { key: "work_offset".to_string(), value: on_line("work_offset").or_else(|| Some("G54".to_string())), required: false, options: None });
             return Ok(StatementForm { head: "header".to_string(), fields });
         }
         Statement::Stock => {
@@ -3488,6 +3488,9 @@ pub struct GcodeLine {
 #[derive(Clone, Debug, PartialEq)]
 pub struct GcodeView {
     pub lines: Vec<GcodeLine>,
+    /// Each op's own block of lines. A program at several work offsets
+    /// holds the op again for each further part; those lines are not here.
+    pub own: Vec<(usize, std::ops::Range<usize>)>,
 }
 
 impl GcodeView {
@@ -3503,9 +3506,7 @@ impl GcodeView {
     /// index past the end. In a program at several work offsets it is the
     /// first part's block; the op's lines for the other parts follow later.
     pub fn span(&self, op: usize) -> Option<std::ops::Range<usize>> {
-        let first = self.lines.iter().position(|l| l.op == Some(op))?;
-        let len = self.lines[first..].iter().take_while(|l| l.op == Some(op)).count();
-        Some(first..first + len)
+        self.own.iter().find(|(i, _)| *i == op).map(|(_, lines)| lines.clone()).filter(|l| !l.is_empty())
     }
 
     /// The op the cursor is ON, given the cursor's count — how many ops have
@@ -3536,7 +3537,9 @@ impl GcodeView {
 
     /// How many moves op `op` emitted — the block cursor's bound.
     pub fn block_count(&self, op: usize) -> usize {
-        self.lines.iter().filter(|l| l.op == Some(op) && l.block.is_some()).count()
+        // The highest move number, not a count of lines: a program at
+        // several work offsets holds each move once per part.
+        self.lines.iter().filter(|l| l.op == Some(op)).filter_map(|l| l.block).max().map_or(0, |b| b + 1)
     }
 
     /// The program line holding move `b` of op `op`, if both exist.
@@ -3664,6 +3667,8 @@ fn attribute(text: &str, emitted_moves: &[OpEmission]) -> GcodeView {
         }
     }
     GcodeView {
+        // A range the text does not hold is cut to it, as the lines are.
+        own: emitted_moves.iter().map(|em| (em.op_idx, em.lines.start.min(text.len())..em.lines.end.min(text.len()))).collect(),
         lines: text
             .into_iter()
             .zip(of.into_iter().zip(block))
@@ -3804,6 +3809,7 @@ pub const ACTIONS: &[Action] = &[
     // copied or written beside the project. Keyless, as every write is.
     Action { id: "program.copy", key: "", sentence: "copy the whole program — the text nacs writes to stdout" },
     Action { id: "program.write", key: "", sentence: "write the program beside the project as <name>.nc — the text nacs -o writes" },
+    Action { id: "origin.register", key: "", sentence: "choose the work offset the program selects: open the stock's card, where the header's work_offset takes G54 to G59, or several to run a part in each" },
     // The way in (DESIGN.md §1, Phase 50 slice 3): a main.part from nothing.
     Action { id: "project.new", key: "", sentence: "new project — write a main.part here, a stock and the header, every value shown first (nacs --init)" },
     // The third door (DESIGN.md §5.2, Phase 50 slice 9): the fourth write's swap, composed.
@@ -4186,7 +4192,7 @@ pub fn job_steps(part: &Part, facts: &JobFacts) -> Vec<JobStep> {
             match (&facts.origin, model) {
                 (Some(o), _) => format!("{}; the program selects {register}", origin_says(o)),
                 (None, Some(_)) => format!("X0 Y0 Z0 as modeled; the program selects {register}"),
-                (None, None) if several => format!("where the features are written from; the program selects {register}"),
+                (None, None) if several || has_file => format!("where the features are written from; the program selects {register}"),
                 (None, None) => "where the features are written from".to_string(),
             },
             String::new(),
@@ -4224,7 +4230,7 @@ pub fn job_steps(part: &Part, facts: &JobFacts) -> Vec<JobStep> {
     rows.push(match (refusal, &facts.program_file) {
         (Some(why), _) => ("Program", false, String::new(), format!("refused: {why}"), Some(("Show the problems".to_string(), "sidebar.problems"))),
         (None, Some(file)) => ("Program", true, format!("{file} is written"), String::new(), None),
-        (None, None) => ("Program", false, String::new(), "ready to write beside the project as a .nc file".to_string(), Some(("Write program".to_string(), "program.write"))),
+        (None, None) => ("Program", false, String::new(), format!("ready to write beside the project as a .nc file; it selects {register} (File > Work offset… changes that)"), Some(("Write program".to_string(), "program.write"))),
     });
     let mut next_given = false;
     rows.into_iter()
@@ -5053,6 +5059,7 @@ pub fn reference_text() -> String {
         };
         o.push_str(&format!("- `{k} <value>` — {what}\n"));
     }
+    o.push_str("- `work_offset <register>...` — optional: the register the program selects, `G54` to `G59` (`G54` unwritten); several run the program at each, one part a register\n");
     o.push_str("\n## The stock — the blank, declared first\n\n");
     o.push_str(&format!("- `stock Box({})` — `w`, `l`, `h` required; `x`, `y` the datum corner, `z` the TOP (0 when absent)\n", crate::parse::STOCK_KEYS.iter().map(|k| format!("{k}=")).collect::<Vec<_>>().join(", ")));
     o.push_str(&format!("- `stock Cylinder({})` — `dia`, `h` required; `x`, `y` the axis, `z` the top\n", crate::parse::STOCK_CYLINDER_KEYS.iter().map(|k| format!("{k}=")).collect::<Vec<_>>().join(", ")));
@@ -5287,7 +5294,7 @@ pub fn unit_of(key: &str, units_mm: bool) -> Option<&'static str> {
     const DEGREES: &[&str] = &["angle", "chamfer_angle", "csink_angle", "rotation", "heading", "tilt", "angle_error", "engagement", "lead_angle", "lead_descent"];
     const NONE: &[&str] = &[
         "n", "flute_count", "cover", "tool", "surface", "profile", "points", "cycle", "comp", "compress", "strategy",
-        "coolant", "pattern", "direction", "entry", "file", "units", "material", "body", "source", "name",
+        "coolant", "pattern", "direction", "entry", "file", "units", "material", "body", "source", "name", "work_offset",
     ];
     if DEGREES.contains(&key) {
         return Some("°");
@@ -5491,6 +5498,7 @@ pub const MENU: &[(&str, &[(&str, &str)])] = &[
         ("project.new", "New project…"),
         ("import.step", "Import STEP…"),
         ("stock.new", "New stock…"),
+        ("origin.register", "Work offset…"),
         ("project.reload", "Reload project"),
         ("program.write", "Write program (.nc)"),
         ("program.copy", "Copy program"),
