@@ -59,7 +59,8 @@ and a side can have its own margin after the number (`1,bottom=3,x+=10`);
 earlier program's blank turned over as the stock words, the sidecar measures
 the blank's margins instead of taking an allowance, proposes the stock with
 the `given from` line beside it, and leaves the plan-bounding rim to the
-earlier setup (`rim_given`). The
+earlier setup (`rim_given`); `--origin` there reads the given blank, and
+the line says where the earlier zero went (`at=`). The
 full contract — schema, invariants,
 determinism rules — is `sidecar/CONTRACT.md`.
 

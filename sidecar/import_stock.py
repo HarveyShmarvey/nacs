@@ -35,12 +35,14 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from import_step import (MARGIN_KEYS, UP_ROTATIONS, allowance_even,  # noqa: E402
-                         allowance_says, blank_margins, blank_words, fmt,
+                         allowance_says, at_word, blank_margins, blank_words, fmt,
                          origin_note, parse_allowance, parse_blank, parse_origin,
-                         place_origin, plan_bounding_cylinder, prism_outline,
-                         round_side, select_solid)
+                         parse_point, place_in_given, place_origin,
+                         plan_bounding_cylinder, prism_outline, round_side,
+                         select_solid)
 
-def propose_stock(step_path, solid_sel=None, up="z+", allowance=None, blank=None, given=None, origin=None):
+def propose_stock(step_path, solid_sel=None, up="z+", allowance=None, blank=None, given=None, origin=None,
+                  given_origin=(0.0, 0.0, 0.0)):
     """The proposal's text, the statement's kind word and one phrase for the
     summary line. `allowance` is the blank's margin per side, as
     parse_allowance gives it."""
@@ -52,8 +54,10 @@ def propose_stock(step_path, solid_sel=None, up="z+", allowance=None, blank=None
     if UP_ROTATIONS[up] is not None:
         axis, degrees = UP_ROTATIONS[up]
         solid = solid.rotate((0, 0, 0), axis, degrees)
-    origin_at = None
-    if origin is not None:
+    origin_at, given_at = None, (0.0, 0.0, 0.0)
+    if blank is not None:
+        solid, blank, given_at, _ = place_in_given(solid, up, blank, given_origin, origin)
+    elif origin is not None:
         solid, origin_at = place_origin(solid, origin, allowance)
     bb = solid.BoundingBox()
     faces = solid.Faces()
@@ -75,7 +79,7 @@ def propose_stock(step_path, solid_sel=None, up="z+", allowance=None, blank=None
         about = (f"the blank of {given} turned over, " +
                  (f"dia {fmt(vals['dia'])} h {fmt(vals['h'])}" if kind == "Cylinder"
                   else f"{fmt(vals['w'])} x {fmt(vals['l'])} x {fmt(vals['h'])}"))
-        statement = [f"stock {blank_words(kind, vals)}", f"given from {given} up={up}"]
+        statement = [f"stock {blank_words(kind, vals)}", f"given from {given} up={up}{at_word(given_at)}"]
     elif outer is not None:
         lines = [
             f"# Proposed stock from {step_path.name} by sidecar/import_stock.py",
@@ -117,8 +121,11 @@ def propose_stock(step_path, solid_sel=None, up="z+", allowance=None, blank=None
         lines.append(f"# solid S{solid_sel} of {n_solids} in the file (--solid {solid_sel})")
     if UP_ROTATIONS[up] is not None:
         lines.append(f"# imported with --up {up} -- coordinates are post-rotation")
-    if origin is not None:
+    if origin_at is not None:
         lines.append(origin_note(origin, origin_at))
+    elif origin is not None:
+        lines.append(f"# imported with --origin {','.join(origin)}, read on the given blank: the earlier")
+        lines.append(f"# program's zero is at ({', '.join(fmt(c) for c in given_at)}) here, which at= says")
     return "\n".join(lines + statement) + "\n", kind, about
 
 
@@ -138,6 +145,7 @@ def main():
     ap.add_argument("--blank", metavar="WORDS", default=None, help="the blank as given, the earlier program's turned over: Cylinder(dia=, h=, x=, y=, z=) or Box(w=, l=, h=, x=, y=, z=); with --given")
     ap.add_argument("--given", metavar="PROJECT", default=None, help="the earlier program's project as `given from` will name it; with --blank")
     ap.add_argument("--origin", metavar="X,Y,Z", default=None, help="the point that becomes 0,0,0, as import_step.py takes it")
+    ap.add_argument("--given-origin", metavar="X,Y,Z", default="0,0,0", help="with --blank: the model point the earlier program zeroed at, as import_step.py takes it")
     args = ap.parse_args()
     origin = None
     if args.origin is not None:
@@ -145,8 +153,10 @@ def main():
             origin = parse_origin(args.origin)
         except ValueError as e:
             sys.exit(f"error: {e}")
-        if args.blank is not None and origin != ["model"] * 3:
-            sys.exit("error: --origin with --blank: the second setup keeps the origin the given blank is written in")
+    try:
+        given_origin = parse_point(args.given_origin, "--given-origin")
+    except ValueError as e:
+        sys.exit(f"error: {e}")
     try:
         allowance = parse_allowance(args.allowance)
     except ValueError as e:
@@ -164,7 +174,7 @@ def main():
         except ValueError as e:
             sys.exit(f"error: {e}")
     try:
-        text, kind, about = propose_stock(args.step, args.solid, args.up, allowance, blank, args.given, origin)
+        text, kind, about = propose_stock(args.step, args.solid, args.up, allowance, blank, args.given, origin, given_origin)
     except SystemExit:
         raise
     except Exception as e:  # noqa: BLE001 -- the sidecar's one error shape

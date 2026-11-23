@@ -2336,12 +2336,29 @@ pub fn parse_into(src: &str, p: &mut Part, base_dir: Option<&std::path::Path>) -
                     let mut words = from.split_whitespace();
                     let project = words.next().unwrap_or("").trim_matches('"').trim_matches('\'').to_string();
                     let up_word = words.next();
+                    let at_word = words.next();
                     let extra = words.next();
                     if project.is_empty() || up_word.is_none() || extra.is_some() {
                         return Err(format!(
                             "line {}: given from names the earlier project and the turn, e.g. `given from ../plate_top.cam up=z-` — which way the part was turned is the one fact the statement exists to say, so up= is not defaulted",
                             lineno + 1
                         ));
+                    }
+                    // `at=x,y,z`: where the earlier program's zero sits here
+                    // once the part is turned. Unwritten, the two setups
+                    // share one origin.
+                    let mut at = [0.0; 3];
+                    if let Some(word) = at_word {
+                        let nums: Option<Vec<f64>> = word.strip_prefix("at=").map(|w| w.split(',').map(|n| n.trim().parse::<f64>().ok().filter(|v| v.is_finite())).collect()).unwrap_or(None);
+                        match nums.as_deref() {
+                            Some([x, y, z]) => at = [*x, *y, *z],
+                            _ => {
+                                return Err(format!(
+                                    "line {}: given from's third word is at=x,y,z — where the earlier program's zero sits in this one once the part is turned, e.g. at=0,0,12 — not '{}'",
+                                    lineno + 1, word
+                                ));
+                            }
+                        }
                     }
                     let Some(axis_word) = up_word.and_then(|w| w.strip_prefix("up=")) else {
                         return Err(format!(
@@ -2379,8 +2396,8 @@ pub fn parse_into(src: &str, p: &mut Part, base_dir: Option<&std::path::Path>) -
                             ));
                         }
                     };
-                    let air = crate::stock::turn_program(&part, up, &project);
-                    p.given_from = Some(GivenFrom { project, resolved, up, part: Box::new(part), air });
+                    let air = crate::stock::turn_program(&part, up, at, &project);
+                    p.given_from = Some(GivenFrom { project, resolved, up, at, part: Box::new(part), air });
                     continue;
                 }
                 let name = rest.trim();

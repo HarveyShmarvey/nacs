@@ -293,9 +293,10 @@ fn given_from_lines(p: &Part) -> Vec<String> {
         crate::parse::UpAxis::ZMinus => "turned over (y → −y, z → −z)",
     };
     let mut out = vec![format!(
-        "given from {} up={}: {} removal(s) from {} of its {} op(s), {} — air at prefix 0{}",
+        "given from {} up={}{}: {} removal(s) from {} of its {} op(s), {} — air at prefix 0{}",
         gf.project,
         gf.up.word(),
+        crate::stock::at_word(gf.at),
         air.removals.len(),
         air.ops_read,
         gf.part.operations.len(),

@@ -3156,14 +3156,26 @@ def parse_origin(text):
     return parts
 
 
-def origin_point(parts, bb, grow):
+def blank_box(blank):
+    """A given blank's low and high corners."""
+    kind, v = blank
+    if kind == "Cylinder":
+        r = v["dia"] / 2.0
+        return (v["x"] - r, v["y"] - r, v["z"] - v["h"]), (v["x"] + r, v["y"] + r, v["z"])
+    return (v["x"], v["y"], v["z"] - v["h"]), (v["x"] + v["w"], v["y"] + v["l"], v["z"])
+
+
+def origin_point(parts, bb, grow, given=None):
     """The model point (after --up) that becomes 0,0,0. `grow` is how far
     the blank stands outside the model on each side (parse_allowance), or
-    None for a blank that is the model's own outline."""
+    None for a blank that is the model's own outline. `given` is a blank
+    handed over (the second setup's): its own box is then the blank."""
     lo, hi = (bb.xmin, bb.ymin, bb.zmin), (bb.xmax, bb.ymax, bb.zmax)
     g = grow or dict.fromkeys(MARGIN_KEYS, 0.0)
     blo = (bb.xmin - g["x-"], bb.ymin - g["y-"], bb.zmin - g["bottom"])
     bhi = (bb.xmax + g["x+"], bb.ymax + g["y+"], bb.zmax + g["top"])
+    if given is not None:
+        blo, bhi = blank_box(given)
     out = []
     for k, p in enumerate(parts):
         of_part = p.startswith("part-")
@@ -3191,12 +3203,56 @@ def place_origin(solid, origin, allowance):
     return solid, at
 
 
+def parse_point(text, flag):
+    try:
+        x, y, z = (float(p) for p in text.split(","))
+    except ValueError:
+        raise ValueError(f"{flag} `{text}` is not three numbers x,y,z") from None
+    return (x, y, z)
+
+
+def place_in_given(solid, up, blank, given_origin, origin):
+    """The second setup's model and blank in its own frame. The blank
+    arrives in the earlier program's frame, turned; the model (already
+    turned by --up) is first moved into that frame: `given_origin` is the
+    model point the earlier program zeroed at, and it turns with the part.
+    Then the origin asked for here becomes 0,0,0 for both. Returns the
+    solid, the blank, where the earlier program's zero now sits (the
+    `given from` line's at=) and the point that became zero."""
+    gx, gy, gz = given_origin
+    if up == "z-":
+        gy, gz = -gy, -gz
+    elif up != "z+":
+        raise ValueError(f"--given with --up {up}: a program reads only z+ and z- "
+                         "for the turn between two setups")
+    if (gx, gy, gz) != (0.0, 0.0, 0.0):
+        solid = solid.translate(cq.Vector(-gx, -gy, -gz))
+    kind, vals = blank
+    at = (0.0, 0.0, 0.0)
+    here = (0.0, 0.0, 0.0)
+    if origin is not None:
+        here = origin_point(origin, solid.BoundingBox(), None, blank)
+        if any(c != 0.0 for c in here):
+            solid = solid.translate(cq.Vector(-here[0], -here[1], -here[2]))
+            vals = dict(vals, x=vals["x"] - here[0], y=vals["y"] - here[1], z=vals["z"] - here[2])
+            at = tuple(round(-c, 6) + 0.0 for c in here)
+    return solid, (kind, vals), at, here
+
+
+def at_word(at):
+    """The `given from` line's third word, or nothing for a shared origin."""
+    if not any(at):
+        return ""
+    return " at=" + ",".join(fmt(c) for c in at)
+
+
 def origin_note(origin, at):
     return (f"# imported with --origin {','.join(origin)}: the model's point "
             f"({fmt(at[0])}, {fmt(at[1])}, {fmt(at[2])}) is 0,0,0 here")
 
 
-def recognize(step_path, solid_sel=None, up="z+", allowance=None, blank=None, given=None, origin=None):
+def recognize(step_path, solid_sel=None, up="z+", allowance=None, blank=None, given=None, origin=None,
+              given_origin=(0.0, 0.0, 0.0)):
     """`allowance` is the blank's margin per side, as parse_allowance gives it."""
     allowance = allowance or dict.fromkeys(MARGIN_KEYS, 0.0)
     solid, solid_sel, n_solids = select_solid(step_path, solid_sel)
@@ -3207,7 +3263,7 @@ def recognize(step_path, solid_sel=None, up="z+", allowance=None, blank=None, gi
         meta["margins"] = allowance_says(allowance)
     if blank is not None:
         meta["given"] = given
-        meta["blank"] = blank_words(*blank)
+        meta["blank"] = blank_words(*blank)  # said again below, once it is placed
     if n_solids > 1:
         meta["solid"] = f"S{solid_sel}"
         meta["solids_total"] = n_solids
@@ -3219,7 +3275,16 @@ def recognize(step_path, solid_sel=None, up="z+", allowance=None, blank=None, gi
         axis, degrees = UP_ROTATIONS[up]
         solid = solid.rotate((0, 0, 0), axis, degrees)
         meta["up"] = up
-    if origin is not None:
+    if blank is not None:
+        # The second setup: into the earlier program's frame, then to this
+        # setup's own zero, the blank with it.
+        solid, blank, given_at, here = place_in_given(solid, up, blank, given_origin, origin)
+        meta["given"] = given
+        meta["blank"] = blank_words(*blank)
+        if origin is not None:
+            meta["origin"] = ",".join(origin)
+            meta["given_at"] = given_at
+    elif origin is not None:
         # After the turn and before anything reads the geometry, as --up is:
         # every reported coordinate is measured from the chosen zero.
         solid, at = place_origin(solid, origin, allowance)
@@ -3485,8 +3550,12 @@ def build_outputs(step_path, entries, proposals, n_faces, meta):
         if "up" in meta:
             lines.append(f"# imported with --up {meta['up']} (model {meta['up']} "
                          "is machine +Z) -- coordinates are post-rotation")
-        if "origin" in meta:
+        if "origin_at" in meta:
             lines.append(origin_note(meta["origin"].split(","), meta["origin_at"]))
+        elif "origin" in meta:
+            lines.append(f"# imported with --origin {meta['origin']}, read on the given blank: "
+                         f"the earlier program's zero is at "
+                         f"({', '.join(fmt(c) for c in meta['given_at'])}) here")
         if "given" in meta:
             lines += textwrap.wrap(
                 f"imported with --given {meta['given']}: the blank is the earlier "
@@ -3531,6 +3600,10 @@ def main():
     ap.add_argument("--given", metavar="PROJECT", default=None,
                     help="the earlier program's project as `given from` will name it; "
                          "with --blank")
+    ap.add_argument("--given-origin", metavar="X,Y,Z", default="0,0,0",
+                    help="with --blank: the model point the earlier program zeroed "
+                         "at (its report's origin_at), so the model is read in the "
+                         "frame the given blank is written in")
     ap.add_argument("--origin", metavar="X,Y,Z", default=None,
                     help="the point that becomes 0,0,0: per axis `model`, a number "
                          "(a model coordinate), min, mid or max of the blank, or "
@@ -3548,9 +3621,10 @@ def main():
             origin = parse_origin(args.origin)
         except ValueError as e:
             sys.exit(f"error: {e}")
-        if args.blank is not None and origin != ["model"] * 3:
-            sys.exit("error: --origin with --blank: the second setup keeps the origin "
-                     "the given blank is written in")
+    try:
+        given_origin = parse_point(args.given_origin, "--given-origin")
+    except ValueError as e:
+        sys.exit(f"error: {e}")
     blank = None
     if (args.blank is None) != (args.given is None):
         sys.exit("error: --blank and --given go together: the earlier program's blank "
@@ -3567,7 +3641,8 @@ def main():
     try:
         solid, entries, proposals, meta = recognize(args.step, args.solid,
                                                     args.up, allowance,
-                                                    blank, args.given, origin)
+                                                    blank, args.given, origin,
+                                                    given_origin)
         n_faces = len(solid.Faces())
         report_text, part_text = build_outputs(args.step, entries, proposals,
                                                n_faces, meta)

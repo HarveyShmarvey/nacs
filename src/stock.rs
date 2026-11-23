@@ -1467,6 +1467,61 @@ pub fn turn_stock(s: &Stock, up: UpAxis) -> Stock {
     }
 }
 
+/// A stock moved by `at`, the translation `given from … at=` says: the
+/// earlier program's blank, turned, where this program's origin sees it.
+pub fn shift_stock(s: &Stock, at: [f64; 3]) -> Stock {
+    let shape = match &s.shape {
+        StockShape::Profile { points } => StockShape::Profile { points: points.iter().map(|q| Pt { x: q.x + at[0], y: q.y + at[1] }).collect() },
+        other => other.clone(),
+    };
+    // `+ 0.0`: a corner that lands on the origin prints as 0, never -0.
+    Stock { shape, x: s.x + at[0] + 0.0, y: s.y + at[1] + 0.0, z: s.z + at[2] + 0.0, ..s.clone() }
+}
+
+/// ` at=x,y,z` as the `given from` line spells it, or nothing for the two
+/// setups sharing one origin.
+pub fn at_word(at: [f64; 3]) -> String {
+    if at == [0.0; 3] {
+        return String::new();
+    }
+    format!(" at={},{},{}", at[0], at[1], at[2])
+}
+
+/// A removal moved by `at`: every plan point by its x and y, every height
+/// by its z. The tables' keys (a distance from a centre or a path) do not
+/// move.
+fn shift_removal(r: &Removal, at: [f64; 3]) -> Removal {
+    if at == [0.0; 3] {
+        return r.clone();
+    }
+    let pt = |q: &Pt| Pt { x: q.x + at[0], y: q.y + at[1] };
+    let pts = |v: &Vec<Pt>| v.iter().map(pt).collect::<Vec<Pt>>();
+    let rise = |v: &Vec<(f64, f64)>| v.iter().map(|&(k, z)| (k, z + at[2])).collect::<Vec<(f64, f64)>>();
+    let floor = |f: &Floor| match f {
+        Floor::Flat(z) => Floor::Flat(z + at[2]),
+        Floor::Dome { x, y, z, r } => Floor::Dome { x: x + at[0], y: y + at[1], z: z + at[2], r: *r },
+        Floor::Meridian { x, y, samples } => Floor::Meridian { x: x + at[0], y: y + at[1], samples: rise(samples) },
+        Floor::PathForm { path, samples } => Floor::PathForm { path: pts(path), samples: rise(samples) },
+        Floor::AlongWire { wire, drop } => {
+            Floor::AlongWire { wire: wire.iter().map(|w| crate::parse::Pt3 { x: w.x + at[0], y: w.y + at[1], z: w.z + at[2] }).collect(), drop: *drop }
+        }
+    };
+    let section = match &r.section {
+        Section::All => Section::All,
+        Section::Disc { x, y, r } => Section::Disc { x: x + at[0], y: y + at[1], r: *r },
+        Section::Annulus { x, y, r_inner, r_outer } => Section::Annulus { x: x + at[0], y: y + at[1], r_inner: *r_inner, r_outer: *r_outer },
+        Section::Ellipse { x, y, a, b, rot } => Section::Ellipse { x: x + at[0], y: y + at[1], a: *a, b: *b, rot: *rot },
+        Section::Polygon { points, holes } => Section::Polygon { points: pts(points), holes: holes.iter().map(pts).collect() },
+        Section::PathBand { path, material_inside, d_inner, d_outer } => {
+            Section::PathBand { path: pts(path), material_inside: *material_inside, d_inner: *d_inner, d_outer: *d_outer }
+        }
+        Section::ChainBand { outline, chain, material_inside, d_inner, d_outer } => {
+            Section::ChainBand { outline: pts(outline), chain: pts(chain), material_inside: *material_inside, d_inner: *d_inner, d_outer: *d_outer }
+        }
+    };
+    Removal { section, z_top: r.z_top + at[2], floor: floor(&r.floor), ceiling: r.ceiling.as_ref().map(floor) }
+}
+
 /// Whether two stocks are the same blank in the same place — shape and the
 /// six numbers, to a micron. `material` is a feeds-table name and says
 /// nothing about where the steel is, so it is not compared.
@@ -1626,7 +1681,7 @@ pub struct GivenFromAir {
 /// derived it on every ask of the stock model, and a program of
 /// fifty-seven ops asked it so often that its second setup did not
 /// generate in a sitting (the CLOSE's finding 2).
-pub fn turn_program(earlier: &Part, up: UpAxis, project: &str) -> GivenFromAir {
+pub fn turn_program(earlier: &Part, up: UpAxis, at: [f64; 3], project: &str) -> GivenFromAir {
     let mut removals = Vec::new();
     let mut declined = Vec::new();
     let mut ops_read = 0;
@@ -1645,7 +1700,7 @@ pub fn turn_program(earlier: &Part, up: UpAxis, project: &str) -> GivenFromAir {
         for r in &rs {
             match turn_removal(r, up) {
                 Ok(t) => {
-                    removals.push(t);
+                    removals.push(shift_removal(&t, at));
                     read_one = true;
                 }
                 Err(why) => declined.push(format!("op [{}] on '{}' of {} — {}", k, op.feature_name, project, why)),
@@ -1711,11 +1766,12 @@ pub enum Certificate {
     Declined,
 }
 
-/// A point turned into the earlier program's frame. The turn is its own
-/// inverse (none, or a half turn), so this is `turn_pt` and `turn_z` again.
-fn turn_point_back(q: [f64; 3], up: UpAxis) -> [f64; 3] {
-    let t = turn_pt(Pt { x: q[0], y: q[1] }, up);
-    [t.x, t.y, turn_z(q[2], up)]
+/// A point turned into the earlier program's frame: `at` taken off, then
+/// the turn, which is its own inverse (none, or a half turn), so this is
+/// `turn_pt` and `turn_z` again.
+fn turn_point_back(q: [f64; 3], up: UpAxis, at: [f64; 3]) -> [f64; 3] {
+    let t = turn_pt(Pt { x: q[0] - at[0], y: q[1] - at[1] }, up);
+    [t.x, t.y, turn_z(q[2] - at[2], up)]
 }
 
 /// The samples the certificate asks of one given void: for every removal
@@ -1796,7 +1852,7 @@ pub fn certify_given(p: &Part, name: &str) -> Option<Certificate> {
             stands_at = z;
             z -= CERT_PROBE_MM;
         }
-        return Some(Certificate::Standing(StandingSample { here: *s, there: turn_point_back(*s, gf.up), steel_to, depth }));
+        return Some(Certificate::Standing(StandingSample { here: *s, there: turn_point_back(*s, gf.up, gf.at), steel_to, depth }));
     }
     Some(Certificate::Certified { samples: samples.len() })
 }
@@ -1879,7 +1935,7 @@ pub fn given_from_findings(p: &Part) -> Vec<crate::parse::Finding> {
             if said.iter().any(|s| s == name) {
                 continue;
             }
-            let Ok(t) = turn_removal(&r, gf.up) else { continue };
+            let Ok(t) = turn_removal(&r, gf.up).map(|t| shift_removal(&t, gf.at)) else { continue };
             if t.z_top < top - EPS || matches!(t.section, Section::All) {
                 continue;
             }

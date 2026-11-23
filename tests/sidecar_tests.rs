@@ -2148,10 +2148,60 @@ fn test_an_allowance_per_side_places_the_part_in_the_blank() {
     let _ = fs::remove_dir_all(&outdir);
 }
 
+/// The flip with a zero of its own, through the doors the window uses: a
+/// first setup imported at the blank's centre and top, then the same model
+/// turned over with `given=`. The second import finds the model in the
+/// first one's frame from that project's report, zeroes at the turned
+/// blank's centre and new top, and writes a `given from … at=` line the
+/// engine accepts. Skips without the venv.
+#[test]
+fn test_a_flipped_setup_is_proposed_at_its_own_zero_and_the_engine_reads_it() {
+    if !Path::new(VENV_PYTHON).exists() {
+        println!("Skipping sidecar flip test: sidecar/.venv not installed (see sidecar/README.md)");
+        return;
+    }
+    let root = std::env::temp_dir().join(format!("nacs_sidecar_flip_{}", std::process::id()));
+    let _ = fs::remove_dir_all(&root);
+    let (front, back) = (root.join("front"), root.join("back"));
+    fs::create_dir_all(&back).unwrap();
+    let sidecar = Path::new("sidecar");
+    let step = Path::new("tests/fixtures/drilled_plate.step");
+    let head = "units mm\nfeed 800\nplunge 300\nrapid_z 5\nclearance_z 25\nspindle 3000\n";
+    let import = |dir: &Path, setup: &nacs::view::ImportSetup| {
+        for (python, args) in [nacs::view::import_command(sidecar, step, dir, setup).unwrap(), nacs::view::stock_command(sidecar, step, dir, setup).unwrap()] {
+            let out = Command::new(python).args(args).output().expect("failed to run the sidecar");
+            assert!(out.status.success(), "{}", String::from_utf8_lossy(&out.stderr));
+        }
+        let stock = fs::read_to_string(dir.join("proposed_stock.part")).unwrap();
+        fs::write(dir.join("main.part"), format!("{head}{stock}")).unwrap();
+        stock
+    };
+    // The first setup: the plate is 100 x 80 x 15 in a blank 1 larger.
+    let stock = import(&front, &nacs::view::ImportSetup::default());
+    assert!(stock.ends_with("stock Box(w=102.0, l=82.0, h=16.0, x=-51.0, y=-41.0, z=0.0)\n"), "{stock}");
+    // Turned over: the blank's centre and its new top are zero, and the
+    // first program's zero is 16 under it.
+    let given = front.to_string_lossy().to_string();
+    let flipped = nacs::view::ImportSetup { up: Some("z-".into()), given: given.clone(), ..Default::default() };
+    let stock = import(&back, &flipped);
+    assert!(stock.ends_with(&format!("stock Box(w=102.0, l=82.0, h=16.0, x=-51.0, y=-41.0, z=0.0)\ngiven from {given} up=z- at=0.0,0.0,-16.0\n")), "{stock}");
+    let part = nacs::parse::load_project(&back.to_string_lossy()).unwrap_or_else(|e| panic!("the engine reads the flipped setup: {e:?}"));
+    assert_eq!(part.given_from.as_ref().unwrap().at, [0.0, 0.0, -16.0]);
+    // The features are the back's: a hole mirrored in Y, from the new top.
+    let features = fs::read_to_string(back.join("proposed.part")).unwrap();
+    assert!(features.contains("\nfeature F7_Hole CylinderBore(dia=12.0, extent=15.0, x=-30.0, y=20.0)\n"), "{features}");
+    // A corner of the turned blank instead: the same line with its own at=.
+    let corner = nacs::view::ImportSetup { origin: "min,min,max".into(), ..flipped.clone() };
+    let stock = import(&back, &corner);
+    assert!(stock.contains("stock Box(w=102.0, l=82.0, h=16.0, x=0.0, y=0.0, z=0.0)\n") && stock.contains("up=z- at=51.0,41.0,-16.0\n"), "{stock}");
+    assert!(nacs::parse::load_project(&back.to_string_lossy()).is_ok());
+    let _ = fs::remove_dir_all(&root);
+}
+
 /// `--origin x,y,z` moves the model so the named point is 0,0,0 before
 /// anything is recognized: both scripts agree, a word reads the blank or
-/// (`part-`) the model, a number is a model coordinate, and a second setup
-/// keeps the origin its given blank is written in. Skips without the venv.
+/// (`part-`) the model, and a number is a model coordinate. Skips without
+/// the venv.
 #[test]
 fn test_the_origin_is_the_point_asked_for_in_both_proposals() {
     if !Path::new(VENV_PYTHON).exists() {
@@ -2184,7 +2234,7 @@ fn test_the_origin_is_the_point_asked_for_in_both_proposals() {
     // The report says what was asked.
     let report = fs::read_to_string(outdir.join("report.json")).unwrap();
     assert!(report.contains("\"origin\": \"10,model,min\""), "{report}");
-    for (args, says) in [(vec!["--origin", "mid,mid"], "not three components"), (vec!["--origin", "mid,mid,up"], "is not model, a number"), (vec!["--origin", "mid,mid,max", "--given", "x", "--blank", "Box(w=1, l=1, h=1, x=0, y=0, z=0)"], "--origin with --blank")] {
+    for (args, says) in [(vec!["--origin", "mid,mid"], "not three components"), (vec!["--origin", "mid,mid,up"], "is not model, a number")] {
         let out = Command::new(VENV_PYTHON).args(["sidecar/import_step.py", step, "-o"]).arg(&outdir).args(&args).output().expect("failed to run the sidecar");
         assert!(!out.status.success() && String::from_utf8_lossy(&out.stderr).contains(says), "{args:?}: {}", String::from_utf8_lossy(&out.stderr));
     }

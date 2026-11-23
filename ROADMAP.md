@@ -730,11 +730,16 @@ One page. What is built, what is next, and the debts we know about.
    one spelling, `--allowance 1,bottom=3,x+=10`, and the origin's words
    read the blank it gives. The guide's Origin step names the register
    the program selects (G54 unless `work_offset` says).
+   Seventh pass (2026-11-22): a flipped setup has its own zero. An
+   import with `given=` takes the origin choice too, read on the turned
+   blank (its centre and new top unless told), and writes `given from
+   <project> up=z- at=x,y,z`; the engine moves the first program's cuts
+   by `at` after the turn. Before this a flip of a project imported at
+   the default origin was refused as outside its blank.
    Not built: moving the origin after features are accepted (import
-   again); an origin and a register for a second setup of its own; one
-   program run at several work offsets; a margin on a blank that is the
-   model's own outline (a plain prism); choosing the register in the
-   window.
+   again); one program run at several work offsets; a margin on a blank
+   that is the model's own outline (a plain prism); choosing the
+   register in the window; a third setup; a quarter turn between setups.
    Asked for, not built: an options page. First on it, the camera: the
    orbit style (the user's pick is a free turntable) and what it turns
    about (the part's center), each with alternatives.
