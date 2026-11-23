@@ -1873,6 +1873,9 @@ pub struct Part {
     /// the program's own space unchanged, and the emitted difference is one
     /// word on the setup line. `None` = `G54`, today's spelling.
     pub work_offset: Option<WorkOffset>,
+    /// The further registers of `work_offset G54 G55 G56`: the same program
+    /// is run again at each, one part per register. Empty for one part.
+    pub also_at: Vec<WorkOffset>,
     /// Where the program's one register POINTS — the machine coordinates of
     /// the work XY zero, `datum x= y=` (Phase 15 slice 1, DECISIONS.md →
     /// "Phase 15 opens: the envelope DRAFT…", fork 1). A declaration the
@@ -1943,6 +1946,7 @@ impl Default for Part {
             given_from: None,
             machine: None,
             work_offset: None,
+            also_at: Vec::new(),
             datum: None,
             sources: Vec::new(),
             op_lines: Vec::new(),

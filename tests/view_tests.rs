@@ -2317,7 +2317,9 @@ fn test_the_program_document_is_the_program_nacs_writes() {
             }
             // The ops run in order and butt up against each other: one
             // op's block ends exactly where the next one's begins.
-            if let Some(end) = previous_end {
+            // (A program at several work offsets repeats a tool's ops for
+            // the other parts before the next tool's begin.)
+            if let Some(end) = previous_end.filter(|_| part.also_at.is_empty()) {
                 assert_eq!(span.start, end, "{name}: op {} follows the last", em.op_idx);
             }
             previous_end = Some(span.end);
@@ -2329,7 +2331,7 @@ fn test_the_program_document_is_the_program_nacs_writes() {
         let attributed = g.lines.iter().filter(|l| l.op.is_some()).count();
         assert_eq!(
             attributed,
-            emitted_moves.iter().map(|em| em.lines.len()).sum::<usize>(),
+            emitted_moves.iter().flat_map(|em| em.copies()).map(|(lines, _)| lines.len()).sum::<usize>(),
             "{name}: every attributed line belongs to exactly one op's block"
         );
         assert!(attributed < g.lines.len(), "{name}: the boilerplate is nobody's");
@@ -7274,6 +7276,15 @@ fn the_job_steps_name_the_next_thing_to_do() {
     assert_eq!(steps[0].state, StepState::Done);
     assert_eq!((steps[2].state, steps[2].act.as_ref().map(|a| a.1)), (StepState::Next, Some("review.accept")));
     assert_eq!((steps[1].name, steps[1].state, steps[1].act.as_ref().map(|a| a.1)), ("Origin", StepState::Done, Some("import.step")), "the origin can still be changed");
+
+    // A program at several work offsets says so where the origin is named,
+    // and its pane gives every part's lines to their op.
+    let several = nacs::parse::load_project("several_offsets.cam").unwrap();
+    let steps = job_steps(&several, &JobFacts { has_file: true, ..JobFacts::default() });
+    assert!(steps[1].says.ends_with("the program selects G54, G55, G56 in turn, 3 parts a run"), "{}", steps[1].says);
+    let pane = view::gcode_view(&several).unwrap();
+    let titles: Vec<Option<usize>> = pane.lines.iter().filter(|l| l.text.contains("(--- floor: Top")).map(|l| l.op).collect();
+    assert_eq!(titles, [Some(0), Some(0), Some(0)]);
 
     // plate.cam is a finished project: only the program is left to write.
     let plate = nacs::parse::load_project("plate.cam").unwrap();

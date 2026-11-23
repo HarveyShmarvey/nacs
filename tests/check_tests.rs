@@ -3312,6 +3312,7 @@ fn lint_gcode(program: &str, stock_top: f64) -> Result<(), String> {
     let mut spindle_on = false;
     let mut comp_pending = false; // set by M06, cleared by G43
     let mut expect_retract = false; // set by an op header comment
+    let mut last_motion = String::new();
 
     for line in program.lines() {
         // The restart ladder's label is invisible to certificates: strip it
@@ -3327,6 +3328,17 @@ fn lint_gcode(program: &str, stock_top: f64) -> Result<(), String> {
         }
         if l.starts_with("M06") {
             comp_pending = true;
+        }
+        // A program at several work offsets changes register between parts,
+        // and only with the tool up: the motion before it is a Z-only rapid.
+        if matches!(l, "G54" | "G55" | "G56" | "G57" | "G58" | "G59") {
+            if !(last_motion.starts_with("G00") && last_motion.contains('Z') && !last_motion.contains('X') && !last_motion.contains('Y')) {
+                return Err(format!("register {} is selected after '{}', not after a retract", l, last_motion));
+            }
+            let z: f64 = last_motion.split_whitespace().find_map(|w| w.strip_prefix('Z')).and_then(|v| v.parse().ok()).unwrap_or(f64::MIN);
+            if z <= stock_top {
+                return Err(format!("register {} is selected at Z{}, not above the stock top {}", l, z, stock_top));
+            }
         }
         if l.contains("G43") {
             comp_pending = false;
@@ -3346,6 +3358,7 @@ fn lint_gcode(program: &str, stock_top: f64) -> Result<(), String> {
             continue;
         }
         if is_motion(l) {
+            last_motion = l.to_string();
             if units_lines == 0 {
                 return Err(format!("motion before units were set: {}", l));
             }
@@ -3544,6 +3557,8 @@ fn test_gcode_safety_lint() {
         // through `given from`.
         ("through_plate.cam/main.part", None),
         ("through_plate_back.cam/main.part", None),
+        // Three parts a run, one in each of three registers.
+        ("several_offsets.cam/main.part", None),
     ];
     // (Phase 32's `walled_rails_offset.cam` and `_open` refuse at validate by the
     // passage law, so they emit no program to lint — pinned in spine_tests.)
@@ -8005,6 +8020,50 @@ fn test_floor_offset_golden() {
         vec![("G90 G55 G17", "G90 G54 G17")],
         "the selection is one word on one line, and nothing else can move"
     );
+}
+
+/// `work_offset G54 G55 G56` runs the program at each register: every tool
+/// cuts all three parts before the next tool change, each part gets the
+/// one-part program's moves, and a restart label stays on one line.
+#[test]
+fn test_several_offsets_golden() {
+    let main_src = fs::read_to_string("several_offsets.cam/main.part").expect("failed to read main.part");
+    let part = parse::parse(&main_src).expect("failed to parse several_offsets.cam");
+    let (text, emissions) = gcode::program_with_moves(&part).expect("failed to generate program");
+    let golden = fs::read_to_string("tests/several_offsets.golden.gcode").expect("failed to read golden");
+    assert_eq!(text.trim(), golden.trim());
+
+    let twin_src = main_src.replace("work_offset G54 G55 G56\n", "");
+    let (twin, twin_emissions) = gcode::program_with_moves(&parse::parse(&twin_src).expect("twin parses")).expect("twin generates");
+    let count = |t: &str, word: &str| t.lines().filter(|l| gcode::strip_n_word(l).starts_with(word)).count();
+    assert_eq!(count(&text, "M06"), count(&twin, "M06"), "no tool change is added");
+    assert_eq!(count(&text, "M06"), 2);
+    // Each tool selects each register once, in the order written.
+    let selected: Vec<&str> = text.lines().filter(|l| matches!(*l, "G54" | "G55" | "G56")).collect();
+    assert_eq!(selected, ["G54", "G55", "G56", "G54", "G55", "G56"]);
+    // Every copy of every op holds the one-part program's moves.
+    let lines: Vec<&str> = text.lines().collect();
+    for (em, one) in emissions.iter().zip(&twin_emissions) {
+        assert_eq!(em.moves, one.moves, "op {}", em.op_idx);
+        assert_eq!(em.copies().count(), 3, "op {}", em.op_idx);
+        for (block, moves_start) in em.copies() {
+            for (k, mv) in em.moves.iter().enumerate() {
+                assert!(block.contains(&(moves_start + k)));
+                assert_eq!(gcode::strip_n_word(lines[moves_start + k]), mv);
+            }
+        }
+    }
+    // The first op ran at 3000 and the second at 2400: a later part starts
+    // by setting 3000 again.
+    let at = lines.iter().position(|l| *l == "G55").unwrap();
+    assert_eq!(lines[at + 1], "S3000.000");
+    for n in ["N10 ", "N20 ", "N30 "] {
+        assert_eq!(lines.iter().filter(|l| l.starts_with(n)).count(), 1, "{n}labels one line");
+    }
+    // The clock counts all three parts.
+    let (three, one) = (nacs::cut_time::time_report(&part).unwrap(), nacs::cut_time::time_report(&parse::parse(&twin_src).unwrap()).unwrap());
+    let cutting = |r: &nacs::cut_time::TimeReport| r.rows.iter().filter(|row| row.op_idx.is_some()).map(|row| row.cutting_s).sum::<f64>();
+    assert!((cutting(&three) - 3.0 * cutting(&one)).abs() < 1e-6, "{} vs 3 x {}", cutting(&three), cutting(&one));
 }
 
 #[test]

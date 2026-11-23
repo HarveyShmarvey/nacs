@@ -3202,7 +3202,7 @@ mod tests {
             run End(tool=T5, surface=Top, stepover=1.0)\n";
         let p = crate::parse::parse(src).unwrap();
         let mk = |resolved: Option<Vec<String>>| {
-            vec![gcode::OpEmission { op_idx: 0, moves: vec!["G01 X1 Y1 F800".into()], resolved, lines: 0..1, moves_start: 0 }]
+            vec![gcode::OpEmission { op_idx: 0, moves: vec!["G01 X1 Y1 F800".into()], resolved, lines: 0..1, moves_start: 0, repeats: Vec::new() }]
         };
         let none = input_hash(&p, 1.0, &mk(None), 1);
         let a = input_hash(&p, 1.0, &mk(Some(vec!["G01 X2 Y2 F800".into()])), 1);
@@ -3332,7 +3332,7 @@ mod tests {
             run End(tool=T5, surface=Top, stepover=4.0)\n";
         let mut p = crate::parse::parse(src).unwrap();
         let moves = vec!["G00 X5 Y5 Z2".to_string(), "G01 Z-1 F800".to_string()];
-        let ems = vec![gcode::OpEmission { op_idx: 0, lines: 0..moves.len(), moves, resolved: None, moves_start: 0 }];
+        let ems = vec![gcode::OpEmission { op_idx: 0, lines: 0..moves.len(), moves, resolved: None, moves_start: 0, repeats: Vec::new() }];
 
         // Widens to r 5 at 4mm, then necks back to r 2: a T-slot's shape.
         let necked = vec![Pt { x: 0.0, y: 0.0 }, Pt { x: 5.0, y: 4.0 }, Pt { x: 2.0, y: 8.0 }];

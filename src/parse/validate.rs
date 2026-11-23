@@ -1698,7 +1698,8 @@ pub fn validate(p: &Part) -> Result<(), String> {
     // (DECISIONS.md → "work offsets…", fork 3A) — the coolant refusal's
     // shape, third verse: the error names the menu key that would
     // license it.
-    if let Some(WorkOffset::Extended { family, p: reg }) = &p.work_offset {
+    for wo in p.work_offset.iter().chain(&p.also_at) {
+        let WorkOffset::Extended { family, p: reg } = wo else { continue };
         match p.machine.as_ref().and_then(|m| m.extended_offsets.as_ref()) {
             None => {
                 return Err(format!(
@@ -1721,6 +1722,11 @@ pub fn validate(p: &Part) -> Result<(), String> {
                 }
             }
         }
+    }
+    // `datum` says where one register points, and the travel check reads
+    // it; with several registers it would vouch for parts it cannot place.
+    if p.datum.is_some() && !p.also_at.is_empty() {
+        return Err("datum says where one register points, and this program runs at several (work_offset names more than one): drop the datum line, or run one register".to_string());
     }
     // The restart ladder must be unambiguous (DECISIONS.md → "N-words…",
     // fork 2A): two rungs with one label would make the operator's search
