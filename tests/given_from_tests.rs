@@ -253,7 +253,7 @@ fn test_the_earlier_air_is_turned_once_at_load_and_held() {
     // held list rather than deriving again.
     let p = load("through_plate_back.cam");
     let gf = p.given_from.as_ref().expect("the back says given from");
-    assert_eq!(stock::turn_program(&gf.part, gf.up, &gf.project), gf.air);
+    assert_eq!(stock::turn_program(&gf.part, gf.up, gf.at, &gf.project), gf.air);
     let read = stock::given_from_air(&p).expect("read");
     assert!(std::ptr::eq(read, &gf.air), "the reader hands back the held list, not a copy");
     assert_eq!(read.removals.len(), 6);
@@ -504,4 +504,80 @@ fn test_an_incomplete_earlier_model_declines_the_certificate_never_passes_it() {
     assert!(declines[0].message.contains("a Dome floor turned over is the underside of a sphere"), "{}", declines[0].message);
     let text = outline::report(&p);
     assert!(text.contains("  not certified: Off — the earlier program's model is incomplete"), "{text}");
+}
+
+// ---- at=: a second setup with a zero of its own
+
+/// The shipped back with its zero moved: `at` on the `given from` line,
+/// and every number of the stock, the planes and the features by hand.
+fn back_zeroed_at(name: &str, at_word: &str, stock_at: [f64; 3]) -> PathBuf {
+    let [x, y, z] = stock_at;
+    scratch(
+        name,
+        &format!(
+            "units mm\nfeed 800\nplunge 300\nrapid_z {}\nclearance_z {}\nspindle 3000\n\
+             given from {} up=z-{at_word}\n\
+             stock Box(w=90, l=50, h=12, x={}, y={}, z={z})\n\
+             tool T3 ChamferMill(angle=90.0, gauge_dia=8.0, gauge_z=3.75, dia=12.0, tip_dia=0.5)\n\
+             feature Left CylinderBore(dia=14.0, extent=12.0, x={}, y={}, chamfer_depth=1.0)\ngiven Left\n\
+             feature Mid CylinderBore(dia=14.0, extent=12.0, x={}, y={}, chamfer_depth=1.0)\ngiven Mid\n\
+             run Form(tool=T3, surface=Left)\nrun Form(tool=T3, surface=Mid)\n",
+            5.0 + z,
+            25.0 + z,
+            front_abs(),
+            x - 45.0,
+            y - 25.0,
+            x - 25.0,
+            y - 6.0,
+            x,
+            y - 6.0,
+        ),
+    )
+}
+
+#[test]
+fn test_at_says_where_the_earlier_zero_sits_in_a_setup_zeroed_elsewhere() {
+    // The back zeroed at the blank's X- Y- corner, 5 under its top face:
+    // the earlier program's zero, turned, is at 45,25,5 here.
+    let at = [45.0, 25.0, 5.0];
+    let dir = back_zeroed_at("at", " at=45,25,5", at);
+    let moved = load(&dir.to_string_lossy());
+    let shipped = load("through_plate_back.cam");
+    // The earlier program's air is the same air, moved: both voids certify.
+    let (a, b) = (stock::given_from_air(&moved).unwrap(), stock::given_from_air(&shipped).unwrap());
+    assert_eq!(a.removals.len(), b.removals.len());
+    for (m, s) in a.removals.iter().zip(&b.removals) {
+        assert!((m.z_top - s.z_top - at[2]).abs() < 1e-9);
+        let (mo, so) = (m.section.outlines(&moved.stock), s.section.outlines(&shipped.stock));
+        assert!((mo[0][0].x - so[0][0].x - at[0]).abs() < 1e-9 && (mo[0][0].y - so[0][0].y - at[1]).abs() < 1e-9);
+    }
+    // And the program is the shipped back's, every X, Y and Z word moved.
+    let word = |line: &str, axis: char| line.split_whitespace().find_map(|w| w.strip_prefix(axis).and_then(|n| n.parse::<f64>().ok()));
+    let (pm, ps) = (nacs::gcode::program(&moved).expect("generates"), nacs::gcode::program(&shipped).expect("generates"));
+    assert_eq!(pm.lines().count(), ps.lines().count());
+    for (lm, ls) in pm.lines().zip(ps.lines()).filter(|(_, ls)| !ls.starts_with('(')) {
+        for (k, axis) in ['X', 'Y', 'Z'].into_iter().enumerate() {
+            match (word(lm, axis), word(ls, axis)) {
+                (Some(m), Some(s)) => assert!((m - s - at[k]).abs() < 2e-3, "{lm} | {ls}"),
+                (m, s) => assert_eq!(m.is_some(), s.is_some(), "{lm} | {ls}"),
+            }
+        }
+    }
+    // The outline says the word back.
+    assert!(outline::report(&moved).contains("up=z- at=45,25,5:"));
+}
+
+#[test]
+fn test_a_setup_zeroed_elsewhere_without_at_is_told_the_word() {
+    // The same blank, moved, and the line not saying so: the refusal
+    // names the at= that would.
+    let dir = back_zeroed_at("at_unsaid", "", [45.0, 25.0, 5.0]);
+    let e = load_err(&dir.to_string_lossy());
+    assert!(e.contains("the blank turned over must be the blank") && e.contains("at=45,25,5 on the `given from` line"), "{e}");
+    // A wrong one is corrected the same way; a malformed one is the statement's refusal.
+    let dir = back_zeroed_at("at_wrong", " at=45,25,0", [45.0, 25.0, 5.0]);
+    let e = load_err(&dir.to_string_lossy());
+    assert!(e.contains("up=z- at=45,25,0:") && e.contains("at=45,25,5 on the `given from` line"), "{e}");
+    let dir = back_zeroed_at("at_bad", " at=45,25", [45.0, 25.0, 5.0]);
+    assert!(load_err(&dir.to_string_lossy()).contains("third word is at=x,y,z"));
 }

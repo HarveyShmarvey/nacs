@@ -1365,6 +1365,8 @@ fn usage_text() -> String {
                                              and a side can have its own: --allowance 1,bottom=3,x+=10 (top, bottom, x-, x+, y-, y+);
                                              X0 Y0 is the blank's center and Z0 its top unless --origin says: per axis model,
                                              a number, min, mid, max (of the blank) or part-min, part-mid, part-max;
+                                             with --given the blank is the earlier program's turned, and the given from
+                                             line says where that program's zero went (at=x,y,z);
                                              --given names the program before this one: the blank is its stock turned over, the given from line written",
         "    --review <report.json>                   the sidecar's proposals, as the window reviews them",
         "    --accept F1,F6,... <report.json>         print the accepted proposals as .part text",

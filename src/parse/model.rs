@@ -1744,6 +1744,11 @@ pub struct GivenFrom {
     /// directory, the `.spline` and `.patch` rule.
     pub resolved: std::path::PathBuf,
     pub up: UpAxis,
+    /// Where the earlier program's zero sits in this program's frame once
+    /// the part is turned, `at=x,y,z`: a point there is turned as `up` says
+    /// and then moved by this. Zeros when the word is not written, which is
+    /// the two setups sharing one origin.
+    pub at: [f64; 3],
     pub part: Box<Part>,
     /// The earlier program's air in this frame, read by
     /// `stock::given_from_air` and never re-derived.

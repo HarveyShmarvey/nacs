@@ -6739,12 +6739,12 @@ fn test_the_import_command_is_judged_before_it_runs() {
     let front_s = front.to_string_lossy().to_string();
     let given = view::ImportSetup::from_words(["x.step", &format!("given={front_s}")].into_iter());
     assert_eq!(given.given, front_s);
-    assert_eq!(given.args().unwrap(), Vec::<String>::new(), "the given blank carries its own allowance");
+    assert_eq!(given.args().unwrap(), ["--origin", "mid,mid,max"], "the given blank carries its own allowance, and takes an origin of its own");
     assert_eq!(given.given_args(&dir).unwrap(), ["--given", &front_s, "--blank", "Box(w=90, l=50, h=12, x=-45, y=-25, z=12)"]);
     let turned = view::ImportSetup { up: Some("z-".into()), given: front_s.clone(), ..Default::default() };
     assert_eq!(turned.given_args(&dir).unwrap(), ["--given", &front_s, "--blank", "Box(w=90, l=50, h=12, x=-45, y=-25, z=0)"]);
     let (_, args) = import_command(&sidecar, &step, &dir, &turned).unwrap();
-    assert_eq!(&args[4..], ["--up", "z-", "--given", &front_s, "--blank", "Box(w=90, l=50, h=12, x=-45, y=-25, z=0)"]);
+    assert_eq!(&args[4..], ["--up", "z-", "--origin", "mid,mid,max", "--given", &front_s, "--blank", "Box(w=90, l=50, h=12, x=-45, y=-25, z=0)"]);
     assert!(view::ImportSetup { up: Some("x+".into()), given: front_s.clone(), ..Default::default() }.given_args(&dir).unwrap_err().contains("quarter turn"));
     assert!(view::ImportSetup { given: "nowhere.cam".into(), ..Default::default() }.given_args(&dir).unwrap_err().contains("no such project"));
     assert!(view::ImportSetup { given: std::fs::canonicalize("stock_profile.cam").unwrap().to_string_lossy().to_string(), ..Default::default() }.given_args(&dir).unwrap_err().contains("Profile over"));
@@ -7354,8 +7354,7 @@ fn an_imports_origin_is_three_words_and_a_sentence() {
     assert_eq!(origin_says("12.5,part-min,part-max"), "X0 Y0 at x 12.5, y part-min, Z0 at the part's top");
     assert!(origin_words("mid,mid").is_err() && origin_words("mid,mid,up").is_err());
     assert!(ImportSetup { origin: "mid,top,max".to_string(), ..Default::default() }.args().is_err());
-    // A second setup keeps the origin its given blank is written in.
+    // A second setup has an origin of its own, read on the given blank.
     let second = ImportSetup::from_words(["origin=min,min,max", "given=../front.cam"].into_iter());
-    assert_eq!(second.origin, "min,min,max");
-    assert!(!second.args().unwrap().iter().any(|a| a == "--origin"));
+    assert_eq!(second.args().unwrap(), ["--origin", "min,min,max"]);
 }

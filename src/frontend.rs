@@ -3894,7 +3894,7 @@ impl ViewApp {
                 });
             });
             ui.horizontal(|ui| {
-                ui.label(egui::RichText::new("origin").small().weak()).on_hover_text("the origin as words, x,y,z: each is model, a number (a model coordinate), min, mid or max of the stock, or part-min, part-mid or part-max of the part. Type here for a point the two lists do not offer");
+                ui.label(egui::RichText::new("origin").small().weak()).on_hover_text("the origin as words, x,y,z: each is model, a number (a model coordinate), min, mid or max of the stock, or part-min, part-mid or part-max of the part. Type here for a point the two lists do not offer. With a given program (a second setup) the stock is that program's blank turned, and model keeps its zero");
                 ui.add(egui::TextEdit::singleline(&mut self.import_setup.origin).hint_text("model,model,model").desired_width(100.0));
             });
             // The part in the stock: a side left empty takes the allowance

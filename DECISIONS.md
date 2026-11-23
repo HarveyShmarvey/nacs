@@ -302,6 +302,15 @@ top; any point can be typed, and `model` keeps the CAD origin. A project
 has no origin statement. One that shifts the program at emit time stays
 open for setups this does not cover.
 
+**A second setup has its own zero (2026-11-22).** `given from <project>
+up=<axis> at=x,y,z`: the earlier program is turned as `up` says and then
+moved by `at`, which is where its zero sits in this program. Unwritten,
+`at` is 0,0,0 and every existing project reads as before. The stocks
+must still coincide, now after the move, and the refusal names the `at`
+that would make them. A flipped import defaults to the turned blank's
+centre and new top and writes the word. Each setup is its own project,
+so each already has its own `work_offset`.
+
 **Recognition proposes, a person accepts.** Unsupported faces are named with
 their `CHECKLIST.md` row. Nothing recognised is machined until it is written
 into the project as text.

@@ -1765,16 +1765,31 @@ pub fn validate(p: &Part) -> Result<(), String> {
     // load (`stock::turn_program`, held in `GivenFrom`), and a removal
     // that cannot be turned is declined there by name, never refused here.
     if let Some(gf) = &p.given_from {
-        let turned = crate::stock::turn_stock(&gf.part.stock, gf.up);
+        let turned = crate::stock::shift_stock(&crate::stock::turn_stock(&gf.part.stock, gf.up), gf.at);
         if !crate::stock::stocks_coincide(&turned, &p.stock) {
+            // The same blank zeroed elsewhere is one word away: say it.
+            let (a, b) = (&turned, &p.stock);
+            let moved = crate::stock::shift_stock(a, [b.x - a.x, b.y - a.y, b.z - a.z]);
+            let fix = if crate::stock::stocks_coincide(&moved, b) {
+                format!(
+                    "this is that blank zeroed elsewhere, which at={},{},{} on the `given from` line says",
+                    b.x - a.x + gf.at[0] + 0.0,
+                    b.y - a.y + gf.at[1] + 0.0,
+                    b.z - a.z + gf.at[2] + 0.0
+                )
+            } else {
+                "a second setup zeroed elsewhere says where the earlier program's zero sits with at=x,y,z on the `given from` line".to_string()
+            };
             return Err(format!(
-                "given from '{}' up={}: the earlier program's stock turned {} is {}, and this program's is {} — the blank turned over must be the blank; `given from` takes a turn about the origin and no translation, so a second setup zeroed elsewhere must restate its stock where the turn puts it (two origins ask first)",
+                "given from '{}' up={}{}: the earlier program's stock turned {}{} is {}, and this program's is {} — the blank turned over must be the blank; {fix}",
                 gf.project,
                 gf.up.word(),
+                crate::stock::at_word(gf.at),
                 match gf.up {
                     UpAxis::ZPlus => "not at all",
                     UpAxis::ZMinus => "over (y → −y, z → −z)",
                 },
+                if gf.at == [0.0; 3] { "" } else { " and moved" },
                 crate::stock::stock_words_row(&turned),
                 crate::stock::stock_words_row(&p.stock),
             ));

@@ -4462,8 +4462,9 @@ pub struct ImportSetup {
     pub given: String,
     /// The point that becomes X0 Y0 Z0, as the sidecar's `--origin` takes
     /// it: `x,y,z`, each `model`, a number, `min`/`mid`/`max` of the blank
-    /// or `part-min`/`part-mid`/`part-max` of the model. A second setup
-    /// (`given`) keeps the origin its blank is written in, so it is not sent.
+    /// or `part-min`/`part-mid`/`part-max` of the model. On a second setup
+    /// (`given`) the blank is the given one and `model` keeps the first
+    /// setup's zero on that axis.
     pub origin: String,
 }
 
@@ -4596,11 +4597,9 @@ impl ImportSetup {
         }
         let origin = self.origin.trim();
         if !origin.is_empty() {
-            let words = origin_words(origin)?;
-            // A given blank is written in the earlier program's origin.
-            if self.given.trim().is_empty() {
-                out.extend(["--origin".to_string(), words.join(",")]);
-            }
+            // A second setup takes the word too: it is read on the given
+            // blank, and the `given from` line says where the first zero went.
+            out.extend(["--origin".to_string(), origin_words(origin)?.join(",")]);
         }
         Ok(out)
     }
@@ -4657,8 +4656,27 @@ impl ImportSetup {
             ));
         }
         let turned = crate::stock::turn_stock(&part.stock, up);
-        Ok(vec!["--given".to_string(), given.to_string(), "--blank".to_string(), crate::stock::stock_words_row(&turned)])
+        let mut out = vec!["--given".to_string(), given.to_string(), "--blank".to_string(), crate::stock::stock_words_row(&turned)];
+        // The model point the earlier program zeroed at, from its import's
+        // report: the same model is read here, and must be found in the
+        // frame the blank is written in. No report, or none with an
+        // origin, is a program written at the model's own zero.
+        let earlier_zero = std::fs::read_to_string(resolved.join("report.json")).ok().and_then(|text| report_origin_at(&text));
+        if let Some([x, y, z]) = earlier_zero {
+            out.extend(["--given-origin".to_string(), format!("{x},{y},{z}")]);
+        }
+        Ok(out)
     }
+}
+
+/// A report's `origin_at`, the model point its import zeroed at. Read as
+/// text: the report's own reader is the window's, and this door is the
+/// lean build's too.
+pub fn report_origin_at(report: &str) -> Option<[f64; 3]> {
+    let after = report.split_once("\"origin_at\"")?.1;
+    let inside = after.split_once('[')?.1.split_once(']')?.0;
+    let nums: Vec<f64> = inside.split(',').map(|n| n.trim().parse::<f64>().ok()).collect::<Option<_>>()?;
+    <[f64; 3]>::try_from(nums).ok()
 }
 
 pub fn import_command(sidecar: &std::path::Path, step: &std::path::Path, project_dir: &std::path::Path, setup: &ImportSetup) -> Result<(std::path::PathBuf, Vec<String>), String> {

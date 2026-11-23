@@ -68,8 +68,16 @@ machine that only the human knows, so they are declared, never guessed:
   The report carries `origin` (the words) and `origin_at` (the model point);
   the headers of `proposed.part` and `proposed_stock.part` say both.
   `import_stock.py` takes the same flag and must be given the same words.
-  Beside `--blank` it is an error unless every component is `model`: the
-  second setup keeps the origin its blank is written in.
+  Beside `--blank` (the second setup) the words read the given blank:
+  `min`, `mid`, `max` are its box, `model` keeps the earlier program's
+  zero on that axis, and a number is a coordinate in that program's
+  frame, turned. The blank moves with the model, and the proposal's
+  `given from` line carries `at=x,y,z`, where the earlier zero now sits.
+- `--given-origin X,Y,Z` — with `--blank`: the model point the earlier
+  program zeroed at (its report's `origin_at`; the engine passes it). The
+  same model is read here, so after the `--up` turn it is moved by that
+  point, turned the same way, into the frame the blank is written in.
+  Default `0,0,0`: an earlier program at the model's own zero.
 - `--given PROJECT --blank WORDS` (ROADMAP item 1, slice 12) — the second
   setup. The engine, which has the earlier program, computes its blank
   turned as `--up` says (`z+` or `z-`; a quarter turn is refused, since a
@@ -566,7 +574,7 @@ Review lists it first, Accept writes it.
 A **second setup** (`--given <project> --blank <words>`, slice 12) is the
 third answer: the blank is the earlier program's turned over, as the engine
 computed it from that program's own stock, and the proposal is two
-statements — the stock, and the `given from <project> up=<axis>` line the
+statements — the stock, and the `given from <project> up=<axis> [at=x,y,z]` line the
 engine's validator demands beside it (the blank turned over must be the
 blank; the earlier program's cuts are air here):
 
