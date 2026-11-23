@@ -1361,7 +1361,8 @@ fn usage_text() -> String {
         "Import",
         "    --import <model.step> [--up <axis>] [--solid N] [--allowance <mm>] [--origin <x,y,z>] [--given <project>] <dir>
                                              run the sidecar into the project directory (report.json beside main.part);
-                                             the blank stands 1 mm outside the model unless --allowance says (0: cut to size);
+                                             the blank stands 1 mm outside the model unless --allowance says (0: cut to size),
+                                             and a side can have its own: --allowance 1,bottom=3,x+=10 (top, bottom, x-, x+, y-, y+);
                                              X0 Y0 is the blank's center and Z0 its top unless --origin says: per axis model,
                                              a number, min, mid, max (of the blank) or part-min, part-mid, part-max;
                                              --given names the program before this one: the blank is its stock turned over, the given from line written",

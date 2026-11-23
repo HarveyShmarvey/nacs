@@ -3843,6 +3843,10 @@ impl ViewApp {
             });
             // The setup under the path (ROADMAP item 1, slice 4): the
             // words `nacs --import` takes, kept for the next import too.
+            // The allowance is one spelling (view.rs) shown as seven
+            // fields: the number here, and each side's own two rows down.
+            let (mut margin_base, mut margin_own) = view::allowance_parts(&self.import_setup.allowance);
+            let mut margin_typed = false;
             ui.horizontal(|ui| {
                 ui.label(egui::RichText::new("up").small().weak()).on_hover_text("which MODEL axis points up on the machine; z+ is as modeled (nacs --import --up)");
                 let shown = self.import_setup.up.clone().unwrap_or_else(|| "z+".to_string());
@@ -3856,7 +3860,9 @@ impl ViewApp {
                 ui.label(egui::RichText::new("solid").small().weak()).on_hover_text("which solid is the part when the file holds several — S1, S2…; empty for a one-solid file (nacs --import --solid)");
                 ui.add(egui::TextEdit::singleline(&mut self.import_setup.solid).hint_text("one").desired_width(36.0));
                 ui.label(egui::RichText::new("allowance").small().weak()).on_hover_text("how far the blank stands above the model's top and outside its plan, in mm: the proposed stock grows by it, and the top face and the rim become passes; 0 for a blank cut to size (nacs --import --allowance)");
-                ui.add(egui::TextEdit::singleline(&mut self.import_setup.allowance).hint_text("0").desired_width(36.0));
+                if ui.add(egui::TextEdit::singleline(&mut margin_base).hint_text("0").desired_width(36.0)).changed() {
+                    margin_typed = true;
+                }
                 ui.label(egui::RichText::new("given").small().weak()).on_hover_text("the program before this one, for a second setup: its project as the given from line will name it from this folder (../front.cam); the proposed stock is that program's blank turned over and the import writes the given from line beside it (nacs --import --given)");
                 ui.add(egui::TextEdit::singleline(&mut self.import_setup.given).hint_text("none").desired_width(110.0));
             });
@@ -3891,6 +3897,22 @@ impl ViewApp {
                 ui.label(egui::RichText::new("origin").small().weak()).on_hover_text("the origin as words, x,y,z: each is model, a number (a model coordinate), min, mid or max of the stock, or part-min, part-mid or part-max of the part. Type here for a point the two lists do not offer");
                 ui.add(egui::TextEdit::singleline(&mut self.import_setup.origin).hint_text("model,model,model").desired_width(100.0));
             });
+            // The part in the stock: a side left empty takes the allowance
+            // (the bottom takes 0), and the hint says which.
+            ui.horizontal(|ui| {
+                ui.label(egui::RichText::new("stock beyond the part").small().weak()).on_hover_text("where the part sits in the stock: how far the blank stands outside the model on each side, in mm. A side left empty takes the allowance; the bottom takes 0 (nacs --import --allowance 1,bottom=3,x+=10)");
+                let even = if margin_base.trim().is_empty() { "0".to_string() } else { margin_base.trim().to_string() };
+                for (k, key) in view::MARGIN_KEYS.iter().enumerate() {
+                    ui.label(egui::RichText::new(key.to_uppercase().replace("TOP", "top").replace("BOTTOM", "bottom")).small().weak());
+                    let hint = if k == 1 { "0" } else { even.as_str() };
+                    if ui.add(egui::TextEdit::singleline(&mut margin_own[k]).hint_text(hint).desired_width(28.0)).changed() {
+                        margin_typed = true;
+                    }
+                }
+            });
+            if margin_typed {
+                self.import_setup.allowance = view::allowance_from(&margin_base, &margin_own);
+            }
             if std::mem::take(&mut self.import_form_scroll) {
                 ui.scroll_to_cursor(Some(egui::Align::BOTTOM));
             }
@@ -7684,7 +7706,8 @@ impl ViewApp {
         if let Some(p) = &self.preview {
             // A proposal has the middle of the view; its one line sits above it.
             let note = if p.stock_waiting { "Proposed from the model. Nothing is in the project until it is accepted" } else { "Dim lines are proposed features, not yet accepted" };
-            painter.text(rect.center_top() + egui::vec2(0.0, 14.0), egui::Align2::CENTER_TOP, note, egui::FontId::proportional(13.0), rgb(self.theme.text));
+            let galley = painter.layout(note.to_string(), egui::FontId::proportional(13.0), rgb(self.theme.text), (rect.width() - 32.0).max(80.0));
+            painter.galley(rect.center_top() + egui::vec2(-galley.size().x / 2.0, 14.0), galley, rgb(self.theme.text));
         } else if let Some(note) = stance.as_deref().or_else(|| view::empty_viewport_note(self.part.operations.len(), self.part.features.len())) {
             // Wrapped to the viewport, so a narrow one does not cut the sentence.
             let galley = painter.layout(note.to_string(), egui::FontId::proportional(14.0), rgb(self.theme.text), (rect.width() - 32.0).max(80.0));

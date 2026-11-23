@@ -34,13 +34,20 @@ import textwrap
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from import_step import (UP_ROTATIONS, blank_margins, blank_words,  # noqa: E402
-                         fmt, origin_note, parse_blank, parse_origin, place_origin,
-                         plan_bounding_cylinder, prism_outline, select_solid)
+from import_step import (MARGIN_KEYS, UP_ROTATIONS, allowance_even,  # noqa: E402
+                         allowance_says, blank_margins, blank_words, fmt,
+                         origin_note, parse_allowance, parse_blank, parse_origin,
+                         place_origin, plan_bounding_cylinder, prism_outline,
+                         round_side, select_solid)
 
-def propose_stock(step_path, solid_sel=None, up="z+", allowance=0.0, blank=None, given=None, origin=None):
+def propose_stock(step_path, solid_sel=None, up="z+", allowance=None, blank=None, given=None, origin=None):
     """The proposal's text, the statement's kind word and one phrase for the
-    summary line."""
+    summary line. `allowance` is the blank's margin per side, as
+    parse_allowance gives it."""
+    allowance = allowance or dict.fromkeys(MARGIN_KEYS, 0.0)
+    any_margin = any(allowance.values())
+    even = allowance_even(allowance)
+    says = fmt(even) if even is not None else allowance_says(allowance)
     solid, solid_sel, n_solids = select_solid(step_path, solid_sel)
     if UP_ROTATIONS[up] is not None:
         axis, degrees = UP_ROTATIONS[up]
@@ -76,33 +83,36 @@ def propose_stock(step_path, solid_sel=None, up="z+", allowance=0.0, blank=None,
             "# plan outline, the solid's Z extent as the height, the top as z.",
         ]
         kind, about = "Profile", f"{len(outer)} points"
-        if allowance > 0.0:
+        if any_margin:
             lines.append(f"# a prism is its own blank, cut to size: the allowance "
-                         f"{fmt(allowance)} is not added")
+                         f"{says} is not added")
             about += ", its own blank (no allowance added)"
         statement = [f"stock Profile(h={fmt(h)}, z={fmt(bb.zmax)}"]
         statement += [f"    {fmt(x)} {fmt(y)}" for x, y in outer]
         statement.append(")")
     else:
         lines = [f"# Proposed stock from {step_path.name} by sidecar/import_stock.py:"]
-        a = allowance
-        tail = (f"Plus an allowance of {fmt(a)} on the sides and the top (--allowance): "
-                "the top face and the rim are this blank's to cut."
-                if a > 0.0 else "Add the allowance you will cut off.")
+        m = allowance
+        tail = ("Add the allowance you will cut off." if not any_margin
+                else f"Plus an allowance of {says} on the sides and the top (--allowance): "
+                     "the top face and the rim are this blank's to cut." if even is not None
+                else f"Plus an allowance per side of {says} (--allowance).")
         lines += textwrap.wrap(
             f"the smallest blank the model fits, not the model's own outline -- "
             f"{why_not}. {tail}",
             width=68, initial_indent="# ", subsequent_indent="# ")
-        fits = "the smallest blank the model fits" + (f" plus {fmt(a)} allowance" if a > 0.0 else "")
+        fits = "the smallest blank the model fits" + (f" plus {says} allowance" if any_margin else "")
+        bh = h + m["top"] + m["bottom"]
         round_ = plan_bounding_cylinder(faces, bb)
         if round_ is not None:
             dia, cx, cy, _ = round_
-            kind, about = "Cylinder", f"dia {fmt(dia + 2 * a)} h {fmt(h + a)}, {fits}"
-            statement = [f"stock Cylinder(dia={fmt(dia + 2 * a)}, h={fmt(h + a)}, x={fmt(cx)}, y={fmt(cy)}, z={fmt(bb.zmax + a)})"]
+            a = round_side(m)
+            kind, about = "Cylinder", f"dia {fmt(dia + 2 * a)} h {fmt(bh)}, {fits}"
+            statement = [f"stock Cylinder(dia={fmt(dia + 2 * a)}, h={fmt(bh)}, x={fmt(cx)}, y={fmt(cy)}, z={fmt(bb.zmax + m['top'])})"]
         else:
-            w, l = bb.xmax - bb.xmin + 2 * a, bb.ymax - bb.ymin + 2 * a
-            kind, about = "Box", f"{fmt(w)} x {fmt(l)} x {fmt(h + a)}, {fits}"
-            statement = [f"stock Box(w={fmt(w)}, l={fmt(l)}, h={fmt(h + a)}, x={fmt(bb.xmin - a)}, y={fmt(bb.ymin - a)}, z={fmt(bb.zmax + a)})"]
+            w, l = bb.xmax - bb.xmin + m["x-"] + m["x+"], bb.ymax - bb.ymin + m["y-"] + m["y+"]
+            kind, about = "Box", f"{fmt(w)} x {fmt(l)} x {fmt(bh)}, {fits}"
+            statement = [f"stock Box(w={fmt(w)}, l={fmt(l)}, h={fmt(bh)}, x={fmt(bb.xmin - m['x-'])}, y={fmt(bb.ymin - m['y-'])}, z={fmt(bb.zmax + m['top'])})"]
     if n_solids > 1:
         lines.append(f"# solid S{solid_sel} of {n_solids} in the file (--solid {solid_sel})")
     if UP_ROTATIONS[up] is not None:
@@ -124,7 +134,7 @@ def main():
     ap.add_argument("-o", "--outdir", type=Path, required=True, help="where proposed_stock.part is written")
     ap.add_argument("--solid", type=int, default=None, metavar="N", help="which solid, 1-based, when the file holds several")
     ap.add_argument("--up", choices=sorted(UP_ROTATIONS), default="z+", help="which MODEL axis points up on the machine (default z+)")
-    ap.add_argument("--allowance", type=float, default=0.0, metavar="MM", help="how far the blank stands outside the model, on the sides and the top (default 0: the model's exact extent)")
+    ap.add_argument("--allowance", default="0", metavar="MM[,SIDE=MM...]", help="how far the blank stands outside the model, on the sides and the top (default 0: the model's exact extent); then any of top=, bottom=, x-=, x+=, y-=, y+= for a side of its own")
     ap.add_argument("--blank", metavar="WORDS", default=None, help="the blank as given, the earlier program's turned over: Cylinder(dia=, h=, x=, y=, z=) or Box(w=, l=, h=, x=, y=, z=); with --given")
     ap.add_argument("--given", metavar="PROJECT", default=None, help="the earlier program's project as `given from` will name it; with --blank")
     ap.add_argument("--origin", metavar="X,Y,Z", default=None, help="the point that becomes 0,0,0, as import_step.py takes it")
@@ -137,13 +147,15 @@ def main():
             sys.exit(f"error: {e}")
         if args.blank is not None and origin != ["model"] * 3:
             sys.exit("error: --origin with --blank: the second setup keeps the origin the given blank is written in")
-    if args.allowance < 0.0:
-        sys.exit(f"error: --allowance {args.allowance} is below zero")
+    try:
+        allowance = parse_allowance(args.allowance)
+    except ValueError as e:
+        sys.exit(f"error: {e}")
     blank = None
     if (args.blank is None) != (args.given is None):
         sys.exit("error: --blank and --given go together: the earlier program's blank turned over, and the project it came from")
     if args.blank is not None:
-        if args.allowance > 0.0:
+        if any(allowance.values()):
             sys.exit("error: --allowance with --blank: the given blank says how far it stands outside the model")
         if up_turn(args.up) is None:
             sys.exit(f"error: --given with --up {args.up}: a program reads only z+ (the same side) and z- (the part turned over) for the turn between two setups")
@@ -152,7 +164,7 @@ def main():
         except ValueError as e:
             sys.exit(f"error: {e}")
     try:
-        text, kind, about = propose_stock(args.step, args.solid, args.up, args.allowance, blank, args.given, origin)
+        text, kind, about = propose_stock(args.step, args.solid, args.up, allowance, blank, args.given, origin)
     except SystemExit:
         raise
     except Exception as e:  # noqa: BLE001 -- the sidecar's one error shape

@@ -433,7 +433,7 @@ fn the_outline_is_five_groups_with_doors_on_their_headers() {
     let fields = h.query_all_by_role(Role::TextInput).count();
     h.get_by_label("New target…").click();
     settle(&mut h);
-    assert_eq!(h.query_all_by_role(Role::TextInput).count(), fields + 5, "the path field, the solid, allowance and given fields under it, and the origin's");
+    assert_eq!(h.query_all_by_role(Role::TextInput).count(), fields + 11, "the path field, the solid, allowance and given fields under it, the origin's, and a margin for each side of the blank");
     assert!(h.query_by_label("Import").is_some());
     // The native dialog's door, where the platform has one (slice 9) — the
     // dialog itself is the system's and is not opened here.
@@ -2845,6 +2845,23 @@ fn a_window_with_no_project_starts_one_beside_the_imported_model() {
     // The origin is asked for beside the path, the common answer already in.
     assert_eq!(h.state().import_setup().origin, "mid,mid,max");
     shot(&mut h, "origin-import-form");
+    // Where the part sits in the stock: a side takes its own margin, the
+    // rest keep the allowance.
+    for (side, mm) in [("bottom", "3"), ("X+", "10")] {
+        for typing in [false, true] {
+            let label = h.get_by_label(side).rect();
+            let field = h
+                .query_all_by_role(Role::TextInput)
+                .filter(|f| (f.rect().center().y - label.center().y).abs() < 8.0 && f.rect().left() > label.left())
+                .min_by(|a, b| a.rect().left().total_cmp(&b.rect().left()))
+                .expect("the side's field");
+            if typing { field.type_text(mm) } else { field.focus() }
+            h.step();
+        }
+    }
+    assert_eq!(h.state().import_setup().allowance, "1,bottom=3,x+=10");
+    settle(&mut h);
+    shot(&mut h, "stock-margins-form");
     h.get_by_label("Import").click();
     let wait_for = |h: &mut Harness<'static, ViewApp>, step: &str| {
         for _ in 0..1200 {
@@ -2862,7 +2879,7 @@ fn a_window_with_no_project_starts_one_beside_the_imported_model() {
     assert!(!project.join("main.part").exists(), "nothing written before Accept");
     // The model is on screen already: the proposed blank and features,
     // measured from the origin asked for, which the guide says back.
-    assert!(std::fs::read_to_string(project.join("proposed_stock.part")).unwrap().contains("x=-51.0, y=-41.0, z=0.0)"), "the blank's center and top are zero");
+    assert!(std::fs::read_to_string(project.join("proposed_stock.part")).unwrap().contains("stock Box(w=111.0, l=82.0, h=19.0, x=-55.5, y=-41.0, z=0.0)"), "the blank's center and top are zero, with 10 beyond the part on X+ and 3 under it");
     assert!(h.query_all_by_label_contains("X0 Y0 at the stock's center, Z0 at the stock's top").next().is_some(), "the guide's Origin row");
     assert!(h.query_by_label("Change the origin…").is_some(), "and it can still be changed");
     shot(&mut h, "start-proposal-drawn");

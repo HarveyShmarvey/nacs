@@ -2109,6 +2109,45 @@ fn test_a_bevel_is_a_leg_on_the_feature_whose_edge_it_breaks() {
     assert!(nacs::stock::entry_findings(&part, &moves).is_empty(), "every entry licensed");
 }
 
+/// `--allowance 1,bottom=3,x+=10` gives a side of the blank its own margin:
+/// the Box grows by each, the origin's words read the grown blank in both
+/// scripts, and a round blank, which has one margin on its sides, refuses
+/// sides that differ. Skips without the venv.
+#[test]
+fn test_an_allowance_per_side_places_the_part_in_the_blank() {
+    if !Path::new(VENV_PYTHON).exists() {
+        println!("Skipping sidecar margins test: sidecar/.venv not installed (see sidecar/README.md)");
+        return;
+    }
+    let outdir = std::env::temp_dir().join(format!("nacs_sidecar_margins_{}", std::process::id()));
+    let _ = fs::remove_dir_all(&outdir);
+    let run = |script: &str, step: &str, allowance: &str| Command::new(VENV_PYTHON).args([script, step, "--allowance", allowance, "--origin", "mid,mid,max", "-o"]).arg(&outdir).output().expect("failed to run the sidecar");
+    // The plate is 100 x 80 x 15: 1 + 10 on X, 1 + 1 on Y, 1 above and 3 under.
+    for script in ["sidecar/import_step.py", "sidecar/import_stock.py"] {
+        let out = run(script, "tests/fixtures/drilled_plate.step", "1,bottom=3,x+=10");
+        assert!(out.status.success(), "{}", String::from_utf8_lossy(&out.stderr));
+    }
+    let stock = fs::read_to_string(outdir.join("proposed_stock.part")).unwrap();
+    assert!(stock.ends_with("stock Box(w=111.0, l=82.0, h=19.0, x=-55.5, y=-41.0, z=0.0)\n"), "{stock}");
+    // The features are measured from the same zero: the bore sits 4.5 off
+    // where the even blank had it, and 1 below the blank's top.
+    let part = fs::read_to_string(outdir.join("proposed.part")).unwrap();
+    assert!(part.contains("\nfeature F9_Bore CylinderBore(dia=16.0, extent=6.0, x=25.5, y=-20.0, z=-1.0)\n"), "{part}");
+    assert!(part.contains("top 1.0, bottom 3.0, x- 1.0, x+ 10.0, y- 1.0, y+ 1.0"), "{part}");
+    // A round blank: top and bottom of its own, the sides alike.
+    let out = run("sidecar/import_stock.py", "tests/fixtures/disc_step.step", "1,bottom=2");
+    assert!(out.status.success(), "{}", String::from_utf8_lossy(&out.stderr));
+    let disc = fs::read_to_string(outdir.join("proposed_stock.part")).unwrap();
+    assert!(disc.ends_with("stock Cylinder(dia=122.0, h=33.0, x=0.0, y=0.0, z=0.0)\n"), "{disc}");
+    for script in ["sidecar/import_step.py", "sidecar/import_stock.py"] {
+        let out = run(script, "tests/fixtures/disc_step.step", "1,x+=5");
+        assert!(!out.status.success() && String::from_utf8_lossy(&out.stderr).contains("a round blank has one margin on its sides"), "{script}: {}", String::from_utf8_lossy(&out.stderr));
+    }
+    let out = run("sidecar/import_stock.py", "tests/fixtures/drilled_plate.step", "1,left=2");
+    assert!(!out.status.success() && String::from_utf8_lossy(&out.stderr).contains("`left=2` is not a size in mm"), "{}", String::from_utf8_lossy(&out.stderr));
+    let _ = fs::remove_dir_all(&outdir);
+}
+
 /// `--origin x,y,z` moves the model so the named point is 0,0,0 before
 /// anything is recognized: both scripts agree, a word reads the blank or
 /// (`part-`) the model, a number is a model coordinate, and a second setup

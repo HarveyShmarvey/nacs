@@ -724,8 +724,17 @@ One page. What is built, what is next, and the debts we know about.
    stock's center and top. The guide has an Origin step that says it
    back and, until something is accepted, a button to change it. The
    viewport marks 0,0,0. `nacs --import --origin` is the same.
+   Sixth pass (2026-11-22): the part is placed in the stock. Under the
+   origin the form has a field per side of the blank (top, bottom, x-,
+   x+, y-, y+); an empty one takes the allowance, the bottom 0. It is
+   one spelling, `--allowance 1,bottom=3,x+=10`, and the origin's words
+   read the blank it gives. The guide's Origin step names the register
+   the program selects (G54 unless `work_offset` says).
    Not built: moving the origin after features are accepted (import
-   again), and six separate margins for the part inside the stock.
+   again); an origin and a register for a second setup of its own; one
+   program run at several work offsets; a margin on a blank that is the
+   model's own outline (a plain prism); choosing the register in the
+   window.
    Asked for, not built: an options page. First on it, the camera: the
    orbit style (the user's pick is a free turntable) and what it turns
    about (the part's center), each with alternatives.
