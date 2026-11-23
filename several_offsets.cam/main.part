@@ -1,0 +1,23 @@
+# several_offsets.cam: three parts a run, one in each register. Each tool
+# cuts all three before the next tool change. The second op changes the
+# spindle speed, so the repeats must set the first op's speed again.
+work_offset G54 G55 G56
+
+units mm
+feed 800
+plunge 300
+rapid_z 5
+clearance_z 25
+spindle 3000
+
+stock Box(w=60, l=40, h=20, x=0, y=0, z=0)
+
+tool T1 Endmill(dia=10.0)
+tool T2 Endmill(dia=6.0)
+
+feature Top Plane(z=-0.5)
+feature Bore CylinderBore(dia=16.0, extent=3.0, x=30.0, y=20.0)
+
+run End(tool=T1, surface=Top, stepover=6.0, n=10)
+run Clear(tool=T1, profile=Bore, stepover=4.0, spindle=2400, n=20)
+run Side(tool=T2, surface=Bore, stepover=2.0, n=30)

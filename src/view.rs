@@ -3500,11 +3500,12 @@ impl GcodeView {
 
     /// The half-open line range one op emitted, or `None` for an op that
     /// emitted nothing (which the writer never produces today) and for an
-    /// index past the end.
+    /// index past the end. In a program at several work offsets it is the
+    /// first part's block; the op's lines for the other parts follow later.
     pub fn span(&self, op: usize) -> Option<std::ops::Range<usize>> {
         let first = self.lines.iter().position(|l| l.op == Some(op))?;
-        let last = self.lines.iter().rposition(|l| l.op == Some(op))?;
-        Some(first..last + 1)
+        let len = self.lines[first..].iter().take_while(|l| l.op == Some(op)).count();
+        Some(first..first + len)
     }
 
     /// The op the cursor is ON, given the cursor's count — how many ops have
@@ -3650,12 +3651,15 @@ fn attribute(text: &str, emitted_moves: &[OpEmission]) -> GcodeView {
     let mut of: Vec<Option<usize>> = vec![None; text.len()];
     let mut block: Vec<Option<usize>> = vec![None; text.len()];
     for em in emitted_moves {
-        for slot in of.iter_mut().take(em.lines.end.min(text.len())).skip(em.lines.start) {
-            *slot = Some(em.op_idx);
-        }
-        for k in 0..em.moves.len() {
-            if let Some(slot) = block.get_mut(em.move_line(k)) {
-                *slot = Some(k);
+        // A program at several work offsets holds the op once per register.
+        for (lines, moves_start) in em.copies() {
+            for slot in of.iter_mut().take(lines.end.min(text.len())).skip(lines.start) {
+                *slot = Some(em.op_idx);
+            }
+            for k in 0..em.moves.len() {
+                if let Some(slot) = block.get_mut(moves_start + k) {
+                    *slot = Some(k);
+                }
             }
         }
     }
@@ -4160,7 +4164,12 @@ pub fn job_steps(part: &Part, facts: &JobFacts) -> Vec<JobStep> {
     let features = part.features.len();
     let unscheduled = part.features.keys().filter(|name| !crate::schedule::consumed(part, name)).count();
     // The origin is the point the machine holds in the program's register.
-    let register = part.work_offset.as_ref().map(|w| w.words()).unwrap_or_else(|| "G54".to_string());
+    let registers = gcode::registers(part);
+    let register = match registers.len() {
+        1 => registers[0].clone(),
+        n => format!("{} in turn, {n} parts a run", registers.join(", ")),
+    };
+    let several = registers.len() > 1;
     let plural =|n: usize, one: &str, many: &str| if n == 1 { format!("1 {one}") } else { format!("{n} {many}") };
     // (name, done, what a done step says, what an open one says, its act)
     let mut rows: Vec<(&'static str, bool, String, String, Option<(String, &'static str)>)> = vec![
@@ -4177,6 +4186,7 @@ pub fn job_steps(part: &Part, facts: &JobFacts) -> Vec<JobStep> {
             match (&facts.origin, model) {
                 (Some(o), _) => format!("{}; the program selects {register}", origin_says(o)),
                 (None, Some(_)) => format!("X0 Y0 Z0 as modeled; the program selects {register}"),
+                (None, None) if several => format!("where the features are written from; the program selects {register}"),
                 (None, None) => "where the features are written from".to_string(),
             },
             String::new(),

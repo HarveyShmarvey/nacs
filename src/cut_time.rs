@@ -134,7 +134,7 @@ pub fn time_report_of(p: &Part, text: &str, emissions: &[gcode::OpEmission]) -> 
 
         let row = emissions
             .iter()
-            .find(|em| em.lines.contains(&lineno))
+            .find(|em| em.owns_line(lineno))
             .map(|em| em.op_idx)
             .unwrap_or(between);
         let row = &mut rows[row];

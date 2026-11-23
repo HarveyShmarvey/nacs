@@ -92,6 +92,15 @@ fn a_work_offset_is_selected_never_set() {
     assert!(err.contains("is not a register"), "{err}");
     let err = offset_part("work_offset G55\nwork_offset G56\n", "").unwrap_err();
     assert!(err.contains("duplicate 'work_offset'"), "{err}");
+    // Several registers on one line: the program runs at each.
+    let p = offset_part("work_offset G54 G56\n", "").unwrap();
+    assert_eq!((p.work_offset, p.also_at), (Some(WorkOffset::Standard(54)), vec![WorkOffset::Standard(56)]));
+    let err = offset_part("work_offset G54 G55 G54\n", "").unwrap_err();
+    assert!(err.contains("names G54 twice"), "{err}");
+    let err = offset_part("work_offset G54 G92\n", "").unwrap_err();
+    assert!(err.contains("SETS a datum"), "{err}");
+    let err = offset_part("work_offset G54 G55\ndatum x=-500 y=-200\n", "").unwrap_err();
+    assert!(err.contains("datum says where one register points"), "{err}");
 }
 
 #[test]

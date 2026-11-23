@@ -736,10 +736,18 @@ One page. What is built, what is next, and the debts we know about.
    <project> up=z- at=x,y,z`; the engine moves the first program's cuts
    by `at` after the turn. Before this a flip of a project imported at
    the default origin was refused as outside its blank.
+   Eighth pass (2026-11-22): one program at several work offsets.
+   `work_offset G54 G55 G56` cuts a part in each register, every tool
+   finishing all of them before the next tool change. The Origin step
+   and the cycle time count the parts.
    Not built: moving the origin after features are accepted (import
-   again); one program run at several work offsets; a margin on a blank
-   that is the model's own outline (a plain prism); choosing the
-   register in the window; a third setup; a quarter turn between setups.
+   again); a margin on a blank that is the model's own outline (a plain
+   prism); choosing the register in the window; a third setup; a quarter
+   turn between setups; a front and its flipped back in one program
+   (fronts on G54, backs on G55); a different part in each register.
+   Idea, not built: orientation advice at import. Recognize from all six
+   directions, then rank them: the one that reaches the most features,
+   and the fewest directions that reach all. It cannot know workholding.
    Asked for, not built: an options page. First on it, the camera: the
    orbit style (the user's pick is a free turntable) and what it turns
    about (the part's center), each with alternatives.

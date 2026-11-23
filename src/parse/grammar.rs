@@ -2042,41 +2042,22 @@ pub fn parse_into(src: &str, p: &mut Part, base_dir: Option<&std::path::Path>) -
                 if p.work_offset.is_some() {
                     return Err(format!("line {}: duplicate 'work_offset' line — the program's one coordinate space rides one register (per-op selection is gated on the multi-datum stock model, by design)", lineno + 1));
                 }
-                let reg = rest.trim();
-                p.work_offset = Some(match reg {
-                    "" => return Err(format!("line {}: 'work_offset' needs a register, e.g. 'work_offset G55'", lineno + 1)),
-                    "G54" | "G55" | "G56" | "G57" | "G58" | "G59" => {
-                        WorkOffset::Standard(reg[1..].parse().expect("matched literal digits"))
+                // Several registers on the line: the program is run at
+                // each in turn, one part per register (DECISIONS.md "One
+                // program at several work offsets").
+                let mut regs = Vec::new();
+                for reg in rest.split_whitespace() {
+                    let wo = work_offset_register(reg, lineno)?;
+                    if regs.contains(&wo) {
+                        return Err(format!("line {}: work_offset names {} twice - each register holds one part", lineno + 1, reg));
                     }
-                    "G92" | "G10" | "G52" => {
-                        return Err(format!(
-                            "line {}: {} SETS a datum — that is work positioning wearing offset clothes, and where a register points is the operator's setup sheet, never this program's claim. work_offset SELECTS a pre-defined register: G54–G59, or the machine's declared extended family",
-                            lineno + 1, reg
-                        ));
-                    }
-                    "G53" => {
-                        return Err(format!(
-                            "line {}: G53 is the MACHINE coordinate system, not a work offset — there is no register to select. Pick G54–G59, or the machine's declared extended family",
-                            lineno + 1
-                        ));
-                    }
-                    _ => {
-                        // The extended shape: <word ending in P><number>,
-                        // e.g. G54.1P7, G154P12.
-                        let split = reg.rfind('P').map(|i| reg.split_at(i + 1));
-                        match split {
-                            Some((family, num)) if family.starts_with('G') && !num.is_empty() && num.bytes().all(|b| b.is_ascii_digit()) => {
-                                WorkOffset::Extended { family: family.to_string(), p: num.parse().map_err(|_| format!("line {}: work_offset register number '{}' is out of range", lineno + 1, num))? }
-                            }
-                            _ => {
-                                return Err(format!(
-                                    "line {}: work_offset '{}' is not a register — say G54–G59, or an extended register like G54.1P7 (sayable when the machine file declares its family via `extended_offsets`)",
-                                    lineno + 1, reg
-                                ));
-                            }
-                        }
-                    }
-                });
+                    regs.push(wo);
+                }
+                if regs.is_empty() {
+                    return Err(format!("line {}: 'work_offset' needs a register, e.g. 'work_offset G55'", lineno + 1));
+                }
+                p.work_offset = Some(regs.remove(0));
+                p.also_at = regs;
             }
             // Where the selected register POINTS, declared for the
             // certificates (Phase 15 slice 1, DECISIONS.md → "Phase 15
@@ -2832,4 +2813,43 @@ pub(super) fn parse_travel_span(key: &str, rest: &str, lineno: usize) -> Result<
         ));
     }
     Ok((lo, hi))
+}
+
+/// One register word of a `work_offset` line. The words that SET a datum
+/// are refused by name; an extended register parses by shape here and is
+/// checked against the machine's menu at validate.
+fn work_offset_register(reg: &str, lineno: usize) -> Result<WorkOffset, String> {
+    Ok(match reg {
+        "G54" | "G55" | "G56" | "G57" | "G58" | "G59" => {
+            WorkOffset::Standard(reg[1..].parse().expect("matched literal digits"))
+        }
+        "G92" | "G10" | "G52" => {
+            return Err(format!(
+                "line {}: {} SETS a datum — that is work positioning wearing offset clothes, and where a register points is the operator's setup sheet, never this program's claim. work_offset SELECTS a pre-defined register: G54–G59, or the machine's declared extended family",
+                lineno + 1, reg
+            ));
+        }
+        "G53" => {
+            return Err(format!(
+                "line {}: G53 is the MACHINE coordinate system, not a work offset — there is no register to select. Pick G54–G59, or the machine's declared extended family",
+                lineno + 1
+            ));
+        }
+        _ => {
+            // The extended shape: <word ending in P><number>,
+            // e.g. G54.1P7, G154P12.
+            let split = reg.rfind('P').map(|i| reg.split_at(i + 1));
+            match split {
+                Some((family, num)) if family.starts_with('G') && !num.is_empty() && num.bytes().all(|b| b.is_ascii_digit()) => {
+                    WorkOffset::Extended { family: family.to_string(), p: num.parse().map_err(|_| format!("line {}: work_offset register number '{}' is out of range", lineno + 1, num))? }
+                }
+                _ => {
+                    return Err(format!(
+                        "line {}: work_offset '{}' is not a register — say G54–G59, or an extended register like G54.1P7 (sayable when the machine file declares its family via `extended_offsets`)",
+                        lineno + 1, reg
+                    ));
+                }
+            }
+        }
+    })
 }

@@ -312,6 +312,11 @@ pub struct OpEmission {
     /// lines in place and move none. The block-grain scrub sync (slice 3)
     /// is its consumer; until then the pins are.
     pub moves_start: usize,
+    /// A program run at several work offsets repeats each op's lines once
+    /// per further register: the lines of each repeat and where its moves
+    /// start. The repeat of the first op after a tool change leaves the
+    /// tool change out. Empty for one register.
+    pub repeats: Vec<(std::ops::Range<usize>, usize)>,
 }
 
 impl OpEmission {
@@ -319,6 +324,113 @@ impl OpEmission {
     pub fn move_line(&self, k: usize) -> usize {
         self.moves_start + k
     }
+
+    /// Every place the op's lines stand in the program: its own block,
+    /// then one per further register.
+    pub fn copies(&self) -> impl Iterator<Item = (std::ops::Range<usize>, usize)> + '_ {
+        std::iter::once((self.lines.clone(), self.moves_start)).chain(self.repeats.iter().cloned())
+    }
+
+    /// Whether this op wrote program line `lineno`, in any copy.
+    pub fn owns_line(&self, lineno: usize) -> bool {
+        self.copies().any(|(lines, _)| lines.contains(&lineno))
+    }
+}
+
+/// The registers the program runs at, as the words it emits: `G54` when
+/// none is declared.
+pub fn registers(p: &Part) -> Vec<String> {
+    match &p.work_offset {
+        None => vec!["G54".to_string()],
+        Some(first) => std::iter::once(first).chain(&p.also_at).map(|w| w.words()).collect(),
+    }
+}
+
+/// Rewrite a one-part program to run at every register (DECISIONS.md "One
+/// program at several work offsets"). Each tool cuts every part before the
+/// next tool change: the ops between two tool changes are written once per
+/// register, with a retract to clearance and the register's word between.
+/// The emissions keep describing one part; each gains the lines of its
+/// repeats.
+fn repeat_at_registers(p: &Part, g: Vec<String>, ems: &mut [OpEmission]) -> Vec<String> {
+    let regs = registers(p);
+    if regs.len() < 2 {
+        return g;
+    }
+    let op = |em: &OpEmission| &p.operations[em.op_idx];
+    let clearance = |em: &OpEmission| op(em).clearance_z.unwrap_or(p.global_clearance_z);
+    let mut out: Vec<String> = Vec::with_capacity(g.len() * regs.len());
+    let mut done = 0; // lines of `g` already written
+    let mut i = 0;
+    while i < ems.len() {
+        let mut j = i;
+        while j + 1 < ems.len() && op(&ems[j + 1]).tool_num == op(&ems[i]).tool_num {
+            j += 1;
+        }
+        let (start, end) = (ems[i].lines.start, ems[j].lines.end);
+        // The tool change ends at the length-comp line; what follows is cut
+        // once per part.
+        let body = (start..ems[i].lines.end)
+            .find(|&k| strip_n_word(&g[k]).starts_with("G00 G43 "))
+            .expect("the first op after a tool change writes its G43 line")
+            + 1;
+        out.extend_from_slice(&g[done..body]);
+        let head_shift = out.len() - body;
+        let (first, last) = (&ems[i], &ems[j]);
+        let (speed_first, speed_last) = (
+            crate::parse::derive_spindle_speed(op(first), p.global_spindle),
+            crate::parse::derive_spindle_speed(op(last), p.global_spindle),
+        );
+        let (coolant_first, coolant_last) = (crate::parse::coolant_for(p, op(first)), crate::parse::coolant_for(p, op(last)));
+        let between = clearance(first).max(clearance(last));
+        let one_part: Vec<(std::ops::Range<usize>, usize)> = ems[i..=j].iter().map(|em| (em.lines.clone(), em.moves_start)).collect();
+        for (r, reg) in regs.iter().enumerate() {
+            if r > 0 {
+                out.push(format!("G00 Z{}", f(between)));
+            }
+            out.push(format!("(part {} of {} at {})", r + 1, regs.len(), reg));
+            out.push(reg.clone());
+            if r > 0 {
+                // The last op left its own speed and coolant; the first
+                // op's were set by the tool change, which is not repeated.
+                if speed_first != speed_last {
+                    out.push(format!("S{}", f_speed(speed_first, p.machine.as_ref())));
+                }
+                if coolant_first != coolant_last {
+                    out.push("M09".into());
+                    if let Some(word) = crate::parse::coolant_word(p.machine.as_ref(), coolant_first).filter(|_| coolant_first != crate::parse::CoolantKind::Off) {
+                        out.push(word);
+                    }
+                }
+            }
+            let shift = out.len() - body;
+            for (k, em) in ems[i..=j].iter_mut().enumerate() {
+                let (was, was_moves) = one_part[k].clone();
+                let from = if k == 0 { body } else { was.start };
+                let lines = from + shift..was.end + shift;
+                let moves = was_moves + shift;
+                if r == 0 {
+                    // The op's own block: its tool change, where it has one,
+                    // through its moves, the register's word between them.
+                    let own = if k == 0 { was.start + head_shift } else { lines.start };
+                    em.lines = own..lines.end;
+                    em.moves_start = moves;
+                } else {
+                    em.repeats.push((lines, moves));
+                }
+            }
+            if r == 0 {
+                out.extend_from_slice(&g[body..end]);
+            } else {
+                // A restart label names one line: the first part's.
+                out.extend(g[body..end].iter().map(|l| strip_n_word(l).to_string()));
+            }
+        }
+        done = end;
+        i = j + 1;
+    }
+    out.extend_from_slice(&g[done..]);
+    out
 }
 
 /// An op emitter's two heads: `text` is the program (what stdout gets, byte
@@ -777,7 +889,7 @@ pub fn program_with_moves(p: &Part) -> Result<(String, Vec<OpEmission>), String>
         // one (under control comp the text is the part edge, which is not
         // where the tool goes; DECISIONS.md "the control-comp centerline
         // resolve", slice 2), the text otherwise.
-        let mut em = OpEmission { op_idx, moves, resolved, lines: op_start..op_start, moves_start: 0 };
+        let mut em = OpEmission { op_idx, moves, resolved, lines: op_start..op_start, moves_start: 0, repeats: Vec::new() };
         crate::stock::check_moves(p, op_idx, resolved_moves(&em))?;
         // The address (Phase 16 slice 2): the one `extend` below is what
         // makes `moves_start + k` the k-th move's program line.
@@ -875,6 +987,8 @@ pub fn program_with_moves(p: &Part) -> Result<(String, Vec<OpEmission>), String>
     // Skipped entirely for the undeclared machine and for any declared
     // machine whose output format is the default: today's bytes never pass
     // through a parse-and-reformat they don't need.
+    // Every reader above saw one part; the text now says all of them.
+    let mut g = repeat_at_registers(p, g, &mut emitted_moves);
     if let Some(m) = p.machine.as_ref().filter(|m| !m.output_format_is_default()) {
         for line in g.iter_mut() {
             *line = respell_line(line, m);

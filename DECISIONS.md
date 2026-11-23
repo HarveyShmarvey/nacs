@@ -311,6 +311,15 @@ that would make them. A flipped import defaults to the turned blank's
 centre and new top and writes the word. Each setup is its own project,
 so each already has its own `work_offset`.
 
+**One program at several work offsets (2026-11-22).** `work_offset G54
+G55 G56` runs the program at each register, one part in each. Each tool
+cuts every part before the next tool change: the ops between two tool
+changes are written out once per register, with a retract to
+`clearance_z` and the register's word between. No subprograms. An `n=`
+label stays on the first part's copy. One register emits what it did,
+byte for byte. Every check reads one part; `datum` with several
+registers is refused, since it places only one.
+
 **Recognition proposes, a person accepts.** Unsupported faces are named with
 their `CHECKLIST.md` row. Nothing recognised is machined until it is written
 into the project as text.
