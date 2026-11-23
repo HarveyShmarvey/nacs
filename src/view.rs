@@ -4159,7 +4159,9 @@ pub fn job_steps(part: &Part, facts: &JobFacts) -> Vec<JobStep> {
     let (needed, extra) = tools_wanted(&facts.notes);
     let features = part.features.len();
     let unscheduled = part.features.keys().filter(|name| !crate::schedule::consumed(part, name)).count();
-    let plural = |n: usize, one: &str, many: &str| if n == 1 { format!("1 {one}") } else { format!("{n} {many}") };
+    // The origin is the point the machine holds in the program's register.
+    let register = part.work_offset.as_ref().map(|w| w.words()).unwrap_or_else(|| "G54".to_string());
+    let plural =|n: usize, one: &str, many: &str| if n == 1 { format!("1 {one}") } else { format!("{n} {many}") };
     // (name, done, what a done step says, what an open one says, its act)
     let mut rows: Vec<(&'static str, bool, String, String, Option<(String, &'static str)>)> = vec![
         (
@@ -4173,8 +4175,8 @@ pub fn job_steps(part: &Part, facts: &JobFacts) -> Vec<JobStep> {
             "Origin",
             model.is_some() || features > 0,
             match (&facts.origin, model) {
-                (Some(o), _) => origin_says(o),
-                (None, Some(_)) => "X0 Y0 Z0 as modeled".to_string(),
+                (Some(o), _) => format!("{}; the program selects {register}", origin_says(o)),
+                (None, Some(_)) => format!("X0 Y0 Z0 as modeled; the program selects {register}"),
                 (None, None) => "where the features are written from".to_string(),
             },
             String::new(),
@@ -4445,7 +4447,9 @@ pub fn is_step(path: &std::path::Path) -> bool {
 /// empty solid is the one solid; `S2` and `2` are the same answer. The
 /// allowance is 1 mm unless typed: the stock proposal grows by it on the
 /// sides and the top, and the top face and the rim become passes; `0` is a
-/// blank cut to size, which is what the sidecar does on its own. The
+/// blank cut to size, which is what the sidecar does on its own. A side
+/// can have its own after the number (`1,bottom=3,x+=10`): that is where
+/// the part sits in the stock. The
 /// fourth word (slice 12) is the program before this one, `given=`, the
 /// path as the project's `given from` line will name it: the blank is then
 /// that program's turned over, computed here from its stock and handed to
@@ -4467,6 +4471,61 @@ impl Default for ImportSetup {
     fn default() -> Self {
         ImportSetup { up: None, solid: String::new(), allowance: "1".to_string(), given: String::new(), origin: ORIGIN_DEFAULT.to_string() }
     }
+}
+
+/// The sides of the blank an allowance can name, in the sidecar's order.
+pub const MARGIN_KEYS: [&str; 6] = ["top", "bottom", "x-", "x+", "y-", "y+"];
+
+/// An allowance as its fields hold it: the number for the sides and the
+/// top, then each side's own (empty where it takes the first; the bottom's
+/// empty is 0). `1,bottom=3,x+=10` is the spelling. Text only: a number
+/// half typed comes back as typed.
+pub fn allowance_parts(text: &str) -> (String, [String; 6]) {
+    let mut base = String::new();
+    let mut own: [String; 6] = Default::default();
+    for (i, word) in text.split(',').map(str::trim).enumerate() {
+        match word.rsplit_once('=') {
+            Some((key, val)) => {
+                if let Some(k) = MARGIN_KEYS.iter().position(|m| *m == key.trim()) {
+                    own[k] = val.trim().to_string();
+                }
+            }
+            None if i == 0 => base = word.to_string(),
+            None => {}
+        }
+    }
+    (base, own)
+}
+
+/// The fields back into the one spelling the sidecar reads.
+pub fn allowance_from(base: &str, own: &[String; 6]) -> String {
+    let clean = |t: &str| t.trim().replace([',', '='], "");
+    let mut words: Vec<String> = Vec::new();
+    if !clean(base).is_empty() {
+        words.push(clean(base));
+    }
+    words.extend(MARGIN_KEYS.iter().zip(own).filter(|(_, v)| !clean(v).is_empty()).map(|(k, v)| format!("{k}={}", clean(v))));
+    words.join(",")
+}
+
+/// How far the blank stands outside the model on each side, in
+/// `MARGIN_KEYS` order, or why the allowance is not one.
+pub fn allowance_sides(text: &str) -> Result<[f64; 6], String> {
+    let bad = || format!("allowance `{}` is not a size in mm — 1, 0.5, or 0 for a blank cut to size; then top=, bottom=, x-=, x+=, y-= or y+= for a side of its own, as in 1,bottom=3", text.trim());
+    let size = |t: &str| t.parse::<f64>().ok().filter(|a| a.is_finite() && *a >= 0.0);
+    let mut base = 0.0;
+    let mut own: [Option<f64>; 6] = [None; 6];
+    for (i, word) in text.split(',').map(str::trim).enumerate() {
+        match word.rsplit_once('=') {
+            Some((key, val)) => {
+                let k = MARGIN_KEYS.iter().position(|m| *m == key.trim()).filter(|k| own[*k].is_none()).ok_or_else(bad)?;
+                own[k] = Some(size(val.trim()).ok_or_else(bad)?);
+            }
+            None if i == 0 => base = size(word).ok_or_else(bad)?,
+            None => return Err(bad()),
+        }
+    }
+    Ok(std::array::from_fn(|k| own[k].unwrap_or(if k == 1 { 0.0 } else { base })))
 }
 
 /// The origin an import takes unless told: the blank's centre in plan and
@@ -4528,12 +4587,11 @@ impl ImportSetup {
         }
         let allowance = self.allowance.trim();
         if !allowance.is_empty() {
-            if !allowance.parse::<f64>().is_ok_and(|a| a.is_finite() && a >= 0.0) {
-                return Err(format!("allowance `{allowance}` is not a size in mm — 1, 0.5, or 0 for a blank cut to size"));
-            }
+            allowance_sides(allowance)?;
             // A given blank carries its own allowance: the word is not sent.
             if self.given.trim().is_empty() {
-                out.extend(["--allowance".to_string(), allowance.to_string()]);
+                let (base, own) = allowance_parts(allowance);
+                out.extend(["--allowance".to_string(), allowance_from(&base, &own)]);
             }
         }
         let origin = self.origin.trim();

@@ -49,13 +49,19 @@ machine that only the human knows, so they are declared, never guessed:
   is the other setup's and lands in the residue as `rim_not_on_bottom`).
   The header of `proposed.part` and the report's `allowance` field say
   the import was made with it; without it both files are byte for byte
-  what they were.
+  what they were. After the number a side of the blank can have a margin
+  of its own: `top=`, `bottom=`, `x-=`, `x+=`, `y-=`, `y+=`, as in
+  `1,bottom=3,x+=10`. The number is the sides and the top; the bottom is
+  0 unless said. The recognizer reads the top's margin where it read the
+  allowance; a round blank has one margin on its sides, and sides that
+  differ are an error. The header and the report's `margins` field say
+  them when they are not the one number.
 - `--origin X,Y,Z` — the point that becomes 0,0,0. The sidecar moves the
   model there after the `--up` turn and before recognition, so every
   reported coordinate and proposed feature is measured from it. Each
   component is `model` (that axis keeps the model's own zero), a number (a
   model coordinate, after `--up`), `min`, `mid` or `max` of the blank (the
-  model's box grown by `--allowance` on the sides and the top; a prism is
+  model's box grown by `--allowance`, each side by its own margin; a prism is
   its own blank and is not grown), or `part-min`, `part-mid` or `part-max`
   of the model. `mid,mid,max` is the blank's centre and its top. Without
   the flag nothing moves and both files are byte for byte what they were.
@@ -545,7 +551,9 @@ says how far the blank stands outside it: a bounding blank then grows by
 it on the sides and the top (`dia + 2a`, `h + a`, `z + a`; a Box's low
 corner moves out by `a` too), the comment says so, and a prism — its own
 blank, cut to size — is left alone with a comment saying the allowance was
-not added. The engine's import doors pass `--allowance 1` unless the person
+not added. With a margin per side (`--allowance 1,bottom=3,x+=10`) a Box
+grows by each side's own, and a Cylinder by its top, its bottom and the
+one margin its sides share. The engine's import doors pass `--allowance 1` unless the person
 types another number (`allowance=` on the Output line, `--allowance` on
 `nacs --import`, the field under the import path), so the proposed blank is
 the one the shop saws, and the top face and the rim become passes

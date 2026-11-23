@@ -7323,6 +7323,25 @@ fn a_proposal_is_drawn_before_it_is_accepted() {
 }
 
 #[test]
+fn an_allowance_can_give_each_side_of_the_blank_its_own() {
+    use nacs::view::{allowance_from, allowance_parts, allowance_sides, ImportSetup};
+    // top, bottom, x-, x+, y-, y+: the number is the sides and the top, never the bottom.
+    assert_eq!(allowance_sides("1").unwrap(), [1.0, 0.0, 1.0, 1.0, 1.0, 1.0]);
+    assert_eq!(allowance_sides(" 1, bottom=3 ,x+=10").unwrap(), [1.0, 3.0, 1.0, 10.0, 1.0, 1.0]);
+    assert_eq!(allowance_sides("top=2").unwrap(), [2.0, 0.0, 0.0, 0.0, 0.0, 0.0]);
+    for bad in ["1,side=2", "1,2", "1,x+=-1", "1,x+=2,x+=3", "x+"] {
+        assert!(allowance_sides(bad).unwrap_err().contains("not a size in mm"), "{bad}");
+    }
+    // The window's seven fields and the one spelling are the same thing.
+    let (base, own) = allowance_parts("1,bottom=3,x+=10");
+    assert_eq!((base.as_str(), own[1].as_str(), own[3].as_str(), own[0].as_str()), ("1", "3", "10", ""));
+    assert_eq!(allowance_from(&base, &own), "1,bottom=3,x+=10");
+    let args = ImportSetup { allowance: " 1 , x-=4".to_string(), ..Default::default() }.args().unwrap();
+    assert!(args.windows(2).any(|w| w == ["--allowance", "1,x-=4"]), "{args:?}");
+    assert!(ImportSetup { allowance: "1,left=4".to_string(), ..Default::default() }.args().is_err());
+}
+
+#[test]
 fn an_imports_origin_is_three_words_and_a_sentence() {
     use nacs::view::{origin_says, origin_words, ImportSetup};
     // Unless told, the stock's center and its top.

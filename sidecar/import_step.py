@@ -3083,6 +3083,56 @@ def prism_outline(faces, bb):
     return outer, None
 
 
+MARGIN_KEYS = ("top", "bottom", "x-", "x+", "y-", "y+")
+
+
+def parse_allowance(text):
+    """--allowance's words as a margin per side of the blank. A bare number
+    is the sides and the top (never the bottom: a blank cut to thickness
+    sits on its parallels); `top=`, `bottom=`, `x-=`, `x+=`, `y-=`, `y+=`
+    after it give a side its own, e.g. `1,bottom=3,x+=10`."""
+    base, own = 0.0, {}
+    for i, word in enumerate(w.strip() for w in str(text).split(",")):
+        key, _, val = word.rpartition("=")
+        key = key.strip()
+        try:
+            v = float(val)
+        except ValueError:
+            v = -1.0
+        bare_first = key == "" and i == 0
+        if not (bare_first or key in MARGIN_KEYS) or key in own or not 0.0 <= v < float("inf"):
+            raise ValueError(f"--allowance `{text}`: `{word}` is not a size in mm, "
+                             "or one of top=, bottom=, x-=, x+=, y-=, y+= with a size, "
+                             "e.g. 1 or 1,bottom=3,x+=10")
+        if key == "":
+            base = v
+        else:
+            own[key] = v
+    return {k: own.get(k, 0.0 if k == "bottom" else base) for k in MARGIN_KEYS}
+
+
+def allowance_even(m):
+    """The one number the margins come to when they are the sides and the
+    top alike with nothing under the model, else None."""
+    a = m["top"]
+    even = m["bottom"] == 0.0 and all(m[k] == a for k in MARGIN_KEYS[2:])
+    return a if even else None
+
+
+def allowance_says(m):
+    return ", ".join(f"{k} {fmt(m[k])}" for k in MARGIN_KEYS)
+
+
+def round_side(m):
+    """How far a round blank stands outside the model's rim: one number, so
+    the four sides must agree."""
+    sides = {m[k] for k in MARGIN_KEYS[2:]}
+    if len(sides) != 1:
+        raise ValueError("a round blank has one margin on its sides, and --allowance "
+                         f"gives {allowance_says(m)}: say x-, x+, y- and y+ alike")
+    return sides.pop()
+
+
 ORIGIN_WORDS = ("min", "mid", "max")
 
 
@@ -3108,11 +3158,12 @@ def parse_origin(text):
 
 def origin_point(parts, bb, grow):
     """The model point (after --up) that becomes 0,0,0. `grow` is how far
-    the blank stands outside the model: on the sides and the top, never
-    under it."""
+    the blank stands outside the model on each side (parse_allowance), or
+    None for a blank that is the model's own outline."""
     lo, hi = (bb.xmin, bb.ymin, bb.zmin), (bb.xmax, bb.ymax, bb.zmax)
-    blo = (bb.xmin - grow, bb.ymin - grow, bb.zmin)
-    bhi = (bb.xmax + grow, bb.ymax + grow, bb.zmax + grow)
+    g = grow or dict.fromkeys(MARGIN_KEYS, 0.0)
+    blo = (bb.xmin - g["x-"], bb.ymin - g["y-"], bb.zmin - g["bottom"])
+    bhi = (bb.xmax + g["x+"], bb.ymax + g["y+"], bb.zmax + g["top"])
     out = []
     for k, p in enumerate(parts):
         of_part = p.startswith("part-")
@@ -3134,7 +3185,7 @@ def place_origin(solid, origin, allowance):
     prism is its own blank (import_stock.py), so nothing is grown for it."""
     bb = solid.BoundingBox()
     outer, _ = prism_outline(solid.Faces(), bb)
-    at = origin_point(origin, bb, 0.0 if outer is not None else allowance)
+    at = origin_point(origin, bb, None if outer is not None else allowance)
     if any(c != 0.0 for c in at):
         solid = solid.translate(cq.Vector(-at[0], -at[1], -at[2]))
     return solid, at
@@ -3145,11 +3196,15 @@ def origin_note(origin, at):
             f"({fmt(at[0])}, {fmt(at[1])}, {fmt(at[2])}) is 0,0,0 here")
 
 
-def recognize(step_path, solid_sel=None, up="z+", allowance=0.0, blank=None, given=None, origin=None):
+def recognize(step_path, solid_sel=None, up="z+", allowance=None, blank=None, given=None, origin=None):
+    """`allowance` is the blank's margin per side, as parse_allowance gives it."""
+    allowance = allowance or dict.fromkeys(MARGIN_KEYS, 0.0)
     solid, solid_sel, n_solids = select_solid(step_path, solid_sel)
     meta = {}
-    if allowance > 0.0:
-        meta["allowance"] = allowance
+    if allowance["top"] > 0.0:
+        meta["allowance"] = allowance["top"]
+    if allowance_even(allowance) is None:
+        meta["margins"] = allowance_says(allowance)
     if blank is not None:
         meta["given"] = given
         meta["blank"] = blank_words(*blank)
@@ -3186,7 +3241,7 @@ def recognize(step_path, solid_sel=None, up="z+", allowance=0.0, blank=None, giv
     # (slice 12). The passes that read the model (the topmost plane, the
     # pockets, the profiles) keep z_top; the bores, authored from the stock
     # top, read this.
-    top_margin = allowance
+    top_margin = allowance["top"]
     if blank is not None:
         _, top_margin = blank_margins(blank, faces, solid.BoundingBox())
         if top_margin > 0.0:
@@ -3234,7 +3289,12 @@ def recognize(step_path, solid_sel=None, up="z+", allowance=0.0, blank=None, giv
     # face bounding the plan is a boss to bring to size, claimed before
     # the trim-wire pass would refuse it as a wall with a curved top edge.
     if blank is None:
-        rim_member_of, rim_note = recognize_rim(solid, faces, emap, member_of, allowance)
+        # The rim is only found on a model a round blank fits, and that
+        # blank has one margin on its sides.
+        rim_side = max(allowance[k] for k in MARGIN_KEYS[2:])
+        if rim_side > 0.0 and plan_bounding_cylinder(faces, solid.BoundingBox()) is not None:
+            rim_side = round_side(allowance)
+        rim_member_of, rim_note = recognize_rim(solid, faces, emap, member_of, rim_side)
         member_of.update(rim_member_of)
     else:
         rim_note = withdraw_rim_for_given(solid, faces, member_of, given)
@@ -3433,7 +3493,10 @@ def build_outputs(step_path, entries, proposals, n_faces, meta):
                 f"program's turned over, {meta['blank']} (--blank); what that program "
                 "cut is air here (given from), and the plan-bounding rim stands as it "
                 "left it", width=78, initial_indent="# ", subsequent_indent="# ")
-        if "allowance" in meta:
+        if "margins" in meta:
+            lines.append(f"# imported with the blank standing outside the model by "
+                         f"{meta['margins']} (--allowance)")
+        elif "allowance" in meta:
             lines.append(f"# imported with --allowance {fmt(meta['allowance'])}: the blank "
                          f"stands {fmt(meta['allowance'])} above the model's top and outside "
                          "its plan; bores at the model's top are drilled from the blank top")
@@ -3456,9 +3519,11 @@ def main():
     ap.add_argument("--up", choices=sorted(UP_ROTATIONS), default="z+",
                     help="which MODEL axis points up on the machine "
                          "(default z+)")
-    ap.add_argument("--allowance", type=float, default=0.0, metavar="MM",
+    ap.add_argument("--allowance", default="0", metavar="MM[,SIDE=MM...]",
                     help="how far the blank stands above the model's top and "
-                         "outside its plan (default 0: a blank cut to size)")
+                         "outside its plan (default 0: a blank cut to size); "
+                         "then any of top=, bottom=, x-=, x+=, y-=, y+= for a "
+                         "side of its own, e.g. 1,bottom=3,x+=10")
     ap.add_argument("--blank", metavar="WORDS", default=None,
                     help="the blank as given, the earlier program's turned over: "
                          "Cylinder(dia=, h=, x=, y=, z=) or Box(w=, l=, h=, x=, y=, z=); "
@@ -3473,8 +3538,10 @@ def main():
                          "mid,mid,max is the blank's centre and its top "
                          "(default: the model's own origin)")
     args = ap.parse_args()
-    if args.allowance < 0.0:
-        sys.exit(f"error: --allowance {args.allowance} is below zero")
+    try:
+        allowance = parse_allowance(args.allowance)
+    except ValueError as e:
+        sys.exit(f"error: {e}")
     origin = None
     if args.origin is not None:
         try:
@@ -3489,7 +3556,7 @@ def main():
         sys.exit("error: --blank and --given go together: the earlier program's blank "
                  "turned over, and the project it came from")
     if args.blank is not None:
-        if args.allowance > 0.0:
+        if any(allowance.values()):
             sys.exit("error: --allowance with --blank: the given blank says how far it "
                      "stands outside the model")
         try:
@@ -3499,7 +3566,7 @@ def main():
 
     try:
         solid, entries, proposals, meta = recognize(args.step, args.solid,
-                                                    args.up, args.allowance,
+                                                    args.up, allowance,
                                                     blank, args.given, origin)
         n_faces = len(solid.Faces())
         report_text, part_text = build_outputs(args.step, entries, proposals,

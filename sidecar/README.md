@@ -51,7 +51,8 @@ assembly) rejects with a per-solid inventory unless `--solid` names the
 part; `--up` declares which model axis is up on the machine (a Y-up CAD
 export imports with `--up y+`); `--allowance` says how far the blank stands
 outside the model, so bores at the model's top are placed and the rim is
-proposed as a boss to bring to size (the engine passes 1 unless told);
+proposed as a boss to bring to size (the engine passes 1 unless told),
+and a side can have its own margin after the number (`1,bottom=3,x+=10`);
 `--origin` names the point that becomes 0,0,0 (the engine passes
 `mid,mid,max`, the blank's centre and top, unless told; `CONTRACT.md`);
 `--given` with `--blank` is the second setup: the engine hands over the
