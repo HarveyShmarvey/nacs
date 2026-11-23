@@ -385,6 +385,9 @@ fn repeat_at_registers(p: &Part, g: Vec<String>, ems: &mut [OpEmission]) -> Vec<
         let between = clearance(first).max(clearance(last));
         let one_part: Vec<(std::ops::Range<usize>, usize)> = ems[i..=j].iter().map(|em| (em.lines.clone(), em.moves_start)).collect();
         for (r, reg) in regs.iter().enumerate() {
+            // The retract and the register's word before a later part are
+            // the first op's lines, as its tool change is.
+            let part_start = out.len();
             if r > 0 {
                 out.push(format!("G00 Z{}", f(between)));
             }
@@ -406,8 +409,8 @@ fn repeat_at_registers(p: &Part, g: Vec<String>, ems: &mut [OpEmission]) -> Vec<
             let shift = out.len() - body;
             for (k, em) in ems[i..=j].iter_mut().enumerate() {
                 let (was, was_moves) = one_part[k].clone();
-                let from = if k == 0 { body } else { was.start };
-                let lines = from + shift..was.end + shift;
+                let from = if k == 0 { part_start } else { was.start + shift };
+                let lines = from..was.end + shift;
                 let moves = was_moves + shift;
                 if r == 0 {
                     // The op's own block: its tool change, where it has one,

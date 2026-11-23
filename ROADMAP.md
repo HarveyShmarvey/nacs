@@ -740,10 +740,14 @@ One page. What is built, what is next, and the debts we know about.
    `work_offset G54 G55 G56` cuts a part in each register, every tool
    finishing all of them before the next tool change. The Origin step
    and the cycle time count the parts.
+   Ninth pass (2026-11-23): the register is chosen in the window. The
+   stock's card has a `work_offset` field at the top of the header (G54
+   until a line says otherwise; several registers run a part in each;
+   emptied, the line is removed). File > Work offset… opens it, and the
+   guide's Program step names the register before the program is written.
    Not built: moving the origin after features are accepted (import
    again); a margin on a blank that is the model's own outline (a plain
-   prism); choosing the register in the window; a third setup; a quarter
-   turn between setups; a front and its flipped back in one program
+   prism); a third setup; a quarter turn between setups; a front and its flipped back in one program
    (fronts on G54, backs on G55); a different part in each register.
    Idea, not built: orientation advice at import. Recognize from all six
    directions, then rank them: the one that reaches the most features,

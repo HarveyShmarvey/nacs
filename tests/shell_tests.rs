@@ -2767,6 +2767,68 @@ fn the_job_guide_leads_from_an_empty_folder_to_a_program() {
     let _ = std::fs::remove_dir_all(&root);
 }
 
+/// The work offset is chosen in the window: File > Work offset… opens the
+/// stock's card, where the header's `work_offset` field writes the line,
+/// takes several registers, and removes the line when emptied.
+#[test]
+fn the_work_offset_is_chosen_on_the_stocks_card() {
+    let (mut h, project) = open_copy_pixels("plate.cam");
+    settle(&mut h);
+    let main = || std::fs::read_to_string(project.join("main.part")).unwrap();
+    assert!(!main().contains("work_offset"));
+    h.get_by_label(view::MENU_GLYPH).click();
+    settle(&mut h);
+    submenu(&h, "File").expect("the File submenu").click();
+    settle(&mut h);
+    h.get_by_label("Work offset…").click();
+    settle(&mut h);
+    // The field shows what the program selects today.
+    let type_register = |h: &mut Harness<'static, ViewApp>, words: &str| {
+        // Focus, select what is there, then type over it.
+        for phase in 0..3 {
+            if phase == 1 {
+                h.key_combination_modifiers(egui::Modifiers::COMMAND, &[egui::Key::A]);
+                h.step();
+                continue;
+            }
+            if phase == 2 && words.is_empty() {
+                h.key_press(egui::Key::Backspace);
+                h.step();
+                continue;
+            }
+            let label = h.get_by_label("work_offset =").rect();
+            let field = h
+                .query_all_by_role(Role::TextInput)
+                .filter(|n| n.rect().left() > label.right() - 1.0)
+                .min_by(|a, b| (a.rect().center().y - label.center().y).abs().total_cmp(&(b.rect().center().y - label.center().y).abs()))
+                .expect("the register's field");
+            if phase == 2 { field.type_text(words) } else { field.focus() }
+            h.step();
+        }
+    };
+    shot(&mut h, "register-card-before");
+    type_register(&mut h, "G54 G55 G56");
+    shot(&mut h, "register-card-typed");
+    h.key_press(egui::Key::Enter);
+    settle(&mut h);
+    assert!(main().contains("work_offset G54 G55 G56\n"), "{}", main());
+    assert_eq!(nacs::gcode::registers(&nacs::parse::load_project(&project.to_string_lossy()).unwrap()), ["G54", "G55", "G56"]);
+    shot(&mut h, "register-card-written");
+    // A word that is not a register is refused with the parser's sentence.
+    type_register(&mut h, "G92");
+    h.key_press(egui::Key::Enter);
+    settle(&mut h);
+    assert!(h.query_all_by_label_contains("SETS a datum").next().is_some(), "refused by name");
+    assert!(main().contains("work_offset G54 G55 G56\n"));
+    // Emptied, the line goes and the program selects G54 again.
+    type_register(&mut h, "");
+    h.key_press(egui::Key::Enter);
+    settle(&mut h);
+    assert!(!main().contains("work_offset"), "{}", main());
+    drop(h);
+    let _ = std::fs::remove_dir_all(project.parent().unwrap());
+}
+
 /// A chamfer nobody can cut yet (no chamfer mill is declared) is still said
 /// once the operations are scheduled, with the button that adds the tool.
 #[test]

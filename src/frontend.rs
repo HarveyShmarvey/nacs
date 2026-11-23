@@ -2683,6 +2683,12 @@ impl ViewApp {
             }
             // The way in (DESIGN.md §1, Phase 50 slice 3): a main.part from
             // nothing, every value shown before it is written.
+            // The register is a header line, and the header is on the
+            // stock's card.
+            "origin.register" => {
+                self.layout.apply(DockAction::ShowTab(SidebarTab::Outline));
+                self.set_selection(view::Selection::Stock);
+            }
             "project.new" => {
                 self.new_form = Some(NewForm::for_project(0));
                 self.layout.apply(DockAction::OpenForm);
@@ -5740,24 +5746,36 @@ impl ViewApp {
     /// never removed from the form: the header law needs every one.
     fn set_header(&mut self, key: &str, value: Option<&str>) {
         self.field_edit.retain(|(t, k, _)| !(*t == FieldTarget::Header && k == key));
-        let Some(value) = value.map(str::trim).filter(|v| !v.is_empty()) else {
+        // The register is the one header line a program can go without:
+        // emptied, its line is removed and the program selects G54.
+        let optional = key == "work_offset";
+        let value = value.map(str::trim).filter(|v| !v.is_empty());
+        if value.is_none() && !optional {
             self.edit_note = Some(format!("Not written — the header's `{key}` is not removed; every program needs it"));
             return;
+        }
+        let what = match value {
+            Some(v) => format!("{key} {v}"),
+            None => format!("{key} removed; the program selects G54"),
         };
-        let what = format!("{key} {value}");
         let Some(path) = self.part.sources.first().cloned() else {
             self.edit_note = Some("Not written — this project has no file on disk".to_string());
             return;
         };
         let plan = view::header_write_plan(&self.part, key);
         let at = view::header_insert_at(&self.part);
-        let new_line = view::header_line(key, value);
+        if value.is_none() && plan.is_none() {
+            return;
+        }
+        let new_line = value.map(|v| view::header_line(key, v));
         let result = std::fs::read_to_string(&path)
             .map_err(|e| format!("cannot read {}: {e}", path.display()))
             .and_then(|before| {
-                let after = match plan {
-                    Some(line) => view::replace_line(&before, line, &new_line)?,
-                    None => view::insert_line(&before, at, &new_line),
+                let after = match (plan, &new_line) {
+                    (Some(line), Some(new_line)) => view::replace_line(&before, line, new_line)?,
+                    (Some(line), None) => view::delete_lines(&before, line, line)?,
+                    (None, Some(new_line)) => view::insert_line(&before, at, new_line),
+                    (None, None) => before.clone(),
                 };
                 self.reparse_with(0, &after)?;
                 crate::theme::write_atomically(&path, &after)?;
@@ -6633,6 +6651,7 @@ impl ViewApp {
                 // rewritten in place or inserted before the stock.
                 ui.add_space(4.0);
                 ui.label(egui::RichText::new("Header — the program's words").small().weak());
+                ui.add(egui::Label::new(egui::RichText::new("work_offset: the register the machine holds this origin in. Several (G54 G55 G56) run a part in each.").small().weak()).wrap());
                 self.fields_form(ui, FieldTarget::Header, &header);
             }
             view::Card::Review { head, section, text, statement, refs, in_project, member_of } => {
