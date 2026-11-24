@@ -752,9 +752,14 @@ One page. What is built, what is next, and the debts we know about.
    Idea, not built: orientation advice at import. Recognize from all six
    directions, then rank them: the one that reaches the most features,
    and the fewest directions that reach all. It cannot know workholding.
-   Asked for, not built: an options page. First on it, the camera: the
-   orbit style (the user's pick is a free turntable) and what it turns
-   about (the part's center), each with alternatives.
+   Tenth pass (2026-11-23): an options page, File > Options…. First on
+   it, the camera: the orbit style (free turntable, where the tilt goes
+   on over the top, or a turntable that stops straight down and straight
+   up) and what a drag turns the view about (the part's center, the
+   viewport's middle, or the point under the cursor). The first of each
+   is the default. A pick is saved in the workspace file at once;
+   `nacs --options` prints the same page. Not built: a trackball orbit
+   (the camera holds no roll).
 
 ## Debts
 
