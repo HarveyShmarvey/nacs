@@ -6518,7 +6518,6 @@ impl ViewApp {
             }
         }
         let mut go: Option<usize> = None;
-        let mut section = "";
         let pending = view::proposals_waiting(&self.review_rows, &self.review_dups);
         if !self.part.features.is_empty() && ui.small_button("Schedule operations").on_hover_text("Add an operation for every feature that has none, with tools from this project. z undoes.").clicked() {
             self.act("schedule");
@@ -6528,24 +6527,40 @@ impl ViewApp {
         if pending > 0 && has_file && ui.small_button(format!("Accept all ({pending})")).on_hover_text("Accept every proposal not yet in the project; duplicates are skipped. z undoes.").clicked() {
             self.act("review.accept_all");
         }
-        for (i, row) in self.review_rows.iter().enumerate() {
-            if row.section != section {
-                section = &row.section;
-                ui.add_space(4.0);
-                ui.label(egui::RichText::new(section).strong());
-            }
-            let head = if row.in_project {
-                format!("{}  · in project", row.head)
-            } else if row.rejected {
-                format!("{}  · rejected", row.head)
-            } else if let Some(first) = self.review_dups.get(i).copied().flatten() {
-                format!("{}  · same as {}", row.head, self.review_rows.get(first).map(|r| r.id.as_str()).unwrap_or("an earlier row"))
-            } else {
-                row.head.clone()
+        // The proposals are listed as features, one row each: a member
+        // face of a grouped proposal is its feature's row. The faces
+        // nothing was proposed for sit under a fold a reason, shut.
+        let mut at = 0;
+        while at < self.review_rows.len() {
+            let section = &self.review_rows[at].section;
+            let end = at + self.review_rows[at..].iter().take_while(|r| r.section == *section).count();
+            let mut list = |ui: &mut egui::Ui| {
+                for (i, row) in self.review_rows.iter().enumerate().take(end).skip(at) {
+                    if row.statement.is_some() && row.member_of.is_some() {
+                        continue;
+                    }
+                    let head = if row.in_project {
+                        format!("{}  · in project", row.head)
+                    } else if row.rejected {
+                        format!("{}  · rejected", row.head)
+                    } else if let Some(first) = self.review_dups.get(i).copied().flatten() {
+                        format!("{}  · same as {}", row.head, self.review_rows.get(first).map(|r| r.id.as_str()).unwrap_or("an earlier row"))
+                    } else {
+                        row.head.clone()
+                    };
+                    if ui.selectable_label(self.selection == view::Selection::Review(i), head).clicked() {
+                        go = Some(i);
+                    }
+                }
             };
-            if ui.selectable_label(self.selection == view::Selection::Review(i), head).clicked() {
-                go = Some(i);
+            ui.add_space(4.0);
+            if self.review_rows[at].statement.is_some() {
+                ui.label(egui::RichText::new(section).strong());
+                list(ui);
+            } else {
+                egui::CollapsingHeader::new(format!("{section} ({})", end - at)).id_salt(("review.residue", section)).default_open(false).show(ui, list);
             }
+            at = end;
         }
         if let Some(i) = go {
             self.set_selection(view::Selection::Review(i));
