@@ -3817,7 +3817,7 @@ pub const ACTIONS: &[Action] = &[
     // `f` (and Home, `ALSO`) since 2026-09-17 — §9's ban lifted for a
     // named list (DESIGN.md §9, Phase 23 slice 1): the first frame fits
     // once, and a fit is an act a hand reaches ten times an hour.
-    Action { id: "options", key: "", sentence: "the options page: how a drag turns the view, and what it turns about" },
+    Action { id: "options", key: "", sentence: "the options page: how a drag turns the view, what it turns about, and how much of the job guide shows" },
     Action { id: "view.fit", key: "f", sentence: "fit the scene to the viewport again" },
     // `.` since 2026-10-04 (DESIGN.md §9's named list grows by one, Phase
     // 41 slice 1): the focus is an ACT — selection framing centres and

@@ -6411,7 +6411,7 @@ impl ViewApp {
         if next.is_some_and(|i| i + 1 < steps.len()) {
             self.guide_shown = true;
         }
-        if !self.guide_shown {
+        if !self.guide_shown || self.options.guide == crate::theme::Guide::Hidden {
             return;
         }
         let title = match next {
@@ -6419,7 +6419,10 @@ impl ViewApp {
             None => "Job: done".to_string(),
         };
         let mut act: Option<&'static str> = None;
-        egui::CollapsingHeader::new(egui::RichText::new(title).strong()).id_salt("job.guide").default_open(true).show(ui, |ui| {
+        // The option is where the guide starts; the arrow still turns it.
+        // Its id carries the option, so a pick on the page applies at once.
+        let folded = self.options.guide == crate::theme::Guide::Folded;
+        egui::CollapsingHeader::new(egui::RichText::new(title).strong()).id_salt(("job.guide", folded)).default_open(!folded).show(ui, |ui| {
             for (i, s) in steps.iter().enumerate() {
                 let head = format!("{}  {}", i + 1, s.name);
                 match s.state {

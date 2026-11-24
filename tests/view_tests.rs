@@ -1835,6 +1835,9 @@ fn test_the_workspace_file_carries_the_options() {
         assert_eq!(row.choices.iter().filter(|c| c.3).count(), 1, "{}", row.key);
     }
     assert!(ws.options.report().contains("* turntable"));
+    assert!(ws.options.set("guide", "hidden"));
+    assert!(ws.render().ends_with("guide hidden\n"), "{}", ws.render());
+    assert_eq!(theme::Workspace::parse(&ws.render()).options.guide, theme::Guide::Hidden);
 }
 
 /// A drag turns the view about its pivot: that point stays where it is on
