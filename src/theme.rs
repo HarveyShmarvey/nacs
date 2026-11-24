@@ -1827,11 +1827,23 @@ pub enum Pivot {
     Cursor,
 }
 
+/// How much of the job guide the sidebar shows. Every act it offers is
+/// in the menu too, so hiding it takes nothing away.
+#[derive(Clone, Copy, Debug, PartialEq, Default)]
+pub enum Guide {
+    #[default]
+    Shown,
+    /// One line, the step it is on; its arrow unfolds it.
+    Folded,
+    Hidden,
+}
+
 /// What the options page holds. One line a field in the workspace file.
 #[derive(Clone, Copy, Debug, PartialEq, Default)]
 pub struct Options {
     pub orbit: Orbit,
     pub pivot: Pivot,
+    pub guide: Guide,
 }
 
 /// One option as the page, `nacs --options` and the workspace file spell
@@ -1864,6 +1876,15 @@ impl Options {
                     ("cursor", "Cursor", "the point the drag began on", self.pivot == Pivot::Cursor),
                 ],
             },
+            OptionRow {
+                key: "guide",
+                title: "Job guide",
+                choices: vec![
+                    ("shown", "Shown", "the seven steps at the top of the sidebar, the next one with its button", self.guide == Guide::Shown),
+                    ("folded", "Folded", "one line naming the step; its arrow unfolds it", self.guide == Guide::Folded),
+                    ("hidden", "Hidden", "no guide; every act is in the menu", self.guide == Guide::Hidden),
+                ],
+            },
         ]
     }
 
@@ -1876,6 +1897,9 @@ impl Options {
             ("orbit.about", "part") => self.pivot = Pivot::Part,
             ("orbit.about", "view") => self.pivot = Pivot::View,
             ("orbit.about", "cursor") => self.pivot = Pivot::Cursor,
+            ("guide", "shown") => self.guide = Guide::Shown,
+            ("guide", "folded") => self.guide = Guide::Folded,
+            ("guide", "hidden") => self.guide = Guide::Hidden,
             _ => return false,
         }
         true

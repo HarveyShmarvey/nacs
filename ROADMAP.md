@@ -752,6 +752,9 @@ One page. What is built, what is next, and the debts we know about.
    proposal is one row, its name and kind ("F7_Bore  CylinderBore · 2
    faces"); a face that is only a member of one has no row. The faces
    nothing was proposed for sit under a shut fold for each reason.
+   Thirteenth pass (2026-11-23): the job guide is an option (File >
+   Options…): shown, folded to its one line, or hidden. Every act it
+   offers is in the menu, so a user who knows the order loses nothing.
    Not built: moving the origin after features are accepted (import
    again); a margin on a blank that is the model's own outline (a plain
    prism); a third setup; a quarter turn between setups; a front and its flipped back in one program

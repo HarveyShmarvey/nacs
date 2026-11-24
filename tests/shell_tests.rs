@@ -2890,6 +2890,61 @@ fn the_options_page_sets_how_a_drag_turns_the_view() {
     shot(&mut h, "options-turntable-stops");
 }
 
+/// The job guide is an option: shown, folded to its one line, or hidden.
+/// A pick applies at once and is in the workspace file.
+#[test]
+fn the_job_guide_is_shown_folded_or_hidden_by_an_option() {
+    redirect_config_home();
+    let root = std::env::temp_dir().join(format!("nacs-shell-guide-{}", std::process::id()));
+    let _ = std::fs::remove_dir_all(&root);
+    let project = root.join("pad.cam");
+    std::fs::create_dir_all(&project).unwrap();
+    // A feature with no operation yet: the guide stands at Operations.
+    std::fs::write(
+        project.join("main.part"),
+        "units mm\nfeed 800\nplunge 300\nrapid_z 5\nclearance_z 25\nspindle 3000\n\
+         stock Box(w=200, l=120, h=30, x=0, y=0, z=0)\n\
+         tool T1 Endmill(dia=10.0)\n\
+         feature Pad ProfileBoss(extent=10.0\n    20 100\n    60 100\n    60 60\n    20 60\n)\n",
+    )
+    .unwrap();
+    let path = project.to_string_lossy().into_owned();
+    let part = nacs::parse::load_project(&path).expect("the project parses");
+    let cr = nacs::check_result::check_result(&part);
+    let mut h = Harness::builder()
+        .with_size(egui::Vec2::new(1200.0, 800.0))
+        .with_max_steps(64)
+        .wgpu()
+        .build_eframe(move |_cc| frontend::harness_app(&part, cr, &path, None, Workspace::default()));
+    settle(&mut h);
+    let title = "Job: step 6 of 7, Operations";
+    let pick = |h: &mut Harness<'static, ViewApp>, choice: &str| {
+        h.get_by_label(view::MENU_GLYPH).click();
+        settle(h);
+        submenu(h, "File").expect("the File submenu").click();
+        settle(h);
+        h.get_by_label("Options…").click();
+        settle(h);
+        h.get_by_label(choice).click();
+        settle(h);
+        h.key_press(egui::Key::Escape);
+        settle(h);
+    };
+    assert!(h.query_by_label(title).is_some() && h.query_all_by_label("Schedule operations").next().is_some(), "shown by default");
+    shot(&mut h, "guide-shown");
+    pick(&mut h, "Folded");
+    assert!(h.query_by_label(title).is_some(), "the one line stays");
+    assert!(h.query_all_by_label_contains("no operation yet").next().is_none(), "its steps are folded away");
+    shot(&mut h, "guide-folded");
+    pick(&mut h, "Hidden");
+    assert!(h.query_by_label(title).is_none(), "no guide");
+    shot(&mut h, "guide-hidden");
+    let file = std::fs::read_to_string(nacs::theme::workspace_path().unwrap()).unwrap();
+    assert!(file.contains("guide hidden\n"), "{file}");
+    drop(h);
+    let _ = std::fs::remove_dir_all(&root);
+}
+
 /// A chamfer nobody can cut yet (no chamfer mill is declared) is still said
 /// once the operations are scheduled, with the button that adds the tool.
 #[test]

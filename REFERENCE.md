@@ -126,7 +126,7 @@ Every act below is a palette entry (`p`), many a button; a key where one is boun
 - `form.open` — show the form on the selection — its card and its fields (the right-click menu's Edit…)  (·)
 - `layout.revert` — return the arrangement to its defaults  (0)
 - `theme.reload` — reload the active theme file now  (r)
-- `options` — the options page: how a drag turns the view, and what it turns about  (·)
+- `options` — the options page: how a drag turns the view, what it turns about, and how much of the job guide shows  (·)
 - `view.fit` — fit the scene to the viewport again  (f Home)
 - `view.focus` — focus the selection — an oblique look down the tool axis, fitted to the selected feature or operation; with nothing selected, the scene  (.)
 - `view.plan` — look straight down — the plan view, +X right, +Y up  (·)
