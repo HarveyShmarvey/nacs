@@ -898,6 +898,7 @@ fn build(
         runner_history: view::LineHistory::default(),
         transient: None,
         program_copy_pending: false,
+        sheet_copy_pending: false,
         project_switch: false,
         quick_shape: Default::default(),
         hover_feature: None,
@@ -1585,6 +1586,7 @@ pub struct ViewApp {
     /// A copy asked of `act`, done where the context is (the focus
     /// flag's pattern): `program.copy`, DESIGN.md §5.3.
     program_copy_pending: bool,
+    sheet_copy_pending: bool,
     /// A project just switched to by a drop (Phase 50 slice 3): a load
     /// that fails lands in a stance, not in "Not reloaded".
     project_switch: bool,
@@ -2070,6 +2072,11 @@ impl eframe::App for ViewApp {
         if std::mem::take(&mut self.output_copy_pending) {
             ui.ctx().copy_text(self.output.export(&self.project_path, self.opened_unix));
             self.transient = Some(("Output copied".to_string(), std::time::Instant::now()));
+        }
+        if std::mem::take(&mut self.sheet_copy_pending) {
+            let rows = view::setup_sheet(&self.part, &self.job_facts(), &self.clock);
+            ui.ctx().copy_text(view::setup_sheet_text(&rows));
+            self.transient = Some(("Setup sheet copied".to_string(), std::time::Instant::now()));
         }
         if self.program_copy_pending {
             self.program_copy_pending = false;
@@ -2708,6 +2715,10 @@ impl ViewApp {
             // under §1's law: no undo, no reload, the watch unmoved.
             "program.copy" => match &self.gcode {
                 Ok(_) => self.program_copy_pending = true,
+                Err(_) => self.edit_note = Some("Not copied — this project has errors, so no program was generated".to_string()),
+            },
+            "sheet.copy" => match &self.gcode {
+                Ok(_) => self.sheet_copy_pending = true,
                 Err(_) => self.edit_note = Some("Not copied — this project has errors, so no program was generated".to_string()),
             },
             "program.write" => match &self.gcode {
@@ -6378,9 +6389,9 @@ impl ViewApp {
         }
     }
 
-    /// The job's steps as the window knows them: `view::job_steps` on the
-    /// loaded project, report and proposals.
-    fn job_steps(&self) -> Vec<view::JobStep> {
+    /// What the window knows beside the part: the import's report, the
+    /// proposals, and whether the program is written.
+    fn job_facts(&self) -> view::JobFacts {
         // One stat a frame; the window repaints on input and twice a second.
         let main = self.part.sources.first();
         let has_file = main.is_some_and(|p| p.is_file());
@@ -6395,15 +6406,15 @@ impl ViewApp {
         let program = view::program_file_path(std::path::Path::new(&self.project_path));
         let stamp = |p: &std::path::Path| std::fs::metadata(p).and_then(|m| m.modified()).ok();
         let program_file = (program.is_file() && main.is_some_and(|m| stamp(&program) >= stamp(m))).then(|| Self::file_word(&program));
-        let facts = view::JobFacts { has_file, model, stock_waiting, waiting, notes: self.schedule_notes.clone(), refusal: self.check_result.refusal.clone(), program_file, to_schedule: self.schedule_lines, origin: self.report.as_ref().and_then(|r| r.as_ref().ok()).and_then(|r| r.origin.clone()) };
-        view::job_steps(&self.part, &facts)
+        view::JobFacts { has_file, model, stock_waiting, waiting, notes: self.schedule_notes.clone(), refusal: self.check_result.refusal.clone(), program_file, to_schedule: self.schedule_lines, origin: self.report.as_ref().and_then(|r| r.as_ref().ok()).and_then(|r| r.origin.clone()) }
     }
 
     /// The job guide at the top of the sidebar, over every tab, until the
     /// operations are scheduled: the seven steps in order, the next one with
     /// its sentence and its button.
     fn job_guide(&mut self, ui: &mut egui::Ui) {
-        let steps = self.job_steps();
+        let facts = self.job_facts();
+        let steps = view::job_steps(&self.part, &facts);
         let next = steps.iter().position(|s| s.state == view::StepState::Next);
         // A project opened with its operations already scheduled has no
         // use for a guide. One the guide has led this far keeps it to the
@@ -6455,6 +6466,17 @@ impl ViewApp {
                             }
                         });
                     }
+                }
+            }
+            // The job is done: what to take to the machine.
+            if next.is_none() {
+                ui.add_space(4.0);
+                ui.label(egui::RichText::new("At the machine").strong());
+                for (head, says) in view::setup_sheet(&self.part, &facts, &self.clock) {
+                    ui.add(egui::Label::new(format!("{head}  · {says}")).wrap());
+                }
+                if ui.small_button("Copy setup sheet").clicked() {
+                    act = Some("sheet.copy");
                 }
             }
         });

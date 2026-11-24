@@ -3838,6 +3838,7 @@ pub const ACTIONS: &[Action] = &[
     // copied or written beside the project. Keyless, as every write is.
     Action { id: "program.copy", key: "", sentence: "copy the whole program — the text nacs writes to stdout" },
     Action { id: "program.write", key: "", sentence: "write the program beside the project as <name>.nc — the text nacs -o writes" },
+    Action { id: "sheet.copy", key: "", sentence: "copy the setup sheet: the stock, the origin and its register, the tools to load, the run time — the text nacs --sheet prints" },
     Action { id: "origin.register", key: "", sentence: "choose the work offset the program selects: open the stock's card, where the header's work_offset takes G54 to G59, or several to run a part in each" },
     // The way in (DESIGN.md §1, Phase 50 slice 3): a main.part from nothing.
     Action { id: "project.new", key: "", sentence: "new project — write a main.part here, a stock and the header, every value shown first (nacs --init)" },
@@ -4213,13 +4214,8 @@ pub fn job_steps(part: &Part, facts: &JobFacts) -> Vec<JobStep> {
     let (needed, extra) = tools_wanted(&facts.notes);
     let features = part.features.len();
     let unscheduled = part.features.keys().filter(|name| !crate::schedule::consumed(part, name)).count();
-    // The origin is the point the machine holds in the program's register.
-    let registers = gcode::registers(part);
-    let register = match registers.len() {
-        1 => registers[0].clone(),
-        n => format!("{} in turn, {n} parts a run", registers.join(", ")),
-    };
-    let several = registers.len() > 1;
+    let register = registers_say(part);
+    let several = gcode::registers(part).len() > 1;
     let plural =|n: usize, one: &str, many: &str| if n == 1 { format!("1 {one}") } else { format!("{n} {many}") };
     // (name, done, what a done step says, what an open one says, its act)
     let mut rows: Vec<(&'static str, bool, String, String, Option<(String, &'static str)>)> = vec![
@@ -4233,11 +4229,10 @@ pub fn job_steps(part: &Part, facts: &JobFacts) -> Vec<JobStep> {
         (
             "Origin",
             model.is_some() || features > 0,
-            match (&facts.origin, model) {
-                (Some(o), _) => format!("{}; the program selects {register}", origin_says(o)),
-                (None, Some(_)) => format!("X0 Y0 Z0 as modeled; the program selects {register}"),
-                (None, None) if several || has_file => format!("where the features are written from; the program selects {register}"),
-                (None, None) => "where the features are written from".to_string(),
+            if facts.origin.is_some() || model.is_some() || several || has_file {
+                format!("{}; the program selects {register}", origin_place(facts))
+            } else {
+                origin_place(facts)
             },
             String::new(),
             Some(("Change the origin…".to_string(), "import.step")),
@@ -4294,6 +4289,49 @@ pub fn job_steps(part: &Part, facts: &JobFacts) -> Vec<JobStep> {
             }
         })
         .collect()
+}
+
+/// The program's register, or all of them when it runs at several. The
+/// origin is the point the machine holds there.
+fn registers_say(part: &Part) -> String {
+    let registers = gcode::registers(part);
+    match registers.len() {
+        1 => registers[0].clone(),
+        n => format!("{} in turn, {n} parts a run", registers.join(", ")),
+    }
+}
+
+/// Where the origin is on the part, as the import says it.
+fn origin_place(facts: &JobFacts) -> String {
+    match (&facts.origin, &facts.model) {
+        (Some(o), _) => origin_says(o),
+        (None, Some(_)) => "X0 Y0 Z0 as modeled".to_string(),
+        (None, None) => "where the features are written from".to_string(),
+    }
+}
+
+/// The setup sheet: what the machine needs before the program runs. The
+/// blank to clamp, where to set the register, the tools to load, and how
+/// long it cuts. Rows of (heading, text); `nacs --sheet` prints them and
+/// the finished job guide shows them.
+pub fn setup_sheet(part: &Part, facts: &JobFacts, clock: &Result<crate::cut_time::TimeReport, String>) -> Vec<(&'static str, String)> {
+    let mut rows = vec![
+        ("Program", facts.program_file.clone().unwrap_or_else(|| "not written yet".to_string())),
+        ("Stock", crate::outline::stock_row(&part.stock).trim_start_matches("stock").trim().to_string()),
+        ("Origin", format!("{}: {}", registers_say(part), origin_place(facts))),
+    ];
+    // Only the tools an operation runs: a declared tool nothing uses is
+    // not loaded.
+    let tools: Vec<String> = crate::outline::outline(part).tools.iter().filter(|t| !t.ops.is_empty()).map(|t| t.label.clone()).collect();
+    rows.extend(tools.into_iter().map(|t| ("Tool", t)));
+    let n = part.operations.len();
+    rows.push(("Run", format!("{n} operation{}; {}", if n == 1 { "" } else { "s" }, clock_line(clock))));
+    rows
+}
+
+/// The setup sheet as text, one row a line.
+pub fn setup_sheet_text(rows: &[(&'static str, String)]) -> String {
+    rows.iter().map(|(head, says)| format!("{head:<9}{says}\n")).collect()
 }
 
 /// The job steps as text, one a line: what `nacs --job` prints.
@@ -5546,6 +5584,7 @@ pub const MENU: &[(&str, &[(&str, &str)])] = &[
         ("project.reload", "Reload project"),
         ("program.write", "Write program (.nc)"),
         ("program.copy", "Copy program"),
+        ("sheet.copy", "Copy setup sheet"),
         ("review.accept_all", "Accept all proposals"),
         ("schedule", "Schedule operations"),
         ("options", "Options…"),

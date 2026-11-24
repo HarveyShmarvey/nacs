@@ -7372,6 +7372,17 @@ fn the_job_steps_name_the_next_thing_to_do() {
     assert_eq!(form.fields[0].value.as_deref(), Some("G54"));
     // The last step says the register before the program is written.
     assert!(job_steps(&plate, &JobFacts { has_file: true, ..JobFacts::default() })[6].says.contains("it selects G54 (File > Work offset"));
+    // The setup sheet says the same origin and register, the tools an
+    // operation runs and no others, and the clock.
+    let facts = JobFacts { has_file: true, origin: Some("center,center,top".to_string()), program_file: Some("plate.nc".to_string()), ..JobFacts::default() };
+    let sheet = view::setup_sheet(&several, &facts, &nacs::cut_time::time_report(&several));
+    let row = |head: &str| sheet.iter().filter(|(h, _)| *h == head).map(|(_, s)| s.clone()).collect::<Vec<_>>();
+    assert_eq!(row("Program"), ["plate.nc"]);
+    assert_eq!(row("Origin"), [format!("G54, G55, G56 in turn, 3 parts a run: {}", view::origin_says("center,center,top"))]);
+    let used: std::collections::BTreeSet<usize> = several.operations.iter().map(|o| o.tool_num).collect();
+    assert_eq!(row("Tool").len(), used.len());
+    assert!(row("Run")[0].contains(&view::mmss(nacs::cut_time::time_report(&several).unwrap().cutting_s())), "{:?}", row("Run"));
+    assert_eq!(view::setup_sheet_text(&sheet).lines().count(), sheet.len());
 
     // plate.cam is a finished project: only the program is left to write.
     let plate = nacs::parse::load_project("plate.cam").unwrap();
