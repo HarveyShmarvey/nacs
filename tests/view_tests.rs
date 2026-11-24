@@ -1802,6 +1802,23 @@ fn test_rebind_lines_are_judged_last_wins_unknown_dropped() {
     assert_eq!(resolved, vec![("palette.open", "Space".to_string())]);
 }
 
+/// The tool form opens on what the job waits for: the kind, and the one
+/// size the scheduler's note names.
+#[test]
+fn test_a_wanted_tool_names_its_form() {
+    use nacs::view::{tools_wanted, wanted_tool_form};
+    let kind = |i: usize| nacs::template::TOOL_SPECS[i].kind;
+    let (needed, extra) = tools_wanted(&[
+        "H1 waits for a tool: no Drill(dia=3) and no Endmill under 3 is declared".to_string(),
+        "Pad's chamfer waits for a ChamferMill(angle=90): none is declared".to_string(),
+        "Floor waits for an Endmill: none is declared".to_string(),
+    ]);
+    let forms: Vec<_> = needed.iter().chain(&extra).map(|w| wanted_tool_form(w).map(|(k, size)| (kind(k), size))).collect();
+    let pair = |k: &str, v: &str| Some((k.to_string(), v.to_string()));
+    assert_eq!(forms, vec![Some(("Drill", pair("dia", "3"))), Some(("Endmill", None)), Some(("ChamferMill", pair("angle", "90")))]);
+    assert_eq!(wanted_tool_form("a lathe"), None);
+}
+
 /// The options page's answers live in the workspace file: a default writes
 /// no line, a choice writes one, and a word nobody offers changes nothing.
 #[test]

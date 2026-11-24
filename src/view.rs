@@ -4189,6 +4189,21 @@ pub fn tools_wanted(notes: &[String]) -> (Vec<String>, Vec<String>) {
     (needed, extra)
 }
 
+/// The tool form a wanted tool opens on: the kind's place in
+/// `template::TOOL_SPECS`, and the one size the job names for it.
+/// "Drill(dia=3) or Endmill under 3" is a Drill with dia 3; "Endmill" is an
+/// Endmill with nothing filled.
+pub fn wanted_tool_form(wanted: &str) -> Option<(usize, Option<(String, String)>)> {
+    let kind_len = wanted.find(|c: char| !c.is_alphanumeric()).unwrap_or(wanted.len());
+    let kind = crate::template::TOOL_SPECS.iter().position(|s| s.kind == &wanted[..kind_len])?;
+    let size = wanted[kind_len..]
+        .strip_prefix('(')
+        .and_then(|rest| rest.split_once(')'))
+        .and_then(|(pair, _)| pair.split_once('='))
+        .map(|(k, v)| (k.trim().to_string(), v.trim().to_string()));
+    Some((kind, size))
+}
+
 /// The job as seven steps, model to program, so the window can say what
 /// comes next.
 pub fn job_steps(part: &Part, facts: &JobFacts) -> Vec<JobStep> {

@@ -745,6 +745,9 @@ One page. What is built, what is next, and the debts we know about.
    until a line says otherwise; several registers run a part in each;
    emptied, the line is removed). File > Work offset… opens it, and the
    guide's Program step names the register before the program is written.
+   Eleventh pass (2026-11-23): New tool… opens on the tool the job
+   waits for, its kind chosen and the one size the scheduler names
+   filled (a ChamferMill at 90, a Drill of 3), not on an empty Endmill.
    Not built: moving the origin after features are accepted (import
    again); a margin on a blank that is the model's own outline (a plain
    prism); a third setup; a quarter turn between setups; a front and its flipped back in one program
