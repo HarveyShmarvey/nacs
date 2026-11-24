@@ -2914,6 +2914,8 @@ fn the_job_guide_says_what_is_left_uncut_for_want_of_a_tool() {
     h.query_all_by_label("New tool…").next().expect("the guide's button").click();
     settle(&mut h);
     assert!(h.query_all_by_label("New tool").next().is_some(), "the tool form opened");
+    assert!(h.query_all_by_label_contains("angle (°)").next().is_some(), "it is the chamfer mill's form");
+    shot(&mut h, "tool-form-wanted");
     drop(h);
     let _ = std::fs::remove_dir_all(&root);
 }

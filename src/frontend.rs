@@ -2758,7 +2758,18 @@ impl ViewApp {
                 self.layout.apply(DockAction::OpenForm);
             }
             "tool.new" => {
-                self.new_form = Some(NewForm::for_tool(0, crate::template::lowest_undeclared_tool(&self.part)));
+                // The form opens on the tool the job is waiting for, its
+                // one named size filled; an Endmill when nothing waits.
+                let (needed, extra) = view::tools_wanted(&self.schedule_notes);
+                let (kind, size) = needed.iter().chain(&extra).find_map(|w| view::wanted_tool_form(w)).unwrap_or((0, None));
+                let mut form = NewForm::for_tool(kind, crate::template::lowest_undeclared_tool(&self.part));
+                if let Some((key, value)) = size {
+                    let keys = crate::template::tool_keys(&crate::template::TOOL_SPECS[kind]);
+                    if let Some(i) = keys.iter().position(|k| k.name == key) {
+                        form.values[i] = value;
+                    }
+                }
+                self.new_form = Some(form);
                 self.layout.apply(DockAction::OpenForm);
             }
             "op.new" => self.new_operation_on_selected(),
