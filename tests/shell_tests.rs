@@ -2829,6 +2829,56 @@ fn the_work_offset_is_chosen_on_the_stocks_card() {
     let _ = std::fs::remove_dir_all(project.parent().unwrap());
 }
 
+/// File > Options… opens the options page. A drag in the viewport reads
+/// its answers: free goes over the top, a turntable stops straight down,
+/// and a pick is in the workspace file at once.
+#[test]
+fn the_options_page_sets_how_a_drag_turns_the_view() {
+    let mut h = open_pixels(Workspace::default());
+    settle(&mut h);
+    let drag_down = |h: &mut Harness<'static, ViewApp>| {
+        let from = egui::pos2(520.0, 250.0);
+        h.hover_at(from);
+        h.step();
+        h.drag_at(from);
+        h.step();
+        for k in 1..=30 {
+            h.hover_at(egui::pos2(from.x, from.y + 10.0 * k as f32));
+            h.step();
+        }
+        h.drop_at(egui::pos2(from.x, from.y + 300.0));
+        h.step();
+    };
+    let center = h.state().camera().target;
+    drag_down(&mut h);
+    let cam = h.state().camera();
+    assert!(cam.pitch.abs() > std::f64::consts::FRAC_PI_2, "free by default: the tilt went over the top, {}", cam.pitch);
+    let (x, y, _) = cam.project(center);
+    assert!(x.abs() < 0.5 && y.abs() < 0.5, "the part's center stayed put: {x},{y}");
+    shot(&mut h, "options-free-over-the-top");
+    h.get_by_label(view::MENU_GLYPH).click();
+    settle(&mut h);
+    submenu(&h, "File").expect("the File submenu").click();
+    settle(&mut h);
+    h.get_by_label("Options…").click();
+    settle(&mut h);
+    shot(&mut h, "options-page");
+    h.get_by_label("Turntable").click();
+    settle(&mut h);
+    assert_eq!(h.state().options().orbit, nacs::theme::Orbit::Turntable);
+    let file = std::fs::read_to_string(nacs::theme::workspace_path().unwrap()).unwrap();
+    assert!(file.contains("orbit turntable\n"), "{file}");
+    shot(&mut h, "options-page-turntable");
+    h.key_press(egui::Key::Escape);
+    settle(&mut h);
+    assert!(h.query_by_label("Turntable").is_none(), "Esc closes the page");
+    // Twice: the first drag has to come back from upside down.
+    drag_down(&mut h);
+    drag_down(&mut h);
+    assert_eq!(h.state().camera().pitch, std::f64::consts::FRAC_PI_2, "a turntable stops straight down");
+    shot(&mut h, "options-turntable-stops");
+}
+
 /// A chamfer nobody can cut yet (no chamfer mill is declared) is still said
 /// once the operations are scheduled, with the button that adds the tool.
 #[test]

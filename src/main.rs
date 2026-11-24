@@ -83,6 +83,12 @@ fn main() {
         print!("{}", usage_text());
         return;
     }
+    // `--options`: the options page as the workspace file holds it. No
+    // project: the options are the user's, not the part's.
+    if args.iter().any(|a| a == "--options") {
+        print!("{}", nacs::theme::load_full_workspace().options.report());
+        return;
+    }
     args.retain(|a| {
         if a == "--patterns" {
             patterns_report = true;
@@ -1343,6 +1349,7 @@ fn usage_text() -> String {
         "                                             open the window on the project (no path: the last one opened)",
         "    --outline                                stock, features and operations in run order",
         "    --job                                    the seven steps from model to program, and which is next",
+        "    --options                                the window's options and what each is set to (File > Options…)",
         "    --check[=json]                           validate and lint; nothing printed means nothing found",
         "Measure",
         "    --time-report                            the cut-time model, per operation and whole",

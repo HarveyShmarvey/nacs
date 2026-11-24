@@ -390,6 +390,34 @@ impl Camera {
         }
     }
 
+    /// Turn the view by a drag: `dyaw` about world +Z, `dpitch` toward
+    /// straight down. A turntable stops the tilt at straight down and
+    /// straight up; a free one goes on over the top. `pivot` is the world
+    /// point that stays where it is on the screen; `None` is the target,
+    /// the middle of the viewport.
+    pub fn orbit(&mut self, dyaw: f64, dpitch: f64, style: crate::theme::Orbit, pivot: Option<[f64; 3]>) {
+        use std::f64::consts::{FRAC_PI_2, PI, TAU};
+        // The target as the pivot sees it, in the screen's own axes: kept
+        // through the turn, it leaves the pivot where it was drawn.
+        let basis = |c: &Camera| {
+            let (r, u) = (c.right(), c.up());
+            [r, u, [r[1] * u[2] - r[2] * u[1], r[2] * u[0] - r[0] * u[2], r[0] * u[1] - r[1] * u[0]]]
+        };
+        let held = pivot.map(|c| (c, basis(self).map(|b| (0..3).map(|k| (self.target[k] - c[k]) * b[k]).sum::<f64>())));
+        self.yaw += dyaw;
+        self.pitch = match style {
+            crate::theme::Orbit::Turntable => (self.pitch + dpitch).clamp(-FRAC_PI_2, FRAC_PI_2),
+            // Kept within one turn, so a focus never unwinds several.
+            crate::theme::Orbit::Free => (self.pitch + dpitch + PI).rem_euclid(TAU) - PI,
+        };
+        if let Some((c, along)) = held {
+            let b = basis(self);
+            for k in 0..3 {
+                self.target[k] = c[k] + along[0] * b[0][k] + along[1] * b[1][k] + along[2] * b[2][k];
+            }
+        }
+    }
+
     /// A standard view (DESIGN.md §5.5, 2026-09-17): the stance's yaw and
     /// pitch, the target and the scale kept — where you were looking, from
     /// a drawing's direction. Plan is `Camera::plan`'s stance (+X right, +Y
@@ -557,7 +585,7 @@ pub fn frame_point(paths: &[OpPath], op: usize) -> Option<[f64; 3]> {
 }
 
 /// The box's center — one home for the arithmetic both fits share.
-fn aabb_center(aabb: [f64; 6]) -> [f64; 3] {
+pub fn aabb_center(aabb: [f64; 6]) -> [f64; 3] {
     [(aabb[0] + aabb[3]) / 2.0, (aabb[1] + aabb[4]) / 2.0, (aabb[2] + aabb[5]) / 2.0]
 }
 
@@ -3789,6 +3817,7 @@ pub const ACTIONS: &[Action] = &[
     // `f` (and Home, `ALSO`) since 2026-09-17 — §9's ban lifted for a
     // named list (DESIGN.md §9, Phase 23 slice 1): the first frame fits
     // once, and a fit is an act a hand reaches ten times an hour.
+    Action { id: "options", key: "", sentence: "the options page: how a drag turns the view, and what it turns about" },
     Action { id: "view.fit", key: "f", sentence: "fit the scene to the viewport again" },
     // `.` since 2026-10-04 (DESIGN.md §9's named list grows by one, Phase
     // 41 slice 1): the focus is an ACT — selection framing centres and
@@ -5504,6 +5533,7 @@ pub const MENU: &[(&str, &[(&str, &str)])] = &[
         ("program.copy", "Copy program"),
         ("review.accept_all", "Accept all proposals"),
         ("schedule", "Schedule operations"),
+        ("options", "Options…"),
     ]),
     ("Git", &[
         ("git.fetch", "Fetch"),

@@ -1802,6 +1802,57 @@ fn test_rebind_lines_are_judged_last_wins_unknown_dropped() {
     assert_eq!(resolved, vec![("palette.open", "Space".to_string())]);
 }
 
+/// The options page's answers live in the workspace file: a default writes
+/// no line, a choice writes one, and a word nobody offers changes nothing.
+#[test]
+fn test_the_workspace_file_carries_the_options() {
+    let mut ws = theme::Workspace::default();
+    assert!(!ws.render().contains("orbit"), "the defaults write nothing");
+    assert_eq!((ws.options.orbit, ws.options.pivot), (theme::Orbit::Free, theme::Pivot::Part));
+    assert!(ws.options.set("orbit", "turntable") && ws.options.set("orbit.about", "cursor"));
+    assert!(ws.render().contains("orbit turntable\norbit.about cursor\n"), "{}", ws.render());
+    assert_eq!(theme::Workspace::parse(&ws.render()), ws, "parse(render(x)) == x");
+    assert_eq!(theme::Workspace::parse("orbit sideways\norbit.about moon\n").options, theme::Options::default());
+    // Each option's chosen row is the one the file names.
+    for row in ws.options.rows() {
+        assert_eq!(row.choices.iter().filter(|c| c.3).count(), 1, "{}", row.key);
+    }
+    assert!(ws.options.report().contains("* turntable"));
+}
+
+/// A drag turns the view about its pivot: that point stays where it is on
+/// the screen, wherever the view was panned to. A turntable stops at
+/// straight down; a free one goes over the top.
+#[test]
+fn test_an_orbit_turns_about_its_pivot() {
+    use nacs::view::Camera;
+    let mut cam = Camera::default_orbit();
+    cam.scale = 3.0;
+    cam.target = [40.0, -12.0, 7.0];
+    let pivot = [5.0, 5.0, -2.0];
+    let at = |c: &Camera| c.project(pivot);
+    let (x0, y0, _) = at(&cam);
+    let far = [80.0, 3.0, 1.0];
+    let before = cam.project(far);
+    for _ in 0..40 {
+        cam.orbit(-0.07, 0.11, theme::Orbit::Free, Some(pivot));
+        let (x, y, _) = at(&cam);
+        assert!((x - x0).abs() < 1e-3 && (y - y0).abs() < 1e-3, "the pivot moved: {x},{y} from {x0},{y0}");
+    }
+    let after = cam.project(far);
+    assert!((after.0 - before.0).abs() > 1.0 || (after.1 - before.1).abs() > 1.0, "everything else turned");
+    assert!(cam.pitch.abs() <= std::f64::consts::PI, "a free tilt stays within one turn");
+    // Free went past straight down on the way; a turntable stops there.
+    let mut free = Camera::default_orbit();
+    let mut table = Camera::default_orbit();
+    free.orbit(0.0, 1.5, theme::Orbit::Free, None);
+    table.orbit(0.0, 1.5, theme::Orbit::Turntable, None);
+    assert!(free.pitch > std::f64::consts::FRAC_PI_2);
+    assert_eq!(table.pitch, std::f64::consts::FRAC_PI_2);
+    // No pivot is the middle of the viewport: the target stays.
+    assert_eq!(free.target, [0.0; 3]);
+}
+
 /// The widened workspace file (slice 4): theme, rebindings and the
 /// x`, and a malformed extra line is dropped without touching the rest.
 #[test]
@@ -1812,6 +1863,7 @@ fn test_the_workspace_file_carries_keys_and_theme() {
         zoom: None,
         project: None,
         shell: None,
+        options: theme::Options::default(),
         keys: vec![("palette.open".to_string(), "Space".to_string())],
     };
     assert_eq!(theme::Workspace::parse(&ws.render()), ws, "parse(render(x)) == x");

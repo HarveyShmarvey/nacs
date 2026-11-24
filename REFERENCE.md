@@ -126,6 +126,7 @@ Every act below is a palette entry (`p`), many a button; a key where one is boun
 - `form.open` — show the form on the selection — its card and its fields (the right-click menu's Edit…)  (·)
 - `layout.revert` — return the arrangement to its defaults  (0)
 - `theme.reload` — reload the active theme file now  (r)
+- `options` — the options page: how a drag turns the view, and what it turns about  (·)
 - `view.fit` — fit the scene to the viewport again  (f Home)
 - `view.focus` — focus the selection — an oblique look down the tool axis, fitted to the selected feature or operation; with nothing selected, the scene  (.)
 - `view.plan` — look straight down — the plan view, +X right, +Y up  (·)
@@ -200,6 +201,7 @@ The job's verbs first, then the submenus; every row is an act above, named here 
 - Copy program — `program.copy`
 - Accept all proposals — `review.accept_all`
 - Schedule operations — `schedule`
+- Options… — `options`
 
 **Git**
 - Fetch — `git.fetch`

@@ -1796,11 +1796,102 @@ pub struct Workspace {
     /// `COMSPEC` on Windows, `/bin/sh` elsewhere. Declared, never guessed
     /// from `$SHELL` or PATH.
     pub shell: Option<String>,
+    /// The options page's answers (`orbit`, `orbit.about`): how a drag
+    /// turns the view. A default writes no line.
+    pub options: Options,
 }
 
 impl Default for Workspace {
     fn default() -> Self {
-        Self { layout: Layout::default(), theme: None, keys: Vec::new(), zoom: None, project: None, shell: None }
+        Self { layout: Layout::default(), theme: None, keys: Vec::new(), zoom: None, project: None, shell: None, options: Options::default() }
+    }
+}
+
+/// How a drag turns the view. Both turn about world Z for a sideways drag
+/// and tilt for an up-and-down one; they differ at the poles.
+#[derive(Clone, Copy, Debug, PartialEq, Default)]
+pub enum Orbit {
+    /// The tilt goes on over the top: the part can be seen upside down.
+    #[default]
+    Free,
+    /// The tilt stops at straight down and straight up.
+    Turntable,
+}
+
+/// The point a drag turns the view about: it stays where it is on screen.
+#[derive(Clone, Copy, Debug, PartialEq, Default)]
+pub enum Pivot {
+    #[default]
+    Part,
+    View,
+    Cursor,
+}
+
+/// What the options page holds. One line a field in the workspace file.
+#[derive(Clone, Copy, Debug, PartialEq, Default)]
+pub struct Options {
+    pub orbit: Orbit,
+    pub pivot: Pivot,
+}
+
+/// One option as the page, `nacs --options` and the workspace file spell
+/// it: its key, its title, and each choice as (word, label, sentence, on).
+pub struct OptionRow {
+    pub key: &'static str,
+    pub title: &'static str,
+    pub choices: Vec<(&'static str, &'static str, &'static str, bool)>,
+}
+
+impl Options {
+    /// Every option with its choices, the chosen one marked. The one table:
+    /// the page draws it, the CLI prints it, the file is read through it.
+    pub fn rows(&self) -> Vec<OptionRow> {
+        vec![
+            OptionRow {
+                key: "orbit",
+                title: "Orbit style",
+                choices: vec![
+                    ("free", "Free turntable", "a sideways drag turns about Z, an up-and-down drag tilts, and the tilt goes on over the top", self.orbit == Orbit::Free),
+                    ("turntable", "Turntable", "the same, but the tilt stops at straight down and straight up", self.orbit == Orbit::Turntable),
+                ],
+            },
+            OptionRow {
+                key: "orbit.about",
+                title: "Rotate about",
+                choices: vec![
+                    ("part", "Part center", "the center of the part and its stock", self.pivot == Pivot::Part),
+                    ("view", "View center", "whatever is at the middle of the viewport", self.pivot == Pivot::View),
+                    ("cursor", "Cursor", "the point the drag began on", self.pivot == Pivot::Cursor),
+                ],
+            },
+        ]
+    }
+
+    /// Choose by the file's words. An unknown key or word changes nothing
+    /// and answers false.
+    pub fn set(&mut self, key: &str, word: &str) -> bool {
+        match (key, word) {
+            ("orbit", "free") => self.orbit = Orbit::Free,
+            ("orbit", "turntable") => self.orbit = Orbit::Turntable,
+            ("orbit.about", "part") => self.pivot = Pivot::Part,
+            ("orbit.about", "view") => self.pivot = Pivot::View,
+            ("orbit.about", "cursor") => self.pivot = Pivot::Cursor,
+            _ => return false,
+        }
+        true
+    }
+
+    /// What `nacs --options` prints: each option, its choices, `*` on the
+    /// chosen one.
+    pub fn report(&self) -> String {
+        let mut out = String::new();
+        for row in self.rows() {
+            out.push_str(&format!("{} ({})\n", row.title, row.key));
+            for (word, label, says, on) in row.choices {
+                out.push_str(&format!("  {} {word:<10} {label}: {says}\n", if on { '*' } else { ' ' }));
+            }
+        }
+        out
     }
 }
 
@@ -1827,6 +1918,13 @@ impl Workspace {
         }
         if let Some(z) = self.zoom {
             out.push_str(&format!("ui.zoom {z}\n"));
+        }
+        // Only what differs from the defaults is written.
+        let unset = Options::default().rows();
+        for (row, base) in self.options.rows().iter().zip(&unset) {
+            if let Some((word, ..)) = row.choices.iter().zip(&base.choices).find(|(c, b)| c.3 && !b.3).map(|(c, _)| c) {
+                out.push_str(&format!("{} {word}\n", row.key));
+            }
         }
         out
     }
@@ -1855,6 +1953,9 @@ impl Workspace {
                         ws.zoom = Some(z.clamp(ZOOM_MIN, ZOOM_MAX));
                     }
                 }
+            }
+            else if let Some((key, word)) = line.split_once(' ') {
+                ws.options.set(key, word.trim());
             }
             // A `toolbar` line is a line older files wrote for a surface
             // that no longer exists: unknown, and dropped.

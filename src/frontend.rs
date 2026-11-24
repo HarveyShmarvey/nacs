@@ -149,6 +149,13 @@ impl ViewApp {
     pub fn op_cursor(&self) -> usize {
         self.op_cursor
     }
+    /// The camera and the options a drag reads.
+    pub fn camera(&self) -> Camera {
+        self.cam
+    }
+    pub fn options(&self) -> crate::theme::Options {
+        self.options
+    }
     /// The Output log's lines as the dock prints them (Phase 54 slice 3).
     pub fn output_lines(&self) -> Vec<String> {
         self.output.events.iter().map(view::OutputLog::render).collect()
@@ -928,6 +935,9 @@ fn build(
         layout,
         raw_keys: workspace.keys,
         shell: workspace.shell,
+        options: workspace.options,
+        options_open: false,
+        orbit_pivot: None,
         keymap,
         palette_open: false,
         palette_query: String::new(),
@@ -1662,6 +1672,11 @@ pub struct ViewApp {
     /// The workspace's `shell <program>` (Phase 59 slice 4, fork 4A),
     /// read for the runner's `sh` and written back as read.
     shell: Option<String>,
+    /// The options page's answers, and whether the page is up.
+    options: crate::theme::Options,
+    options_open: bool,
+    /// The point this drag turns the view about, taken when it began.
+    orbit_pivot: Option<[f64; 3]>,
     /// The keyboard, resolved: action id → key, the
     /// defaults re-bound by the file's judged lines. Read-only after
     /// build; every press becomes `act(id)` — the ONE dispatcher the
@@ -2370,6 +2385,49 @@ impl eframe::App for ViewApp {
                 self.act("dismiss");
             }
         }
+        // The options page: `theme::Options::rows`, a radio a choice. A
+        // pick takes effect at once and is saved at once.
+        if self.options_open {
+            let mut close = false;
+            let mut pick: Option<(&'static str, &'static str)> = None;
+            let rows = self.options.rows();
+            let shown = egui::Window::new("Options")
+                .order(egui::Order::Foreground)
+                .collapsible(false)
+                .resizable(false)
+                .anchor(egui::Align2::CENTER_CENTER, egui::Vec2::ZERO)
+                .show(ui.ctx(), |ui| {
+                    ui.horizontal(|ui| {
+                        ui.label(egui::RichText::new("Esc closes · click outside closes").small().weak());
+                        ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                            if ui.small_button("×").on_hover_text(view::door_hover("dismiss", "close the options")).clicked() {
+                                close = true;
+                            }
+                        });
+                    });
+                    for row in &rows {
+                        ui.add_space(6.0);
+                        ui.strong(row.title);
+                        for (word, label, says, on) in &row.choices {
+                            ui.horizontal(|ui| {
+                                if ui.radio(*on, *label).clicked() {
+                                    pick = Some((row.key, word));
+                                }
+                                ui.label(egui::RichText::new(*says).small().weak());
+                            });
+                        }
+                    }
+                });
+            if let Some((key, word)) = pick {
+                self.options.set(key, word);
+                if let Err(reason) = crate::theme::save_workspace(&self.workspace_snapshot()) {
+                    startup_say(format!("workspace not saved: {reason}"));
+                }
+            }
+            if close || shown.is_some_and(|r| r.response.clicked_elsewhere() && !self.overlay_opened_this_frame) {
+                self.act("dismiss");
+            }
+        }
         // The quick-action palette: one text field,
         // a substring filter over the inventory, Enter or a click runs the
         // selection through the same `act` every key goes through. Zed's
@@ -2492,6 +2550,7 @@ impl ViewApp {
             theme: self.theme_choice.clone(),
             keys: self.raw_keys.clone(),
             shell: self.shell.clone(),
+            options: self.options,
             // Written only when it is not 1: a file that never mentions
             // the zoom means the same as before the line existed.
             zoom: Some(self.zoom).filter(|z| (z - 1.0).abs() > 1e-6),
@@ -2512,6 +2571,11 @@ impl ViewApp {
             // §5.4, amended after the review): the palette, else the help,
             // else the unsent drafts, else the creation form — so closing
             // the help never drops a form full of typed values.
+            "options" => {
+                self.options_open = !self.options_open;
+                self.overlay_opened_this_frame |= self.options_open;
+            }
+            "dismiss" if self.options_open && !self.palette_open => self.options_open = false,
             "dismiss" => match view::dismiss_target(self.help, self.palette_open, !self.field_edit.is_empty(), self.new_form.is_some()) {
                 view::Dismiss::Palette => self.palette_open = false,
                 view::Dismiss::Help => self.help = false,
@@ -7247,9 +7311,19 @@ impl ViewApp {
                 // was to help, and the user has taken over.
                 self.tween = None;
                 let d = resp.drag_delta();
-                self.cam.yaw -= f64::from(d.x) * 0.01;
-                self.cam.pitch = (self.cam.pitch + f64::from(d.y) * 0.01)
-                    .clamp(-std::f64::consts::FRAC_PI_2, std::f64::consts::FRAC_PI_2);
+                // What the view turns about is the options page's answer;
+                // the cursor's point is taken once, where the drag began.
+                if resp.drag_started_by(egui::PointerButton::Primary) || self.orbit_pivot.is_none() {
+                    let c = rect.center();
+                    self.orbit_pivot = match self.options.pivot {
+                        crate::theme::Pivot::Part => Some(view::aabb_center(self.fit_bb)),
+                        crate::theme::Pivot::View => Some(self.cam.target),
+                        crate::theme::Pivot::Cursor => Some(resp.interact_pointer_pos().map_or(self.cam.target, |p| self.cam.unproject_screen(f64::from(p.x - c.x), f64::from(c.y - p.y)))),
+                    };
+                }
+                self.cam.orbit(-f64::from(d.x) * 0.01, f64::from(d.y) * 0.01, self.options.orbit, self.orbit_pivot);
+            } else {
+                self.orbit_pivot = None;
             }
             if resp.dragged_by(egui::PointerButton::Secondary)
                 || resp.dragged_by(egui::PointerButton::Middle)
