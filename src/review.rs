@@ -552,9 +552,16 @@ pub fn rows(report: &Report, part: &parse::Part, rejected: &[String]) -> Vec<cra
                 _ => None,
             };
             let name = feature_name_of(statement).unwrap_or("");
+            // A proposal reads as the feature it declares: its name, its
+            // kind, and how many faces it accounts for when more than one.
+            // A member keeps its face's own line, for the card.
+            let kind = statement.split_whitespace().nth(2).and_then(|w| w.split('(').next()).unwrap_or("");
+            let faces = report.faces.iter().filter(|o| in_group(o)).count();
             let head = match &member_of {
                 Some(g) => format!("{}  {}  — member of {g}", f.id, f.surface),
-                None => format!("{}  {}", f.id, f.surface),
+                None if name.is_empty() => format!("{}  {}", f.id, f.surface),
+                None if faces > 1 => format!("{name}  {kind}  · {faces} faces"),
+                None => format!("{name}  {kind}"),
             };
             out.push(ReviewRow {
                 face: i,

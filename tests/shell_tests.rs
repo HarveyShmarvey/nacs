@@ -1479,9 +1479,16 @@ fn import_into_fresh_folder(project_name: &str, fixture: &str, stock_row: &str) 
 #[test]
 fn an_import_into_an_empty_folder_is_reviewed_into_a_project() {
     let Some((mut h, root, project)) = import_into_fresh_folder("lplate.cam", "tests/fixtures/l_plate.step", "Stock  Profile of 6 points") else { return };
-    // The features are listed too, every face once.
-    assert!(h.query_by_label_contains("F1  plane").is_some(), "the outer profile's wall");
-    assert!(h.query_by_label_contains("F8  plane").is_some(), "the top");
+    // The features are listed too: one row a proposed feature, and no
+    // row for a face that is only a member of one.
+    let rows = h.state().review_rows().to_vec();
+    let mut listed = 0;
+    for r in rows.iter().filter(|r| r.statement.is_some()) {
+        let on_screen = h.query_all_by_label_contains(&r.head).next().is_some();
+        assert_eq!(on_screen, r.member_of.is_none(), "{}", r.head);
+        listed += usize::from(on_screen);
+    }
+    assert!(listed > 0 && listed < rows.iter().filter(|r| r.statement.is_some()).count(), "fewer rows than proposed faces");
     h.get_by_label("Accept into project").click();
     settle(&mut h);
     let main = project.join("main.part");
@@ -2131,7 +2138,7 @@ fn an_import_of_a_round_part_proposes_the_bounding_cylinder() {
 /// the edited text, the row then in the project.
 #[test]
 fn a_review_row_is_rejected_or_edited_before_it_is_accepted() {
-    let (mut h, project) = open_copy("disc_step.cam");
+    let (mut h, project) = open_copy_pixels("disc_step.cam");
     std::fs::copy("tests/fixtures/disc_step.report.golden.json", project.join("report.json")).unwrap();
     // The watch picks the report up; the tab then carries the count.
     let mut seen = false;
@@ -2146,8 +2153,12 @@ fn a_review_row_is_rejected_or_edited_before_it_is_accepted() {
     }
     assert!(seen, "the watch picked the report up and the Review tab counts its proposals");
     settle(&mut h);
-    assert!(h.query_all_by_label("F7  cylinder").next().is_some(), "the Review lists the report's rows");
-    h.get_by_label("F7  cylinder").click();
+    shot(&mut h, "review-features");
+    // A feature a row; the bore's second face has none of its own.
+    assert!(h.query_all_by_label("F7_Bore  CylinderBore  · 2 faces").next().is_some(), "the Review lists the proposed features");
+    assert!(h.query_all_by_label_contains("F12  plane").next().is_none(), "a member face is its feature's row");
+    assert!(h.query_all_by_label_contains("F2  plane").next().is_none(), "the declined faces are under a shut fold");
+    h.get_by_label("F7_Bore  CylinderBore  · 2 faces").click();
     settle(&mut h);
     h.get_by_label("Reject").click();
     settle(&mut h);
@@ -2157,7 +2168,7 @@ fn a_review_row_is_rejected_or_edited_before_it_is_accepted() {
     let mut marked = false;
     for _ in 0..50 {
         settle(&mut h);
-        if h.query_all_by_label("F7  cylinder  · rejected").next().is_some() && h.query_all_by_label("F12  plane  — member of F7_Bore  · rejected").next().is_some() {
+        if h.query_all_by_label("F7_Bore  CylinderBore  · 2 faces  · rejected").next().is_some() && h.state().review_rows().iter().any(|r| r.id == "F12" && r.rejected) {
             marked = true;
             break;
         }
@@ -2166,7 +2177,7 @@ fn a_review_row_is_rejected_or_edited_before_it_is_accepted() {
     assert!(marked, "the row and its group-mate read as rejected: {:?}", h.state().review_rows().iter().filter(|r| r.rejected).map(|r| r.id.as_str()).collect::<Vec<_>>());
     assert!(h.query_all_by_label("Take the rejection back").next().is_some(), "the card offers the way back");
     // The edit: the card's statement, replaced wholesale, then accepted.
-    h.get_by_label("F5  plane").click();
+    h.get_by_label("F5_Top  Plane").click();
     settle(&mut h);
     let field = h.query_all_by_role(Role::MultilineTextInput).find(|n| n.value().is_some_and(|v| v.contains("F5_Top"))).expect("the statement is a text field on the card");
     field.focus();
@@ -2184,7 +2195,7 @@ fn a_review_row_is_rejected_or_edited_before_it_is_accepted() {
     let mut in_project = false;
     for _ in 0..50 {
         settle(&mut h);
-        if h.query_all_by_label("F5  plane  · in project").next().is_some() {
+        if h.query_all_by_label("F5_Top  Plane  · in project").next().is_some() {
             in_project = true;
             break;
         }
