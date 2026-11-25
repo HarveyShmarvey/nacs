@@ -72,6 +72,7 @@ fn main() {
     let mut tool_line = false;
     let mut show_outline = false;
     let mut show_job = false;
+    let mut show_sheet = false;
     let mut show_schedule = false;
     let mut show_view = false;
     let mut serve_mcp = false;
@@ -135,6 +136,10 @@ fn main() {
             false
         } else if a == "--job" {
             show_job = true;
+            false
+        } else if a == "--sheet" {
+            show_job = true;
+            show_sheet = true;
             false
         } else if a == "--schedule" {
             show_schedule = true;
@@ -442,7 +447,7 @@ fn main() {
         .count()
         > 1
     {
-        eprintln!("error: --check, --view, --outline, --job, --schedule, --template, --new, --rest-report, --time-report, --patterns, --assembly-report, --tool-line, --theme-check, --review, --accept and --mcp are one artifact each — pick one");
+        eprintln!("error: --check, --view, --outline, --job, --sheet, --schedule, --template, --new, --rest-report, --time-report, --patterns, --assembly-report, --tool-line, --theme-check, --review, --accept and --mcp are one artifact each — pick one");
         process::exit(2);
     }
     // `--theme` dresses the window and nothing else — passed anywhere
@@ -563,7 +568,7 @@ fn main() {
             }
             // The job's steps answer on a folder with nothing in it: step 1.
             if show_job && !std::path::Path::new(&path_arg).join("main.part").exists() {
-                job_mode(&path_arg, &nacs::view::empty_project_part(std::path::Path::new(&path_arg)), false, Some("no main.part yet"));
+                job_mode(&path_arg, &nacs::view::empty_project_part(std::path::Path::new(&path_arg)), false, Some("no main.part yet"), show_sheet);
             }
             // An unreadable path has no check result to render, in any mode.
             eprintln!("{}", msg);
@@ -624,7 +629,7 @@ fn main() {
     }
     if show_job {
         let refusal = nacs::check_result::check_result(&part).refusal;
-        job_mode(&path_arg, &part, true, refusal.as_deref());
+        job_mode(&path_arg, &part, true, refusal.as_deref(), show_sheet);
     }
     // The run lines for every feature no run names yet (ROADMAP item 1,
     // slice 10): the project's own tools, picked by rule, each line parsed
@@ -740,7 +745,7 @@ fn view_mode(_part: parse::Part, _title: &str, _theme: Option<String>, _frame_na
 
 /// `--job`: the seven steps from model to program and which is next, read
 /// off the project folder as the window's guide reads them.
-fn job_mode(dir: &str, part: &nacs::parse::Part, has_file: bool, refusal: Option<&str>) -> ! {
+fn job_mode(dir: &str, part: &nacs::parse::Part, has_file: bool, refusal: Option<&str>, sheet: bool) -> ! {
     let d = std::path::Path::new(dir);
     let d = if d.is_file() { d.parent().unwrap_or(d) } else { d };
     // The import's report, where this build can read one.
@@ -763,6 +768,16 @@ fn job_mode(dir: &str, part: &nacs::parse::Part, has_file: bool, refusal: Option
     let stamp = |p: &std::path::Path| std::fs::metadata(p).and_then(|m| m.modified()).ok();
     let program_file = (program.is_file() && stamp(&program) >= stamp(&d.join("main.part"))).then(|| program.file_name().unwrap_or_default().to_string_lossy().into_owned());
     let facts = nacs::view::JobFacts { has_file, model, stock_waiting, waiting, notes, refusal: refusal.map(str::to_string), program_file, to_schedule, origin };
+    // `--sheet`: the same facts, as what to take to the machine.
+    if sheet {
+        if let Some(why) = refusal {
+            eprintln!("error: no setup sheet, for there is no program: {why}");
+            process::exit(1);
+        }
+        let rows = nacs::view::setup_sheet(part, &facts, &nacs::cut_time::time_report(part));
+        print!("{}", nacs::view::setup_sheet_text(&rows));
+        process::exit(0)
+    }
     print!("{}", nacs::view::job_report(&nacs::view::job_steps(part, &facts)));
     process::exit(0)
 }
@@ -1349,6 +1364,7 @@ fn usage_text() -> String {
         "                                             open the window on the project (no path: the last one opened)",
         "    --outline                                stock, features and operations in run order",
         "    --job                                    the seven steps from model to program, and which is next",
+        "    --sheet                                  the setup sheet: stock, origin and register, tools to load, run time",
         "    --options                                the window's options and what each is set to (File > Options…)",
         "    --check[=json]                           validate and lint; nothing printed means nothing found",
         "Measure",

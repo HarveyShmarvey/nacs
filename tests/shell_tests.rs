@@ -2771,8 +2771,18 @@ fn the_job_guide_leads_from_an_empty_folder_to_a_program() {
     // Program: the guide's own button, whatever the center shows.
     h.query_all_by_label("Write program").next().expect("the guide's button").click();
     wait_for(&mut h, "Job: done");
+    // Done: the guide says what to take to the machine.
+    assert!(h.query_by_label("At the machine").is_some());
+    assert!(h.query_by_label("Program  · mypart.nc").is_some(), "the sheet names the file just written");
+    assert!(h.query_by_label_contains("Origin  · G54: ").is_some());
     shot(&mut h, "job-7-done");
+    h.get_by_label("Copy setup sheet").click();
+    wait_for(&mut h, "Setup sheet copied");
     let program = std::fs::read_to_string(project.join("mypart.nc")).expect("the program is written beside the project");
+    let sheet = std::fs::read_to_string(project.join("mypart.setup.txt")).expect("the setup sheet is written beside it");
+    assert!(sheet.starts_with("Program  mypart.nc
+") && sheet.contains("
+Origin   G54: "), "{sheet}");
     assert!(program.contains("G01") || program.contains("G1 "), "it cuts");
     drop(h);
     let _ = std::fs::remove_dir_all(&root);
