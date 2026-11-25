@@ -3837,7 +3837,7 @@ pub const ACTIONS: &[Action] = &[
     // The way out (DESIGN.md §5.3, Phase 50 slice 2): the whole program,
     // copied or written beside the project. Keyless, as every write is.
     Action { id: "program.copy", key: "", sentence: "copy the whole program — the text nacs writes to stdout" },
-    Action { id: "program.write", key: "", sentence: "write the program beside the project as <name>.nc — the text nacs -o writes" },
+    Action { id: "program.write", key: "", sentence: "write the program beside the project as <name>.nc — the text nacs -o writes — and the setup sheet beside it as <name>.setup.txt" },
     Action { id: "sheet.copy", key: "", sentence: "copy the setup sheet: the stock, the origin and its register, the tools to load, the run time — the text nacs --sheet prints" },
     Action { id: "origin.register", key: "", sentence: "choose the work offset the program selects: open the stock's card, where the header's work_offset takes G54 to G59, or several to run a part in each" },
     // The way in (DESIGN.md §1, Phase 50 slice 3): a main.part from nothing.
@@ -5926,6 +5926,19 @@ pub fn program_text(program: &str) -> String {
 pub fn write_program(project: &std::path::Path, program: &str) -> Result<std::path::PathBuf, String> {
     let path = program_file_path(project);
     crate::theme::write_atomically(&path, &program_text(program))?;
+    Ok(path)
+}
+
+/// The setup sheet's file, beside the program: `plate.cam/plate.setup.txt`.
+pub fn sheet_file_path(project: &std::path::Path) -> std::path::PathBuf {
+    program_file_path(project).with_extension("setup.txt")
+}
+
+/// Write the setup sheet beside the program. Derived like the `.nc`:
+/// never read back, outside the undo stack. Returns the path written.
+pub fn write_sheet(project: &std::path::Path, rows: &[(&'static str, String)]) -> Result<std::path::PathBuf, String> {
+    let path = sheet_file_path(project);
+    crate::theme::write_atomically(&path, &setup_sheet_text(rows))?;
     Ok(path)
 }
 

@@ -2724,7 +2724,14 @@ impl ViewApp {
             "program.write" => match &self.gcode {
                 Ok(g) => match view::write_program(std::path::Path::new(&self.project_path), &g.text()) {
                     Ok(path) => {
-                        let note = view::program_written_note(&Self::file_word(&path), g.lines.len());
+                        let mut note = view::program_written_note(&Self::file_word(&path), g.lines.len());
+                        // The sheet goes with it; the facts are read after
+                        // the write, so it names the file just written.
+                        let rows = view::setup_sheet(&self.part, &self.job_facts(), &self.clock);
+                        match view::write_sheet(std::path::Path::new(&self.project_path), &rows) {
+                            Ok(sheet) => note.push_str(&format!(", and {}: the setup sheet", Self::file_word(&sheet))),
+                            Err(e) => self.edit_note = Some(format!("Setup sheet not written — {e}")),
+                        }
                         self.transient = Some((note, std::time::Instant::now()));
                     }
                     Err(e) => self.edit_note = Some(format!("Not written — {e}")),

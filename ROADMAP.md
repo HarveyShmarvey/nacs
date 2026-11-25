@@ -758,7 +758,8 @@ One page. What is built, what is next, and the debts we know about.
    Fourteenth pass (2026-11-24): a setup sheet. A finished guide shows
    what to take to the machine: the program file, the blank, the origin
    and its register, the tools an operation runs, the run time. File >
-   Copy setup sheet copies it; `nacs --sheet` prints it.
+   Copy setup sheet copies it; `nacs --sheet` prints it; Write program
+   writes it beside the `.nc` as `<name>.setup.txt`.
    Not built: moving the origin after features are accepted (import
    again); a margin on a blank that is the model's own outline (a plain
    prism); a third setup; a quarter turn between setups; a front and its flipped back in one program

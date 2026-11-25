@@ -135,7 +135,7 @@ Every act below is a palette entry (`p`), many a button; a key where one is boun
 - `program.numbers` — show or hide the Program's line numbers  (·)
 - `program.minimap` — show or hide the Program's minimap  (·)
 - `program.copy` — copy the whole program — the text nacs writes to stdout  (·)
-- `program.write` — write the program beside the project as <name>.nc — the text nacs -o writes  (·)
+- `program.write` — write the program beside the project as <name>.nc — the text nacs -o writes — and the setup sheet beside it as <name>.setup.txt  (·)
 - `sheet.copy` — copy the setup sheet: the stock, the origin and its register, the tools to load, the run time — the text nacs --sheet prints  (·)
 - `origin.register` — choose the work offset the program selects: open the stock's card, where the header's work_offset takes G54 to G59, or several to run a part in each  (·)
 - `project.new` — new project — write a main.part here, a stock and the header, every value shown first (nacs --init)  (·)
