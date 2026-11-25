@@ -428,17 +428,21 @@ fn the_outline_is_five_groups_with_doors_on_their_headers() {
     ops.last().unwrap().click();
     settle(&mut h);
     assert!(matches!(h.state().selection(), Selection::Operation(1)));
-    // New target… opens the path field; × shuts it. (The selected
-    // operation's card has fields of its own, so the count is what moves.)
+    // New target… puts the import form in the form's dock, in place of
+    // the selected operation's card; Cancel gives the card back.
     let fields = h.query_all_by_role(Role::TextInput).count();
     h.get_by_label("New target…").click();
     settle(&mut h);
-    assert_eq!(h.query_all_by_role(Role::TextInput).count(), fields + 11, "the path field, the solid, allowance and given fields under it, the origin's, and a margin for each side of the blank");
+    assert!(h.query_by_label("Import a model").is_some());
+    assert_eq!(h.query_all_by_role(Role::TextInput).count(), 8, "the path, the allowance, and a margin for each side of the stock");
+    h.get_by_label("More").click();
+    settle(&mut h);
+    assert_eq!(h.query_all_by_role(Role::TextInput).count(), 11, "and under the fold the solid, the given program and the origin's words");
     assert!(h.query_by_label("Import").is_some());
     // The native dialog's door, where the platform has one (slice 9) — the
     // dialog itself is the system's and is not opened here.
     assert_eq!(h.query_by_label("Browse…").is_some(), cfg!(windows), "Browse… on Windows alone");
-    h.query_all_by_label("×").last().expect("the field's ×").click();
+    h.get_by_label("Cancel").click();
     settle(&mut h);
     assert_eq!(h.query_all_by_role(Role::TextInput).count(), fields);
     assert!(h.query_by_label("Import").is_none(), "the field closed");
@@ -2244,10 +2248,9 @@ fn an_assembly_is_imported_once_its_solid_is_named_in_the_field() {
         h.query_all_by_role(Role::TextInput).max_by(|a, b| a.rect().width().total_cmp(&b.rect().width())).expect("the path field is the widest")
     }
     fn solid_field<'t>(h: &'t Harness<'static, ViewApp>) -> egui_kittest::Node<'t> {
-        // The setup row under the path reads solid, allowance, given from
-        // the left; the solid field is its first.
-        let path_top = path_field(h).rect().min.y;
-        h.query_all_by_role(Role::TextInput).filter(|n| n.rect().min.y > path_top + 1.0).min_by(|a, b| (a.rect().min.y.round(), a.rect().min.x).partial_cmp(&(b.rect().min.y.round(), b.rect().min.x)).unwrap()).expect("the solid field leads the first setup row")
+        // Under the More fold: the field on the Solid label's row.
+        let label = h.get_by_label("Solid").rect();
+        h.query_all_by_role(Role::TextInput).find(|n| (n.rect().center().y - label.center().y).abs() < 8.0).expect("the solid field beside its label")
     }
     path_field(&h).focus();
     h.step();
