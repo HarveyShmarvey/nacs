@@ -1293,6 +1293,9 @@ struct NewForm {
     name: String,
     values: Vec<String>,
     points: String,
+    /// The value last calculated into a field (a chamfer mill's gauge_z):
+    /// while the field still holds it, it follows the others.
+    offered: Option<String>,
 }
 
 /// Which statement the form composes (DESIGN.md §5.4): a feature by its
@@ -1375,6 +1378,7 @@ impl NewForm {
             name: String::new(),
             values: vec![String::new(); crate::template::FEATURE_SPECS[variant].keys.len()],
             points: String::new(),
+            offered: None,
         }
     }
 
@@ -1382,21 +1386,21 @@ impl NewForm {
     /// `T` — tenet 2's smart default, derived from the declared tools.
     fn for_tool(kind: usize, number: usize) -> Self {
         let n = crate::template::tool_keys(&crate::template::TOOL_SPECS[kind]).len();
-        NewForm { head: NewHead::Tool(kind), name: format!("T{number}"), values: vec![String::new(); n], points: String::new() }
+        NewForm { head: NewHead::Tool(kind), name: format!("T{number}"), values: vec![String::new(); n], points: String::new(), offered: None }
     }
 
     /// The project head: the stock's keys and the header's six, the
     /// defaults prefilled and visible (tenet 2: shown, never silent).
     fn for_project(kind: usize) -> Self {
         let keys = crate::template::project_keys(crate::template::PROJECT_STOCK_KINDS[kind]).unwrap_or_default();
-        NewForm { head: NewHead::Project(kind), name: String::new(), values: keys.into_iter().map(|(_, _, d)| d).collect(), points: String::new() }
+        NewForm { head: NewHead::Project(kind), name: String::new(), values: keys.into_iter().map(|(_, _, d)| d).collect(), points: String::new(), offered: None }
     }
 
     /// The run head: the feature's skeletons, the picked one's blanks as
     /// the fields (the skeleton is the form).
     fn for_run(feature: String, skeletons: Vec<String>, pick: usize) -> Self {
         let n = skeletons.get(pick).map(|s| crate::template::skeleton_blanks(s).len()).unwrap_or(0);
-        NewForm { head: NewHead::Run { feature, skeletons, pick }, name: String::new(), values: vec![String::new(); n], points: String::new() }
+        NewForm { head: NewHead::Run { feature, skeletons, pick }, name: String::new(), values: vec![String::new(); n], points: String::new(), offered: None }
     }
 }
 
@@ -5565,7 +5569,40 @@ impl ViewApp {
                 }
             };
             let is_run = matches!(form.head, NewHead::Run { .. });
+            let tool_kind = match form.head {
+                NewHead::Tool(k) => crate::template::TOOL_SPECS[k].kind,
+                _ => "",
+            };
+            // A chamfer mill's gauge_z follows the angle, gauge_dia and
+            // tip_dia while it is empty or still the last value offered:
+            // a cone that ends at its flat. A typed value is kept.
+            let mut offered = false;
+            if tool_kind == "ChamferMill" {
+                let at = |name: &str| keys.iter().position(|(k, _)| k == name);
+                let num = |name: &str| at(name).and_then(|i| form.values[i].trim().parse::<f64>().ok());
+                let fit = match (num("angle"), num("gauge_dia"), num("tip_dia")) {
+                    (Some(a), Some(g), Some(t)) => crate::parse::Chamfer::gauge_z_at_flat(a, g, t).map(|z| format!("{z:.3}").trim_end_matches('0').trim_end_matches('.').to_string()),
+                    _ => None,
+                };
+                if let (Some(i), Some(fit)) = (at("gauge_z"), fit) {
+                    if form.values[i].trim().is_empty() || form.offered.as_deref() == Some(form.values[i].as_str()) {
+                        form.values[i] = fit.clone();
+                        form.offered = Some(fit);
+                    }
+                    offered = form.offered.as_deref() == Some(form.values[i].as_str());
+                }
+            }
             let key_row = |ui: &mut egui::Ui, i: usize, key: &String, required: bool, buf: &mut String| {
+                // What the key means, on its own line over the field.
+                let says = if key == "gauge_z" && offered {
+                    Some("calculated for a cone ending at the flat; type over it")
+                } else {
+                    crate::template::tool_key_says(tool_kind, key)
+                };
+                if let Some(says) = says {
+                    ui.add_space(2.0);
+                    ui.add(egui::Label::new(egui::RichText::new(says).small().weak()).wrap());
+                }
                 ui.horizontal(|ui| {
                     ui.label(egui::RichText::new(view::field_label(key, units_mm)).small());
                     // On the run head a reference blank is a menu; on the
@@ -6380,6 +6417,13 @@ impl ViewApp {
             }
             ui.add_space(4.0);
         }
+        // A tool whose own declaration reads like a slip, before the
+        // problems it most likely caused.
+        for (_, note) in crate::parse::tool_notes(&self.part) {
+            ui.label(egui::RichText::new("CHECK THE TOOL").strong());
+            ui.add(egui::Label::new(egui::RichText::new(note).small()).wrap());
+            ui.add_space(4.0);
+        }
         if self.rows.is_empty() {
             // Nothing found is said once, on the band's line above.
             self.account_lines(ui);
@@ -6794,6 +6838,7 @@ impl ViewApp {
                 } else {
                     format!("no body declared — drawn to {}mm above the tip, a presentation height", crate::gcode::f(body_top))
                 });
+                self.tool_note(ui, number);
                 self.fields_form(ui, FieldTarget::Tool(number), &form);
                 if ui.button("Delete tool").on_hover_text("Remove this tool. Refused while an operation still runs it. z undoes.").clicked() {
                     self.act("statement.delete");
@@ -6888,6 +6933,14 @@ impl ViewApp {
     }
 
     /// The tool as the card describes it.
+    /// What a tool's declaration says about itself (`parse::tool_notes`),
+    /// on its card: the slip an operation would trip on.
+    fn tool_note(&self, ui: &mut egui::Ui, number: usize) {
+        for (_, note) in crate::parse::tool_notes(&self.part).iter().filter(|(n, _)| *n == number) {
+            ui.add(egui::Label::new(egui::RichText::new(note).color(rgb(self.theme.refusal))).wrap());
+        }
+    }
+
     fn tool_card(&mut self, ui: &mut egui::Ui, card: Option<&view::ToolCard>) {
         match card {
             Some(c) => {
@@ -6903,6 +6956,7 @@ impl ViewApp {
                 } else {
                     format!("no body declared — drawn to {}mm above the tip, a presentation height", crate::gcode::f(c.body_top))
                 });
+                self.tool_note(ui, c.number);
                 self.fields_form(ui, FieldTarget::Tool(c.number), &c.form);
             }
             None => {

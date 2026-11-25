@@ -521,8 +521,12 @@ pub fn render(p: &Part, o: &ProjectOutline) -> String {
     // window's Tools heading is a view of.
     if !o.tools.is_empty() {
         out.push_str("\ntools:\n");
+        let notes = crate::parse::tool_notes(p);
         for node in &o.tools {
             out.push_str(&format!("  {}\n", tool_row(node)));
+            for (_, note) in notes.iter().filter(|(n, _)| *n == node.num) {
+                out.push_str(&format!("      note: {note}\n"));
+            }
         }
     }
 

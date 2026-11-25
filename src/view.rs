@@ -5163,6 +5163,11 @@ pub fn reference_text() -> String {
     for spec in crate::template::TOOL_SPECS {
         let keys: Vec<String> = crate::template::tool_keys(spec).iter().map(|k| if k.required { format!("`{}`", k.name) } else { format!("`{}`?", k.name) }).collect();
         o.push_str(&format!("- **{}** — {}\n", spec.kind, keys.join(", ")));
+        for k in spec.keys {
+            if let Some(says) = crate::template::tool_key_says(spec.kind, k.name) {
+                o.push_str(&format!("  - `{}`: {says}\n", k.name));
+            }
+        }
     }
     o.push_str("\n(`?` marks an optional key; the body keys at the end of every kind describe the shank and holder for the collision checks.)\n");
     o.push_str("\n## Features — `feature <name> <Kind>(key=value, …)`\n\n");

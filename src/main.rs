@@ -618,6 +618,9 @@ fn main() {
     }
     // Advisory lints go to stderr so stdout — the program, and therefore
     // every golden — stays byte-identical whether or not a lint fires.
+    for (_, note) in parse::tool_notes(&part) {
+        eprintln!("warning: {note}");
+    }
     for w in parse::lint(&part) {
         eprintln!("warning: {}", w);
     }

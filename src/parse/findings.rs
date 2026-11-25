@@ -649,6 +649,15 @@ pub fn band_findings(p: &Part) -> Vec<Finding> {
 // and the body-foul probe, which stays advisory-only in every mode because
 // its sampled lattice is biased to silence and can miss — a gate must not
 // promise what a probe cannot.
+/// What a tool's own declaration says about itself, by tool number: a
+/// slip the parser accepts and an operation would trip on later. Not a
+/// finding: it is about no operation and no feature.
+pub fn tool_notes(p: &Part) -> Vec<(usize, String)> {
+    let mut nums: Vec<usize> = p.tools.keys().copied().collect();
+    nums.sort_unstable();
+    nums.into_iter().filter_map(|n| p.tools[&n].chamfer.as_ref().and_then(|c| c.note()).map(|note| (n, format!("T{n}: {note}")))).collect()
+}
+
 pub fn lint(p: &Part) -> Vec<Finding> {
     let mut warnings = engagement_findings(p);
     warnings.extend(deviation_findings(p));

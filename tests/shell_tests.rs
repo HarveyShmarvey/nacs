@@ -2994,6 +2994,28 @@ fn the_job_guide_says_what_is_left_uncut_for_want_of_a_tool() {
     settle(&mut h);
     assert!(h.query_all_by_label("New tool").next().is_some(), "the tool form opened");
     assert!(h.query_all_by_label_contains("angle (°)").next().is_some(), "it is the chamfer mill's form");
+    // Each key says what it is, and gauge_z is calculated once the angle,
+    // gauge_dia and tip_dia are in: a cone that ends at its flat.
+    assert!(h.query_by_label_contains("not the tool's length").is_some(), "gauge_z is explained");
+    let field = |h: &Harness<'static, ViewApp>, key: &str| {
+        let label = h.get_by_label(key).rect();
+        h.query_all_by_role(Role::TextInput)
+            .filter(|f| (f.rect().center().y - label.center().y).abs() < 8.0 && f.rect().left() > label.left())
+            .min_by(|a, b| a.rect().left().total_cmp(&b.rect().left()))
+            .map(|f| (f.rect().center(), f.value().unwrap_or_default()))
+            .expect("the key's field")
+    };
+    for (key, text) in [("gauge_dia (mm) =", "8"), ("tip_dia (mm) =", "1.5")] {
+        let at = field(&h, key).0;
+        for typing in [false, true] {
+            let f = h.query_all_by_role(Role::TextInput).find(|f| f.rect().contains(at)).expect("the field");
+            if typing { f.type_text(text) } else { f.focus() }
+            h.step();
+        }
+        settle(&mut h);
+    }
+    assert_eq!(field(&h, "gauge_z (mm) =").1, "3.25");
+    assert!(h.query_by_label_contains("calculated for a cone ending at the flat").is_some());
     shot(&mut h, "tool-form-wanted");
     drop(h);
     let _ = std::fs::remove_dir_all(&root);
