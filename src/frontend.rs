@@ -965,7 +965,7 @@ fn build(
         runner_killed: false,
         runner_focus_pending: false,
         target_path_draft: None,
-        import_form_scroll: false,
+        import_more: false,
         import_setup: view::ImportSetup::default(),
         import_last: None,
         pose_drawn: None,
@@ -1767,8 +1767,8 @@ pub struct ViewApp {
     /// open, the text typed or pasted so far. A dialog is a crate or a
     /// platform call — named for the CLOSE; a path, or a drop, imports.
     target_path_draft: Option<String>,
-    /// The import form just opened: its last row is scrolled into view once.
-    import_form_scroll: bool,
+    /// The import form's More fold starts open: an import was refused.
+    import_more: bool,
     /// The import's setup as the field holds it (ROADMAP item 1, slice 4):
     /// the up axis and the solid, kept across imports in this window so a
     /// second try changes one word. `import_last` is the path of the import
@@ -2186,7 +2186,8 @@ impl eframe::App for ViewApp {
                         // path typed again.
                         if let Some(step) = self.import_last.take() {
                             self.target_path_draft = Some(step.to_string_lossy().into_owned());
-                            self.layout.apply(DockAction::ShowTab(SidebarTab::Outline));
+                            self.import_more = true;
+                            self.layout.apply(DockAction::OpenForm);
                         }
                     }
                 }
@@ -2660,12 +2661,10 @@ impl ViewApp {
             }
             "output.stop" => self.stop_run(),
             "form.open" => self.layout.apply(DockAction::OpenForm),
-            // The target's door (Phase 52 slice 4): the path field opens
-            // under the Outline's Target header, which is shown.
+            // The target's door: the import form takes the form's dock.
             "import.step" => {
                 self.target_path_draft = Some(String::new());
-                self.import_form_scroll = true;
-                self.layout.apply(DockAction::ShowTab(SidebarTab::Outline));
+                self.layout.apply(DockAction::OpenForm);
             }
             "layout.revert" => {
                 // The arrangement back to its defaults in one act — and
@@ -3920,108 +3919,138 @@ impl ViewApp {
                 ui.label(egui::RichText::new(view::NO_TARGET).weak());
             }
         }
+    }
+
+    /// The import form, in the form's dock while *Import STEP…* has opened
+    /// it: the file, which way is up, where the origin is, how far the
+    /// stock stands beyond the part, and under a fold the words a second
+    /// setup or a file of several solids needs. Each is a word `nacs
+    /// --import` takes, kept for the next import.
+    fn import_form(&mut self, ui: &mut egui::Ui) {
         let (mut go, mut shut, mut browse) = (false, false, false);
         let dialog_open = self.dialog_rx.is_some();
-        if let Some(draft) = self.target_path_draft.as_mut() {
-            ui.horizontal(|ui| {
-                // The native dialog (slice 9), where the platform has one;
-                // the field stands beside it, and alone elsewhere.
-                if HAS_FILE_DIALOG && ui.add_enabled(!dialog_open, egui::Button::new("Browse…").small()).on_hover_text("Choose the STEP file in the system's open dialog").clicked() {
-                    browse = true;
-                }
-                let field = ui.add(egui::TextEdit::singleline(draft).hint_text("path to a .step or .stp file").desired_width((ui.available_width() - 96.0).max(80.0)));
-                if field.lost_focus() && ui.input(|i| i.key_pressed(egui::Key::Enter)) {
-                    go = true;
-                }
-                if ui.small_button("Import").on_hover_text("Run the import on this file (nacs --import <file> <project>)").clicked() {
-                    go = true;
-                }
-                if ui.small_button("×").on_hover_text("close the field — nothing imported").clicked() {
+        let Some(draft) = self.target_path_draft.as_mut() else { return };
+        // The buttons lead, on the title's row: the dock scrolls, and a
+        // button under the last field would be out of sight.
+        ui.horizontal(|ui| {
+            ui.label(egui::RichText::new("Import a model").strong());
+            ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                if ui.button("Cancel").on_hover_text("close the form — nothing imported").clicked() {
                     shut = true;
                 }
+                if ui.button("Import").on_hover_text("Run the import on this file (nacs --import <file> <project>)").clicked() {
+                    go = true;
+                }
             });
-            // The setup under the path (ROADMAP item 1, slice 4): the
-            // words `nacs --import` takes, kept for the next import too.
-            // The allowance is one spelling (view.rs) shown as seven
-            // fields: the number here, and each side's own two rows down.
-            let (mut margin_base, mut margin_own) = view::allowance_parts(&self.import_setup.allowance);
-            let mut margin_typed = false;
-            ui.horizontal(|ui| {
-                ui.label(egui::RichText::new("up").small().weak()).on_hover_text("which MODEL axis points up on the machine; z+ is as modeled (nacs --import --up)");
-                let shown = self.import_setup.up.clone().unwrap_or_else(|| "z+".to_string());
-                egui::ComboBox::from_id_salt("import up").selected_text(shown.clone()).width(56.0).show_ui(ui, |ui| {
-                    for axis in view::UP_AXES {
-                        if ui.selectable_label(shown == axis, axis).clicked() {
-                            self.import_setup.up = (axis != "z+").then(|| axis.to_string());
-                        }
+        });
+        ui.horizontal(|ui| {
+            // The native dialog, where the platform has one; it fills the
+            // field, and Import runs when the rest is said.
+            if HAS_FILE_DIALOG && ui.add_enabled(!dialog_open, egui::Button::new("Browse…")).on_hover_text("Choose the STEP file in the system's open dialog").clicked() {
+                browse = true;
+            }
+            let field = ui.add(egui::TextEdit::singleline(draft).hint_text("path to a .step or .stp file").desired_width((ui.available_width() - 8.0).max(120.0)));
+            if field.lost_focus() && ui.input(|i| i.key_pressed(egui::Key::Enter)) {
+                go = true;
+            }
+        });
+        // The allowance is one spelling (view.rs) shown as seven fields:
+        // the number, and each side's own.
+        let (mut margin_base, mut margin_own) = view::allowance_parts(&self.import_setup.allowance);
+        let mut margin_typed = false;
+        let words = view::origin_words(&self.import_setup.origin).ok();
+        let (x, y, z) = match &words {
+            Some([x, y, z]) => (x.clone(), y.clone(), z.clone()),
+            None => (String::new(), String::new(), String::new()),
+        };
+        ui.add_space(4.0);
+        egui::Grid::new("import form").num_columns(2).spacing([12.0, 6.0]).show(ui, |ui| {
+            ui.label("Up").on_hover_text("which MODEL axis points up on the machine; z+ is as modeled (nacs --import --up)");
+            let shown = self.import_setup.up.clone().unwrap_or_else(|| "z+".to_string());
+            egui::ComboBox::from_id_salt("import up").selected_text(shown.clone()).width(56.0).show_ui(ui, |ui| {
+                for axis in view::UP_AXES {
+                    if ui.selectable_label(shown == axis, axis).clicked() {
+                        self.import_setup.up = (axis != "z+").then(|| axis.to_string());
                     }
-                });
-                ui.label(egui::RichText::new("solid").small().weak()).on_hover_text("which solid is the part when the file holds several — S1, S2…; empty for a one-solid file (nacs --import --solid)");
-                ui.add(egui::TextEdit::singleline(&mut self.import_setup.solid).hint_text("one").desired_width(36.0));
-                ui.label(egui::RichText::new("allowance").small().weak()).on_hover_text("how far the blank stands above the model's top and outside its plan, in mm: the proposed stock grows by it, and the top face and the rim become passes; 0 for a blank cut to size (nacs --import --allowance)");
-                if ui.add(egui::TextEdit::singleline(&mut margin_base).hint_text("0").desired_width(36.0)).changed() {
+                }
+            });
+            ui.end_row();
+            // The origin: two ready answers; any other point is typed as
+            // words under the fold.
+            ui.label("X0 Y0").on_hover_text("where the program's X and Y zero is: the model is moved so that point is 0,0");
+            let shown = view::ORIGIN_XY.iter().find(|(_, a, b)| *a == x && *b == y).map(|(says, ..)| *says).unwrap_or("as typed");
+            egui::ComboBox::from_id_salt("import origin xy").selected_text(shown).width(190.0).show_ui(ui, |ui| {
+                for (says, a, b) in view::ORIGIN_XY {
+                    if ui.selectable_label(shown == says, says).clicked() {
+                        self.import_setup.origin = format!("{a},{b},{}", if z.is_empty() { "max" } else { &z });
+                    }
+                }
+            });
+            ui.end_row();
+            ui.label("Z0").on_hover_text("where the program's Z zero is");
+            let shown = view::ORIGIN_Z.iter().find(|(_, a)| *a == z).map(|(says, _)| *says).unwrap_or("as typed");
+            egui::ComboBox::from_id_salt("import origin z").selected_text(shown).width(190.0).show_ui(ui, |ui| {
+                for (says, a) in view::ORIGIN_Z {
+                    if ui.selectable_label(shown == says, says).clicked() {
+                        self.import_setup.origin = format!("{},{},{a}", if x.is_empty() { "mid" } else { &x }, if y.is_empty() { "mid" } else { &y });
+                    }
+                }
+            });
+            ui.end_row();
+            ui.label("Allowance").on_hover_text("how far the stock stands above the model's top and outside its plan, in mm: the proposed stock grows by it, and the top face and the rim become passes; 0 for stock cut to size (nacs --import --allowance)");
+            ui.horizontal(|ui| {
+                if ui.add(egui::TextEdit::singleline(&mut margin_base).hint_text("0").desired_width(40.0)).changed() {
                     margin_typed = true;
                 }
-                ui.label(egui::RichText::new("given").small().weak()).on_hover_text("the program before this one, for a second setup: its project as the given from line will name it from this folder (../front.cam); the proposed stock is that program's blank turned over and the import writes the given from line beside it (nacs --import --given)");
-                ui.add(egui::TextEdit::singleline(&mut self.import_setup.given).hint_text("none").desired_width(110.0));
+                ui.label(egui::RichText::new("mm").weak());
             });
-            // The origin: two ready answers, and the words themselves for
-            // any point they do not cover (nacs --import --origin).
-            ui.horizontal(|ui| {
-                let words = view::origin_words(&self.import_setup.origin).ok();
-                let (x, y, z) = match &words {
-                    Some([x, y, z]) => (x.clone(), y.clone(), z.clone()),
-                    None => (String::new(), String::new(), String::new()),
-                };
-                ui.label(egui::RichText::new("X0 Y0").small().weak()).on_hover_text("where the program's X and Y zero is: the model is moved so that point is 0,0");
-                let shown = view::ORIGIN_XY.iter().find(|(_, a, b)| *a == x && *b == y).map(|(says, ..)| *says).unwrap_or("as typed");
-                egui::ComboBox::from_id_salt("import origin xy").selected_text(shown).width(150.0).show_ui(ui, |ui| {
-                    for (says, a, b) in view::ORIGIN_XY {
-                        if ui.selectable_label(shown == says, says).clicked() {
-                            self.import_setup.origin = format!("{a},{b},{}", if z.is_empty() { "max" } else { &z });
-                        }
-                    }
-                });
-                ui.label(egui::RichText::new("Z0").small().weak()).on_hover_text("where the program's Z zero is");
-                let shown = view::ORIGIN_Z.iter().find(|(_, a)| *a == z).map(|(says, _)| *says).unwrap_or("as typed");
-                egui::ComboBox::from_id_salt("import origin z").selected_text(shown).width(110.0).show_ui(ui, |ui| {
-                    for (says, a) in view::ORIGIN_Z {
-                        if ui.selectable_label(shown == says, says).clicked() {
-                            self.import_setup.origin = format!("{},{},{a}", if x.is_empty() { "mid" } else { &x }, if y.is_empty() { "mid" } else { &y });
-                        }
-                    }
-                });
-            });
-            ui.horizontal(|ui| {
-                ui.label(egui::RichText::new("origin").small().weak()).on_hover_text("the origin as words, x,y,z: each is model, a number (a model coordinate), min, mid or max of the stock, or part-min, part-mid or part-max of the part. Type here for a point the two lists do not offer. With a given program (a second setup) the stock is that program's blank turned, and model keeps its zero");
-                ui.add(egui::TextEdit::singleline(&mut self.import_setup.origin).hint_text("model,model,model").desired_width(100.0));
-            });
-            // The part in the stock: a side left empty takes the allowance
-            // (the bottom takes 0), and the hint says which.
-            ui.horizontal(|ui| {
-                ui.label(egui::RichText::new("stock beyond the part").small().weak()).on_hover_text("where the part sits in the stock: how far the blank stands outside the model on each side, in mm. A side left empty takes the allowance; the bottom takes 0 (nacs --import --allowance 1,bottom=3,x+=10)");
-                let even = if margin_base.trim().is_empty() { "0".to_string() } else { margin_base.trim().to_string() };
-                for (k, key) in view::MARGIN_KEYS.iter().enumerate() {
-                    ui.label(egui::RichText::new(key.to_uppercase().replace("TOP", "top").replace("BOTTOM", "bottom")).small().weak());
-                    let hint = if k == 1 { "0" } else { even.as_str() };
-                    if ui.add(egui::TextEdit::singleline(&mut margin_own[k]).hint_text(hint).desired_width(28.0)).changed() {
-                        margin_typed = true;
-                    }
+            ui.end_row();
+        });
+        // The part in the stock: a side left empty takes the allowance
+        // (the bottom takes 0), and the hint says which.
+        ui.add_space(4.0);
+        ui.label("Stock beyond the part").on_hover_text("where the part sits in the stock: how far the stock stands outside the model on each side, in mm. A side left empty takes the allowance; the bottom takes 0 (nacs --import --allowance 1,bottom=3,x+=10)");
+        // Two sides a row, a pair an axis: top and bottom, X, Y.
+        egui::Grid::new("import margins").num_columns(4).spacing([8.0, 6.0]).show(ui, |ui| {
+            let even = if margin_base.trim().is_empty() { "0".to_string() } else { margin_base.trim().to_string() };
+            for (k, key) in view::MARGIN_KEYS.iter().enumerate() {
+                ui.label(key.to_uppercase().replace("TOP", "top").replace("BOTTOM", "bottom"));
+                let hint = if k == 1 { "0" } else { even.as_str() };
+                if ui.add(egui::TextEdit::singleline(&mut margin_own[k]).hint_text(hint).desired_width(40.0)).changed() {
+                    margin_typed = true;
                 }
-            });
-            if margin_typed {
-                self.import_setup.allowance = view::allowance_from(&margin_base, &margin_own);
+                if k % 2 == 1 {
+                    ui.end_row();
+                }
             }
-            if std::mem::take(&mut self.import_form_scroll) {
-                ui.scroll_to_cursor(Some(egui::Align::BOTTOM));
-            }
+        });
+        if margin_typed {
+            self.import_setup.allowance = view::allowance_from(&margin_base, &margin_own);
         }
+        ui.add_space(4.0);
+        // Shut until an import is refused: the refusal most often wants
+        // a word from under here (which solid).
+        let more = self.import_more;
+        egui::CollapsingHeader::new("More").id_salt(("import more", more)).default_open(more).show(ui, |ui| {
+            egui::Grid::new("import more grid").num_columns(2).spacing([12.0, 6.0]).show(ui, |ui| {
+                ui.label("Solid").on_hover_text("which solid is the part when the file holds several — S1, S2…; empty for a one-solid file (nacs --import --solid)");
+                ui.add(egui::TextEdit::singleline(&mut self.import_setup.solid).hint_text("the only one").desired_width(110.0));
+                ui.end_row();
+                ui.label("Given").on_hover_text("the program before this one, for a second setup: its project as the given from line will name it from this folder (../front.cam); the proposed stock is that program's stock turned over and the import writes the given from line beside it (nacs --import --given)");
+                ui.add(egui::TextEdit::singleline(&mut self.import_setup.given).hint_text("none: a first setup").desired_width(190.0));
+                ui.end_row();
+                ui.label("Origin as words").on_hover_text("the origin as words, x,y,z: each is model, a number (a model coordinate), min, mid or max of the stock, or part-min, part-mid or part-max of the part. Type here for a point the two lists do not offer. With a given program (a second setup) the stock is that program's stock turned, and model keeps its zero");
+                ui.add(egui::TextEdit::singleline(&mut self.import_setup.origin).hint_text("model,model,model").desired_width(190.0));
+                ui.end_row();
+            });
+        });
         if go {
             let path = std::path::PathBuf::from(self.target_path_draft.take().unwrap_or_default().trim());
             if view::is_step(&path) && path.is_file() {
                 self.start_import(path);
             } else {
                 self.edit_note = Some(format!("Not imported — {} is not a STEP file that exists", path.display()));
+                self.target_path_draft = Some(path.to_string_lossy().into_owned());
             }
         }
         if shut {
@@ -4250,9 +4279,10 @@ impl ViewApp {
         let Some(rx) = &self.dialog_rx else { return };
         match rx.try_recv() {
             Ok(Some(path)) => {
+                // The pick fills the field; Import runs it, once the
+                // origin and the stock are said.
                 self.dialog_rx = None;
-                self.target_path_draft = None;
-                self.start_import(path);
+                self.target_path_draft = Some(path.to_string_lossy().into_owned());
             }
             Ok(None) | Err(std::sync::mpsc::TryRecvError::Disconnected) => self.dialog_rx = None,
             Err(std::sync::mpsc::TryRecvError::Empty) => {}
@@ -6660,6 +6690,10 @@ impl ViewApp {
         // §5.4); Esc dismisses it and its draft.
         if self.new_form.is_some() {
             self.new_feature_form(ui);
+            return;
+        }
+        if self.target_path_draft.is_some() {
+            self.import_form(ui);
             return;
         }
         let card = view::card(&self.part, &self.outline, self.selection, &self.rows, &self.edges, &self.paths, &self.review_rows, self.stock_proposal.as_ref().and_then(|r| r.as_ref().ok()));

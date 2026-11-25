@@ -763,6 +763,12 @@ One page. What is built, what is next, and the debts we know about.
    Fifteenth pass (2026-11-24): the Review counts features too. The tab
    says how many proposed features wait ("Review (4)"), not faces, and
    a feature's row is no longer marked "same as" one of its own faces.
+   Sixteenth pass (2026-11-24): the import form is a form. It sits in
+   the form's dock, a labelled row a question: the file, which way is
+   up, the origin, the allowance, the stock beyond the part; the solid,
+   the given program and the origin's words under a More fold that
+   opens when an import is refused. Browse… fills the path and no
+   longer imports at once.
    Not built: moving the origin after features are accepted (import
    again); a margin on a blank that is the model's own outline (a plain
    prism); a third setup; a quarter turn between setups; a front and its flipped back in one program

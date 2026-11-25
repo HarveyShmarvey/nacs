@@ -4229,7 +4229,7 @@ pub fn job_steps(part: &Part, facts: &JobFacts) -> Vec<JobStep> {
             "Model",
             model.is_some() || features > 0,
             model.map(str::to_string).unwrap_or_else(|| "none imported; the features are declared by hand".to_string()),
-            "import a STEP file, or drop one on the window; its origin is chosen beside the path".to_string(),
+            "import a STEP file, or drop one on the window; the form asks which way is up and where the origin is".to_string(),
             Some(("Import STEP…".to_string(), "import.step")),
         ),
         (
