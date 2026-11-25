@@ -3292,14 +3292,14 @@ fn test_the_band_is_two_rows_and_the_views_line_is_derived() {
     assert_eq!(view::view_line(SidebarTab::Outline, if cfg!(windows) { "C:\\work\\disc.cam" } else { "/work/disc.cam" }, 1, 1, 1, &rows, false, None), "disc.cam — 1 feature, 1 operation");
     assert_eq!(view::view_line(SidebarTab::Outline, "plate.cam", 0, 0, 0, &rows, false, None), "plate.cam — 0 features, no operations");
     // The Target group's row and its empty sentence (Phase 52 slice 4).
-    assert_eq!(view::target_row("part.step", 7, 2), "part.step — 7 faces, 2 proposed");
-    assert_eq!(view::target_row("one.step", 1, 0), "one.step — 1 face, 0 proposed");
+    assert_eq!(view::target_row("part.step", 7, 2), "part.step — 7 faces, 2 features proposed");
+    assert_eq!(view::target_row("one.step", 1, 0), "one.step — 1 face, 0 features proposed");
     assert!(view::NO_TARGET.starts_with("No target"));
     assert_eq!(view::action("import.step").map(|a| a.key), Some(""), "the import is a keyless act");
     assert!(view::MENU.iter().any(|(_, rows)| rows.iter().any(|(id, _)| *id == "import.step")), "and the menu reaches it");
     assert_eq!(view::view_line(SidebarTab::Problems, "plate.cam", 2, 2, 0, &rows, false, None), "no problems");
     assert_eq!(view::view_line(SidebarTab::Problems, "plate.cam", 2, 2, 0, &rows, true, None), "1 problem", "a failed reload is a problem");
-    assert_eq!(view::view_line(SidebarTab::Review, "plate.cam", 2, 2, 0, &rows, false, Some((2, 7))), "2 of 7 faces proposed — report.json");
+    assert_eq!(view::view_line(SidebarTab::Review, "plate.cam", 2, 2, 0, &rows, false, Some((2, 7))), "7 features proposed, 2 waiting — report.json");
     assert!(view::view_line(SidebarTab::Review, "plate.cam", 2, 2, 0, &rows, false, None).starts_with("no report"));
 }
 
@@ -3320,7 +3320,8 @@ fn test_the_tabs_are_the_three_views_and_nothing_twice() {
     sorted.dedup();
     assert_eq!(sorted.len(), labels.len(), "no word twice");
     let review = rail.iter().find(|s| s.tab == SidebarTab::Review).unwrap();
-    assert_eq!(view::tab_label(review, 0, 0, Some((2, 7))), "Review (2/7)");
+    assert_eq!(view::tab_label(review, 0, 0, Some((2, 7))), "Review (2)");
+    assert_eq!(view::tab_label(review, 0, 0, Some((0, 7))), "Review", "nothing waits");
     assert_eq!(view::tab_label(review, 0, 0, None), "Review");
     assert_eq!(view::SIDEBAR_DOOR.0, "sidebar.toggle");
     assert!(view::action(view::SIDEBAR_DOOR.0).is_some(), "the shut sidebar's door is an act the inventory knows");
@@ -6863,6 +6864,15 @@ fn test_duplicate_proposals_point_at_the_first() {
         row("F5", Some("feature F5_Top Plane(z=65.0)")),
     ];
     assert_eq!(view::duplicate_proposals(&rows), vec![None, None, Some(0), None, Some(0)]);
+    // A member face listed before its feature repeats the feature's row;
+    // the feature is the one that waits, and the one counted.
+    let pocket = "feature F9_Pocket ProfilePocket(extent=5.0)";
+    let mut wall = row("F7", Some(pocket));
+    wall.member_of = Some("F9_Pocket".to_string());
+    let rows = vec![wall, row("F9", Some(pocket))];
+    let dups = view::duplicate_proposals(&rows);
+    assert_eq!(dups, vec![Some(1), None]);
+    assert_eq!(view::review_counts(&rows, &dups), (1, 1));
     assert_eq!(view::action("review.accept_all").expect("the act exists").key, "");
 }
 

@@ -4068,7 +4068,7 @@ pub fn view_line(tab: SidebarTab, project_path: &str, n_features: usize, n_ops: 
             }
         }
         SidebarTab::Review => match review {
-            Some((p, n)) => format!("{p} of {n} faces proposed — report.json"),
+            Some((w, n)) => format!("{n} {} proposed, {w} waiting — report.json", plural(n, "feature")),
             None => "no report — drop a STEP file on the window".to_string(),
         },
     }
@@ -4077,8 +4077,8 @@ pub fn view_line(tab: SidebarTab, project_path: &str, n_features: usize, n_ops: 
 /// The Target group's row (DESIGN.md §5.2, Phase 52 slice 4): the model
 /// being made — the report's source file and its totals, the words the
 /// Review's heading carried.
-pub fn target_row(source: &str, faces_total: usize, proposed: usize) -> String {
-    format!("{source} — {faces_total} {}, {proposed} proposed", plural(faces_total, "face"))
+pub fn target_row(source: &str, faces_total: usize, features: usize) -> String {
+    format!("{source} — {faces_total} {}, {features} {} proposed", plural(faces_total, "face"), plural(features, "feature"))
 }
 
 /// The Target group with no report (DESIGN.md §5.2): where one comes from.
@@ -4144,6 +4144,12 @@ pub struct JobStep {
 /// The proposals in the Review that an Accept all would write.
 pub fn proposals_waiting(rows: &[ReviewRow], dups: &[Option<usize>]) -> usize {
     rows.iter().enumerate().filter(|(i, r)| r.statement.is_some() && !r.in_project && !r.rejected && dups.get(*i).copied().flatten().is_none()).count()
+}
+
+/// The Review's two counts: the proposed features still waiting, and all
+/// the features proposed. A face that is only a member of one is not one.
+pub fn review_counts(rows: &[ReviewRow], dups: &[Option<usize>]) -> (usize, usize) {
+    (proposals_waiting(rows, dups), rows.iter().filter(|r| r.statement.is_some() && r.member_of.is_none()).count())
 }
 
 /// What the window or the CLI knows beside the `Part` when it asks for the
@@ -4989,6 +4995,13 @@ pub fn duplicate_proposals(rows: &[ReviewRow]) -> Vec<Option<usize>> {
         .enumerate()
         .map(|(i, r)| {
             let Some(s) = &r.statement else { return None };
+            // A member face carries its feature's statement: it repeats
+            // the feature's own row, wherever that row stands.
+            if r.member_of.is_some() {
+                if let Some(head) = rows.iter().position(|h| h.member_of.is_none() && h.statement.as_ref() == Some(s)) {
+                    return Some(head);
+                }
+            }
             let b = body(s);
             match seen.iter().find(|(x, _)| *x == b) {
                 Some((_, first)) => Some(*first),
@@ -6093,10 +6106,9 @@ pub fn minimap_scroll_to(y: f32, strip_h: f32, n: usize, row_h: f32, spacing: f3
 /// The tab's word with its count (DESIGN.md §5.2, §5.1 — fork 8 of
 /// Phase 23, the rail's label; the heading's counts folded in when the
 /// tabs took the rail's place, Phase 52 slice 1): `Problems (3)` and
-/// `Review (2/7)` where the user looks, so a project that turns red is
-/// not silent on every other view. `review` is the report's
-/// (proposed, total) when one stands — the Review's count needs the
-/// report, which only the shell holds.
+/// `Review (2)` where the user looks, so a project that turns red is
+/// not silent on every other view. `review` is `review_counts` when a
+/// report stands: the tab counts the features still waiting.
 pub fn tab_label(slot: &Tab, n_problems: usize, n_unchecked: usize, review: Option<(usize, usize)>) -> String {
     match (slot.tab, n_problems, n_unchecked) {
         (SidebarTab::Problems, 0, 0) => slot.label.to_string(),
@@ -6104,8 +6116,8 @@ pub fn tab_label(slot: &Tab, n_problems: usize, n_unchecked: usize, review: Opti
         (SidebarTab::Problems, 0, u) => format!("{} ({u} unchecked)", slot.label),
         (SidebarTab::Problems, p, u) => format!("{} ({p} · {u} unchecked)", slot.label),
         (SidebarTab::Review, _, _) => match review {
-            Some((p, n)) => format!("{} ({p}/{n})", slot.label),
-            None => slot.label.to_string(),
+            Some((w, _)) if w > 0 => format!("{} ({w})", slot.label),
+            _ => slot.label.to_string(),
         },
         _ => slot.label.to_string(),
     }
