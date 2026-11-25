@@ -2960,7 +2960,7 @@ impl ViewApp {
                 if sb.open {
                     let (n_problems, n_unchecked) = view::problem_counts(&self.rows);
                     let review = match &self.report {
-                        Some(Ok(r)) => Some((r.proposed_count(), r.faces_total)),
+                        Some(Ok(_)) => Some(view::review_counts(&self.review_rows, &self.review_dups)),
                         _ => None,
                     };
                     // The tabs take what the close leaves (measured last
@@ -3008,7 +3008,7 @@ impl ViewApp {
             // form has the wall, so the band keeps its height.
             let line = if sb.open {
                 let review = match &self.report {
-                    Some(Ok(r)) => Some((r.proposed_count(), r.faces_total)),
+                    Some(Ok(_)) => Some(view::review_counts(&self.review_rows, &self.review_dups)),
                     _ => None,
                 };
                 match sb.tab { SidebarTab::Problems => view::problems_line(&self.rows, self.reload_failed(), &self.account), _ => view::view_line(sb.tab, &self.project_path, self.part.features.len(), self.part.operations.len(), self.op_cursor, &self.rows, self.reload_failed(), review) }
@@ -3908,7 +3908,7 @@ impl ViewApp {
     fn outline_target(&mut self, ui: &mut egui::Ui, act: &mut Option<&'static str>) {
         match &self.report {
             Some(Ok(r)) => {
-                let row = view::target_row(&r.source, r.faces_total, r.proposed_count());
+                let row = view::target_row(&r.source, r.faces_total, view::review_counts(&self.review_rows, &self.review_dups).1);
                 if ui.selectable_label(false, row).on_hover_text("the model the features are recognized from — click for the Review, face by face").clicked() {
                     *act = Some(SidebarTab::Review.action_id());
                 }
@@ -6543,7 +6543,7 @@ impl ViewApp {
                 return;
             }
             Some(Ok(r)) => {
-                ui.label(egui::RichText::new(format!("{}: {} faces, {} proposed, {} declined", r.source, r.faces_total, r.proposed_count(), r.unsupported_count())).small().weak());
+                ui.label(egui::RichText::new(format!("{}: {} faces, {} features proposed, {} faces declined", r.source, r.faces_total, view::review_counts(&self.review_rows, &self.review_dups).1, r.unsupported_count())).small().weak());
                 for line in crate::review::setup_lines(r) {
                     ui.add(egui::Label::new(egui::RichText::new(line).small().weak()).wrap());
                 }
