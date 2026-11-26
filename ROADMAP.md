@@ -769,6 +769,12 @@ One page. What is built, what is next, and the debts we know about.
    the given program and the origin's words under a More fold that
    opens when an import is refused. Browse… fills the path and no
    longer imports at once.
+   Seventeenth pass (2026-11-24): the chamfer mill's form explains
+   itself. Each measured key says what it is; gauge_z is calculated
+   from the angle, gauge_dia and tip_dia until a measured value is
+   typed. A tool whose cone starts far up a straight end (gauge_z read
+   as the tool's length) is noted on its card, at the head of the
+   Problems, in `--outline` and as a warning on stderr.
    Not built: moving the origin after features are accepted (import
    again); a margin on a blank that is the model's own outline (a plain
    prism); a third setup; a quarter turn between setups; a front and its flipped back in one program

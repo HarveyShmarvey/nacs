@@ -1805,6 +1805,33 @@ fn test_rebind_lines_are_judged_last_wins_unknown_dropped() {
 /// The tool form opens on what the job waits for: the kind, and the one
 /// size the scheduler's note names.
 #[test]
+fn test_a_chamfer_mill_whose_cone_starts_far_up_its_end_is_noted() {
+    let part = |gauge_z: &str| {
+        parse::parse(&format!(
+            "units mm
+feed 800
+plunge 300
+rapid_z 5
+clearance_z 25
+spindle 3000
+stock Box(w=60, l=60, h=10, x=0, y=0, z=0)
+             tool T3 ChamferMill(angle=90, gauge_dia=8, gauge_z={gauge_z}, dia=10, tip_dia=1.5)
+"
+        ))
+        .unwrap()
+    };
+    // gauge_z read as the tool's length: the cone would start 36.75 up.
+    let notes = parse::tool_notes(&part("40"));
+    assert_eq!(notes.len(), 1);
+    assert!(notes[0].0 == 3 && notes[0].1.contains("36.750mm above the tip") && notes[0].1.contains("gauge_z 3.250"), "{}", notes[0].1);
+    // The value the note and the form offer says nothing.
+    assert!((parse::Chamfer::gauge_z_at_flat(90.0, 8.0, 1.5).unwrap() - 3.25).abs() < 1e-9);
+    assert!(parse::tool_notes(&part("3.25")).is_empty());
+    assert!(parse::tool_notes(&parse::load_project("chamfer.cam").unwrap()).is_empty());
+    assert!(nacs::outline::report(&part("40")).contains("note: T3: its cone starts"));
+}
+
+#[test]
 fn test_a_wanted_tool_names_its_form() {
     use nacs::view::{tools_wanted, wanted_tool_form};
     let kind = |i: usize| nacs::template::TOOL_SPECS[i].kind;

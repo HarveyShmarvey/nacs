@@ -251,6 +251,35 @@ pub struct Chamfer {
 }
 
 impl Chamfer {
+    /// The `gauge_z` of a cone that ends at the tip flat: where a cone of
+    /// this angle is `gauge_dia` wide, measured up from a flat `tip_dia`
+    /// wide. What the form offers before a measured value is typed.
+    pub fn gauge_z_at_flat(angle: f64, gauge_dia: f64, tip_dia: f64) -> Option<f64> {
+        let ok = angle > 0.0 && angle < 180.0 && tip_dia > 0.0 && gauge_dia > tip_dia;
+        ok.then(|| (gauge_dia - tip_dia) / 2.0 / (angle / 2.0).to_radians().ptan())
+    }
+
+    /// How far above the tip the cone starts: 0 on a cone that ends at
+    /// its flat, more when a straight land runs below it.
+    pub fn land(&self) -> f64 {
+        let t = self.phi_half().ptan();
+        self.gauge_z - (self.gauge_dia / 2.0) / t + (self.tip_dia / 2.0) / t
+    }
+
+    /// A declaration that reads like a slip: a land longer than the flat
+    /// is wide is a pin under the cone, and the program plunges it into
+    /// the work to bring the cone to the edge. Advice; the tool may be so.
+    pub fn note(&self) -> Option<String> {
+        let land = self.land();
+        (land > self.tip_dia + 1e-9).then(|| {
+            let fit = Self::gauge_z_at_flat(self.actual_angle(), self.gauge_dia, self.tip_dia).unwrap_or(0.0);
+            format!(
+                "its cone starts {land:.3}mm above the tip, on a {:.3}mm straight end: gauge_z ({:.3}) is how far above the tip the cone is gauge_dia ({:.3}) wide, not the tool's length. A cone that ends at the tip flat has gauge_z {fit:.3}",
+                self.tip_dia, self.gauge_z, self.gauge_dia
+            )
+        })
+    }
+
     /// The included angle that actually cuts: nominal plus what it measured.
     pub fn actual_angle(&self) -> f64 {
         self.angle + self.angle_error

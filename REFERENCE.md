@@ -27,7 +27,17 @@ A project is a directory holding `main.part` (and, optionally, `geometry.part`).
 - **Drill** — `dia`, `flute_len`?, `shank_dia`?, `neck_dia`?, `neck_len`?, `stickout`?, `flute_count`?, `holder`?, `holder_nose_dia`?, `holder_nose_len`?, `holder_body_dia`?, `coolant`?
 - **FormTool** — `dia`, `profile`, `cut_bottom`?, `cut_top`?, `source`?, `flute_len`?, `shank_dia`?, `neck_dia`?, `neck_len`?, `stickout`?, `flute_count`?, `holder`?, `holder_nose_dia`?, `holder_nose_len`?, `holder_body_dia`?, `coolant`?
 - **CornerRounder** — `radius`, `effective_dia`, `gauge_z`, `dia`, `pilot`, `radius_error`?, `trail_wall`?, `trail_face`?, `source`?, `flute_len`?, `shank_dia`?, `neck_dia`?, `neck_len`?, `stickout`?, `flute_count`?, `holder`?, `holder_nose_dia`?, `holder_nose_len`?, `holder_body_dia`?, `coolant`?
+  - `radius`: the arc's radius, as sold
+  - `effective_dia`: the diameter the arc meets the wall at
+  - `gauge_z`: height above the tip of the arc's top; not the tool's length
+  - `dia`: the body's outside diameter, above the arc
+  - `pilot`: the diameter of the end below the arc
 - **ChamferMill** — `angle`, `gauge_dia`, `gauge_z`, `dia`, `tip_dia`, `angle_error`?, `source`?, `flute_len`?, `shank_dia`?, `neck_dia`?, `neck_len`?, `stickout`?, `flute_count`?, `holder`?, `holder_nose_dia`?, `holder_nose_len`?, `holder_body_dia`?, `coolant`?
+  - `angle`: the included angle of the cone, as sold: 90 cuts a 45° chamfer
+  - `gauge_dia`: a diameter measured on the cone
+  - `gauge_z`: height above the tip of gauge_dia; not the tool's length
+  - `dia`: the body's outside diameter, above the cone
+  - `tip_dia`: the flat at the tip; no ground cone comes to a point
 
 (`?` marks an optional key; the body keys at the end of every kind describe the shank and holder for the collision checks.)
 

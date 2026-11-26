@@ -461,6 +461,24 @@ pub fn tool_spec(kind: &str) -> Result<&'static ToolSpec, String> {
     })
 }
 
+/// What a tool's key means, where its name does not say: shown beside
+/// the field and printed in the reference.
+pub fn tool_key_says(kind: &str, key: &str) -> Option<&'static str> {
+    Some(match (kind, key) {
+        ("ChamferMill", "angle") => "the included angle of the cone, as sold: 90 cuts a 45° chamfer",
+        ("ChamferMill", "gauge_dia") => "a diameter measured on the cone",
+        ("ChamferMill", "gauge_z") => "height above the tip of gauge_dia; not the tool's length",
+        ("ChamferMill", "dia") => "the body's outside diameter, above the cone",
+        ("ChamferMill", "tip_dia") => "the flat at the tip; no ground cone comes to a point",
+        ("CornerRounder", "radius") => "the arc's radius, as sold",
+        ("CornerRounder", "effective_dia") => "the diameter the arc meets the wall at",
+        ("CornerRounder", "gauge_z") => "height above the tip of the arc's top; not the tool's length",
+        ("CornerRounder", "dia") => "the body's outside diameter, above the arc",
+        ("CornerRounder", "pilot") => "the diameter of the end below the arc",
+        _ => return None,
+    })
+}
+
 /// A kind's whole key list — its own keys, then the body ladder.
 pub fn tool_keys(spec: &ToolSpec) -> Vec<&'static Key> {
     spec.keys.iter().chain(BODY.iter()).collect()
