@@ -245,6 +245,15 @@ const FIXTURES: &[(&str, &[&str], &str, &str)] = &[
         "tests/fixtures/boss_chamfer.report.golden.json",
         "tests/fixtures/boss_chamfer.proposed.golden.part",
     ),
+    // ROADMAP item 9: a head over a groove, its top opened by a pocket, three
+    // top edges rounded and the fourth a bevel. Imported with an allowance,
+    // as a real blank is, so the pocket is drawn out past the blank.
+    (
+        "tests/fixtures/block_outline.step",
+        &["--allowance", "1"],
+        "tests/fixtures/block_outline.report.golden.json",
+        "tests/fixtures/block_outline.proposed.golden.part",
+    ),
 ];
 
 /// The allowance (ROADMAP item 1, slice 11): `--allowance 1` grows a
@@ -2104,8 +2113,8 @@ fn test_a_pocket_that_runs_out_onto_a_bevel_proposes_open() {
     assert!(proposed.contains("    40.0 32.0\n    -0.02 32.0\n)"), "{proposed}");
     let report = fs::read_to_string("tests/fixtures/open_pocket.report.golden.json").expect("failed to read report golden");
     let faces = face_entries(&report);
-    assert_eq!(faces.iter().filter(|f| f.status == "proposed").count(), 21, "the fillets and the rounds are the pocket's faces: {report}");
-    assert_eq!(faces[0].code.as_deref(), Some("plane_oblique"), "the bevel itself is still refused: {report}");
+    assert_eq!(faces.iter().filter(|f| f.status == "proposed").count(), 22, "the fillets and the rounds are the pocket's faces: {report}");
+    assert_eq!(faces[0].status, "proposed", "the bevel is the outline's chamfered edge: {report}");
 
     let pocket = proposed.split("\n\n").find(|b| b.contains("feature F9_Pocket")).unwrap();
     let pocket: String = pocket.lines().filter(|l| !l.starts_with('#')).collect::<Vec<_>>().join("\n");
@@ -2128,7 +2137,10 @@ spindle 3000
 tool T6 Endmill(dia=6.0)
 {proposed}
 ");
-    assert!(proposed.contains("feature F4_Trim ContourBoss("), "{proposed}");
+    // The outline: the bevel is a strip seen through to the wall under it,
+    // so the block is a profile with that one edge chamfered, now that the
+    // pocket's mouth on the top face's boundary no longer ends the reading.
+    assert!(proposed.contains("feature F4_Profile ProfileBoss(z=20.0, extent=20.0, chamfer_depth=8.0, chamfer_angle=90.0"), "{proposed}");
     parse::parse(&src).expect("the pocket and the outline it runs out through parse together");
 }
 
@@ -2144,13 +2156,7 @@ fn test_a_block_top_below_a_taller_boss_proposes_as_a_level() {
     assert!(proposed.contains("feature F2_Floor Plane(z=20.0)"), "{proposed}");
     assert!(proposed.contains("feature F22_Boss CylinderBoss(dia=10.0, extent=12.0, x=28.0, y=20.0, z=14.0)"), "{proposed}");
 
-    // The outline's own block is left out: a pocket drawn out past the blank
-    // crosses it, and that pair is its own change.
-    let features: String = proposed.split("
-
-").filter(|b| !b.contains("feature F4_Trim")).collect::<Vec<_>>().join("
-
-");
+    let features = &proposed;
     let src = format!("units mm
 feed 800
 plunge 300
@@ -2168,6 +2174,44 @@ run Clear(tool=T6, profile=F9_Pocket, stepover=3.0)
     let level = program.split("(--- pocket clear: F9_Pocket").next().unwrap();
     assert!(level.contains("(--- volume clear: F2_Floor") && level.contains("(islands: F22_Boss)"), "the level goes round the boss: {program}");
     assert_eq!(program.matches("(islands: F22_Boss)").count(), 2, "and so does the pocket: {program}");
+}
+
+/// ROADMAP item 9: the outline of a head whose top a pocket opens through.
+/// The top face's boundary runs round the pocket's mouth, three top edges
+/// are rounded and the fourth is a bevel as deep as the head. The outline
+/// proposes as a profile carrying the round, the bevel stays refused with
+/// its own reason, and the top stays the level. Reads the committed goldens;
+/// `test_sidecar_golden` ties them to the sidecar.
+#[test]
+fn test_a_block_outline_reads_past_a_pocket_mouth_and_carries_its_rounds() {
+    let proposed = fs::read_to_string("tests/fixtures/block_outline.proposed.golden.part").expect("failed to read proposed golden");
+    assert!(proposed.contains("feature F16_Profile ProfileBoss(z=26.0, extent=12.0, edge_round=1.0\n    0.0 0.0\n    0.0 40.0\n    60.0 40.0\n    60.0 0.0\n)"), "{proposed}");
+    assert!(proposed.contains("feature F2_Floor Plane(z=26.0)"), "the top is the level, not a bounded face: {proposed}");
+    let report = fs::read_to_string("tests/fixtures/block_outline.report.golden.json").expect("failed to read report golden");
+    let faces = face_entries(&report);
+    assert_eq!(faces[0].code.as_deref(), Some("chamfer_beside_round"), "the bevel says why it is left out: {report}");
+
+    let src = format!("units mm
+feed 800
+plunge 300
+rapid_z 36
+clearance_z 41
+spindle 3000
+                 stock Box(w=62, l=42, h=31, x=-1, y=-1, z=31)
+tool T6 Endmill(dia=6.0)
+tool T3 Endmill(dia=3.0)
+                 tool T2 CornerRounder(radius=1.0, effective_dia=4.0, gauge_z=2.0, dia=6.0, pilot=3.9)
+{proposed}
+                 run Clear(tool=T6, profile=F29_Top, stepover=3.0)
+run Clear(tool=T6, profile=F2_Floor, stepover=3.0)
+run Clear(tool=T3, profile=F9_Pocket, stepover=1.5)
+run Side(tool=T6, surface=F16_Profile)
+run Form(tool=T2, surface=F16_Profile)
+");
+    let part = parse::parse(&src).expect("the pocket and the outline it opens through parse together");
+    let (program, _) = gcode::program_with_moves(&part).expect("the outline is cut and its edge rounded");
+    assert!(program.contains("(--- side contour (engine): F16_Profile with T6 ---)"), "{program}");
+    assert!(program.contains("(--- break edge (engine): F16_Profile with T2 ---)"), "{program}");
 }
 
 /// ROADMAP item 9: a round boss whose top edge is broken by a bevel. The

@@ -808,10 +808,22 @@ One page. What is built, what is next, and the debts we know about.
    Fourth pass: the bevel on the boss's top edge, a cone the reader
    refused as a frustum, is the boss's `chamfer_depth` (`boss_chamfer`
    fixture).
-   Still refused on that part, in the order to take them: a counterbore's
-   floor over a through hole, the outline of the block, the bevel itself. The groove and a slot in a
-   side face wait on a quarter turn. Not built: an endmill with a corner
-   radius, which is what leaves a floor fillet.
+   Fifth pass: a counterbore's floor round a through hole is the bore's
+   floor, and `nacs --schedule` pecks a hole deeper than five diameters.
+   Sixth pass: the block's outline (`block_outline` fixture). The top
+   face's boundary runs round the pocket's mouth, which is no wall of the
+   outline; the rounds on three top edges are the profile's `edge_round`;
+   the corner past the blend at each end of the bevel is read sharp. The
+   outline proposes with a square wall where the bevel is, and the bevel
+   says why it is left out: a feature carries a round or a chamfer, not
+   both. Where the other edges are square, the bevel is that one edge's
+   `chamfer_depth` (`open_pocket`, `block_level`: a profile where a trim
+   wire was).
+   Still refused on that part, in the order to take them: the bevel itself
+   (a chamfer deeper than a cutter's flank, beside rounds), the groove (a
+   T-slot cutter). A slot in a side face waits on a quarter turn. Not
+   built: an endmill with a corner radius, which is what leaves a floor
+   fillet.
 
 ## Debts
 

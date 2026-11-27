@@ -1,0 +1,62 @@
+# Proposed features recognized from block_outline.step by sidecar/import_step.py
+# (contract v1 -- see sidecar/CONTRACT.md). Review before use:
+# recognition proposes, it does not machine.
+# imported with --allowance 1.0: the blank stands 1.0 above the model's top and outside its plan; bores at the model's top are drilled from the blank top
+# or placed by z=, and the plan-bounding rim is proposed as a boss to bring to size
+
+# F2: the level at z=26.0, below the part's topmost height and with nothing beside it rising above it: 1 face (F2) at one height; nothing stands above it outside a proposed feature, so the whole blank clears to it around what stands, the islands and voids derived from containment (CHECKLIST row 1.1)
+# consume with: run Clear(tool=..., profile=F2_Floor, stepover=...)  [the whole blank down to z=26.0, around what stands higher]
+# then finish with: run End(tool=..., surface=F2_Floor, stepover=...)
+# what stands higher is an island by containment, and a pocket or bore that opens in this floor is
+# cut from it by its own run
+feature F2_Floor Plane(z=26.0)
+
+# F9: pocket floor at z=21.0; vertical wall loop F7 F10 F26, mouth at z=26.0, depth 5.0, opens upward; 1 inner wire -- standing material inside the pocket proposes beside it; the floor runs out onto F1, which falls away from it -- that side is open, the loop drawn straight out past the blank; mouth rounded R1.0 (F4 F11 F14) -- proposed as edge_round, the mouth at the round's top (CHECKLIST row 2.1)
+# consume with: run Clear(tool=..., profile=F9_Pocket, stepover=...)  [the feature carries its own z + extent]
+# or finish with: run Side(tool=..., surface=F9_Pocket, comp=control)
+# comp=control is required on recognized profile Side runs: recognized boundaries carry rounded
+# corners tessellated to chords, and engine comp hard-errors on rounded-corner
+# offsets (DECISIONS.md -> "recognized contours propose comp=control")
+# this floor has 1 inner wire: a boss proposed INSIDE this loop is its island, derived from
+# containment -- the Clear above goes around it (stepover at most the tool's radius), and the
+# island takes no Clear of its own. CHECK that every inner wire has a proposed boss below:
+# standing material this reader could not name is NOT in the proposal, and would be cleared through.
+# open toward F1: the floor runs out onto a face that falls away, so
+# that side is drawn straight out past the blank, where the engine reads it open;
+# everything the loop holds past the floor is air in the model above this floor
+# break the mouth with: run Form(tool=<CornerRounder>, surface=F9_Pocket)  [its ground arc must be R1.0]
+feature F9_Pocket ProfilePocket(z=26.0, extent=5.0, edge_round=1.0
+    -1.02 12.0
+    40.0 12.0
+    40.0 28.0
+    -1.02 28.0
+)
+
+# F16: outer profile under top cap F2: vertical wall loop F6 F21 F20 F16, top at z=26.0, base at z=14.0, material inside the loop; stepped base: the profile stops at the highest base z=14.0, and F6 to z=0.0 run on below it; the base at z=14.0 is the head's own underside (the face under the walls faces down): the wall is traced from above, the underside is the other setup's; top edge rounded R1.0 (F12 F13 F15) -- proposed as edge_round, the loop read at the walls; one edge is beveled instead (F1) -- a feature carries a round or a chamfer, not both, so the loop stands a square wall there and the bevel stays residue (CHECKLIST row 2.2)
+# consume with: run Side(tool=..., surface=F16_Profile, comp=control)  [the feature carries its own z + extent]
+# the loop is wound CW: material inside, tool outside (the winding convention,
+# DECISIONS.md -> "Row-2.4 side selector")
+# comp=control is required on Contour runs: recognized boundaries carry rounded
+# corners tessellated to chords, and engine comp hard-errors on rounded-corner
+# offsets (DECISIONS.md -> "recognized contours propose comp=control")
+# the base is stepped: this profile stops at z=14.0, the highest base; the walls F6 run on below it
+# and belong to whatever stands lower -- declare that by hand or accept its own proposal
+# the base at z=14.0 is an overhang: the face under the walls faces down, so the
+# tool has air under it at the base; the underside itself is the other setup's
+# break the top edge with: run Form(tool=<CornerRounder>, surface=F16_Profile)  [its ground arc must be R1.0]
+# one edge of the model is a bevel, not a round (see its own entry): this loop stands a
+# square wall there, which leaves the bevel's material on; nothing proposed here cuts it
+feature F16_Profile ProfileBoss(z=26.0, extent=12.0, edge_round=1.0
+    0.0 0.0
+    0.0 40.0
+    60.0 40.0
+    60.0 0.0
+)
+
+# F27: cylindrical, axis +Z, full revolution, material inside (a standing boss), flat top cap F29, clean base at z=21.0 (CHECKLIST row 2.4)
+# finish the wall with: run Side(tool=..., surface=F27_Boss, stepover=...)  [stepover is the ring spacing up the wall]
+# the tool rides outside at R + r_tool (convex flank; finish_cylinder's mirror)
+feature F27_Boss CylinderBoss(dia=8.0, extent=9.0, x=32.0, y=20.0, z=21.0)
+
+# F29: planar, normal +Z, topmost planar face (CHECKLIST row 1.1)
+feature F29_Top Plane(z=30.0)

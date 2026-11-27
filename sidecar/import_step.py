@@ -1451,12 +1451,31 @@ def wall_under_edge(a, b, pieces_by_wall):
     return best[1] if best else None
 
 
-def chain_loop(polylines):
+def chain_loop(polylines, reach=0.0):
     """Chain full polylines into one closed loop by matching endpoints (a
     polyline joins reversed when its END meets the chain). Returns the loop
-    without its closing repeat, or None when the pieces do not close."""
+    without its closing repeat, or None when the pieces do not close.
+
+    With a `reach`, two pieces whose ends do not meet join at the CORNER
+    their end segments make when carried on, if that corner lies within the
+    reach of both ends: two walls with a blend between them the loop does
+    not follow (the round along a bevel's end), read as the sharp corner."""
     def same(a, b):
         return abs(a[0] - b[0]) <= 10.0 * LIN_TOL and abs(a[1] - b[1]) <= 10.0 * LIN_TOL
+
+    def corner(a0, a1, b0, b1):
+        # Where the line a0->a1, carried past a1, meets the line b1->b0,
+        # carried back past b0.
+        dax, day = a1[0] - a0[0], a1[1] - a0[1]
+        dbx, dby = b1[0] - b0[0], b1[1] - b0[1]
+        den = dax * dby - day * dbx
+        if abs(den) <= 1e-9 * math.hypot(dax, day) * math.hypot(dbx, dby):
+            return None
+        t = ((b0[0] - a1[0]) * dby - (b0[1] - a1[1]) * dbx) / den
+        c = (a1[0] + t * dax, a1[1] + t * day)
+        if t < 0.0 or math.dist(c, a1) > reach or math.dist(c, b0) > reach:
+            return None
+        return c
     pool = [list(p) for p in polylines if len(p) >= 2]
     if not pool:
         return None
@@ -1470,12 +1489,22 @@ def chain_loop(polylines):
                 hit, piece = k, p[-2::-1]
             if hit is not None:
                 break
+        if hit is None and reach > 0.0:
+            for k, p in enumerate(pool):
+                for q in (p, p[::-1]):
+                    c = corner(chain[-2], chain[-1], q[0], q[1])
+                    if c is not None:
+                        hit, piece = k, [c] + q
+                        break
+                if hit is not None:
+                    break
         if hit is None:
             return None
         pool.pop(hit)
         chain += piece
     if not same(chain[0], chain[-1]):
-        return None
+        c = corner(chain[-2], chain[-1], chain[0], chain[1]) if reach > 0.0 else None
+        return None if c is None else chain + [c]
     return chain[:-1]
 
 
@@ -1529,9 +1558,30 @@ def see_through(w, faces, emap, face_index, below):
                                      f"row 1.2, no tilted-plane primitive) or a bevel as deep as its "
                                      f"wall (the engine's chamfer needs a flank below it)",
                               refs=[f"F{w}"])
-        elif kind == "CYLINDER":
+        elif kind == "CYLINDER" and upright(pf):
             walls.append(j)
     return walls
+
+
+def upright(face):
+    """A wall a tool's flank cuts: a vertical plane or a cylinder standing
+    on the tool's axis."""
+    kind = face.geomType()
+    if kind == "PLANE":
+        return abs(face_normal(face)[1].Z()) < 1.0 - COS_TOL
+    if kind == "CYLINDER":
+        return abs(BRepAdaptor_Surface(face.wrapped).Cylinder().Axis().Direction().Z()) >= COS_TOL
+    return False
+
+
+def top_round(face, z_cap):
+    """The radius of a quarter-round that ends at a cap's height: the round
+    on a boss's top edge, between the cap and the wall under it. None for
+    anything else."""
+    bb = face.BoundingBox()
+    if abs(bb.zmax - z_cap) > 10.0 * LIN_TOL:
+        return None
+    return blend_radius(face, bb.zmin, axis_on_top=False)
 
 
 def blend_radius(face, z_low, axis_on_top):
@@ -2100,7 +2150,8 @@ def recognize_pockets(solid, faces, z_top, emap, face_index, claimed, blank_side
 
 
 def outer_profile_group(cap, cap_idx, wall_idxs, faces, solid, emap,
-                        face_index, z_top, z_solid_min, chamfer=None):
+                        face_index, z_top, z_solid_min, chamfer=None,
+                        edge_round=None, ends=()):
     """Graduation checks + boundary extraction for one outer-profile
     candidate: a +Z planar cap whose outer-wire walls all descend (the
     caller's filter). The exact mirror of pocket_group, cap-down instead of
@@ -2286,11 +2337,18 @@ def outer_profile_group(cap, cap_idx, wall_idxs, faces, solid, emap,
     # and the loop's points restate the leg (slice 9); (None, None, ...) is
     # strips at two angles: the loop is still read at the walls, but no
     # chamfer is written and the strips are not members.
+    # `edge_round` is (radius, round faces): a quarter-round between the cap
+    # and every wall, read the same way -- the loop at the walls' tops, the
+    # feature's top at the cap. `ends` are the blends along a bevel's ends,
+    # between the bevel and the wall beside it: no part of the loop, which
+    # runs on past them to the sharp corner.
     even = chamfer is not None and chamfer[0] is not None
     marked = chamfer is not None and chamfer[0] is None and chamfer[1] is not None
+    strips_seen = chamfer[2] if chamfer is not None else []
+    round_faces = edge_round[1] if edge_round is not None else []
     pts, had_arc = [], False
     pieces_by_wall = {}
-    if chamfer is None:
+    if chamfer is None and edge_round is None:
         wexp = BRepTools_WireExplorer(BRepTools.OuterWire_s(cap.wrapped),
                                       cap.wrapped)
         while wexp.More():
@@ -2306,7 +2364,7 @@ def outer_profile_group(cap, cap_idx, wall_idxs, faces, solid, emap,
         # bevel meets a shallower one at a corner (the real part's ribs). In
         # plan they all lie on the wall's line, so the chained loop is the
         # wall's.
-        above = set(chamfer[2]) | {cap_idx}
+        above = set(strips_seen) | set(round_faces) | set(ends) | {cap_idx}
         pieces = []
         for w in wall_idxs:
             wf = faces[w - 1]
@@ -2320,7 +2378,23 @@ def outer_profile_group(cap, cap_idx, wall_idxs, faces, solid, emap,
                 pieces.append(ept)
                 pieces_by_wall.setdefault(w, []).append(ept)
                 had_arc = had_arc or arc
-        pts = chain_loop(pieces)
+        # Where the wall under a bevel is cut away below it (a groove under
+        # the head runs out through that wall), the bevel's foot goes on
+        # along the underside, and the loop follows the foot.
+        for j in strips_seen:
+            sf = faces[j - 1]
+            foot = sf.BoundingBox().zmin
+            for edge in sf.Edges():
+                if edge.BoundingBox().zmax > foot + 10.0 * LIN_TOL:
+                    continue
+                for anc in emap.FindFromKey(edge.wrapped):
+                    nb = faces[face_index(anc) - 1]
+                    if (not anc.IsSame(sf.wrapped) and nb.geomType() == "PLANE"
+                            and face_normal(nb)[1].Z() < -COS_TOL):
+                        pieces.append(edge_points(edge.wrapped)[0])
+        reach = 4.0 * max((BRepAdaptor_Surface(faces[j - 1].wrapped).Cylinder().Radius()
+                           for j in ends), default=0.0)
+        pts = chain_loop(pieces, reach)
         if pts is not None:
             # The slanted corner edges project onto the wall's own line:
             # the points they add are collinear and say nothing.
@@ -2330,7 +2404,7 @@ def outer_profile_group(cap, cap_idx, wall_idxs, faces, solid, emap,
                           reason="the walls under this cap's bevel do not chain into one "
                                  "closed loop at their tops -- the bevel breaks an edge "
                                  "this reader cannot follow round",
-                          refs=[f"F{w}" for w in chamfer[2]])
+                          refs=[f"F{w}" for w in list(strips_seen) + list(round_faces)])
 
     # Normalize for determinism, mirrored from pocket_group with the sign
     # flipped: CW winding by signed area (material inside the loop -> tool
@@ -2347,6 +2421,12 @@ def outer_profile_group(cap, cap_idx, wall_idxs, faces, solid, emap,
     # extent, so it authors them (DECISIONS.md "Vertical occupancy is
     # `extent`…").
     keys = f"z={fmt(z_top)}, extent={fmt(depth)}"
+    if even or marked or edge_round is not None:
+        # A broken top edge is at the cap, so the cap is the feature's top
+        # and the extent runs from it.
+        keys = f"z={fmt(z_cap)}, extent={fmt(z_cap - z_base)}"
+    if edge_round is not None:
+        keys += f", edge_round={fmt(edge_round[0])}"
     marks, default_leg, edge_legs = {}, None, []
     if even:
         keys += f", chamfer_depth={fmt(chamfer[0])}, chamfer_angle={fmt(chamfer[1])}"
@@ -2417,10 +2497,23 @@ def outer_profile_group(cap, cap_idx, wall_idxs, faces, solid, emap,
             whys[j] = (f"top-edge bevel of recognized outer profile {name} (top cap F{cap_idx}): "
                        f"a strip between the cap and the walls, {fmt(chamfer[4][j])} deep -- proposed "
                        f"as the boss's chamfer_depth, restated on the loop's points where the leg changes")
-    elif chamfer is not None:
+    elif chamfer is not None and edge_round is None:
         strips = " ".join(f"F{j}" for j in chamfer[2])
         whys[primary] += (f"; top edge beveled unevenly ({strips}) -- proposed without a chamfer, "
                           f"the loop read at the walls; the strips stay residue")
+    if edge_round is not None:
+        blends = " ".join(f"F{j}" for j in round_faces)
+        whys[primary] += (f"; top edge rounded R{fmt(edge_round[0])} ({blends}) -- proposed as "
+                          f"edge_round, the loop read at the walls")
+        for j in round_faces:
+            whys[j] = (f"top-edge round of recognized outer profile {name} (top cap F{cap_idx}): "
+                       f"a quarter-round between the cap and the wall under it -- proposed as the "
+                       f"boss's edge_round, not a standalone face")
+        if strips_seen:
+            strips = " ".join(f"F{j}" for j in strips_seen)
+            whys[primary] += (f"; one edge is beveled instead ({strips}) -- a feature carries a round "
+                              f"or a chamfer, not both, so the loop stands a square wall there and "
+                              f"the bevel stays residue")
     extras = [
         f"# consume with: run Side(tool=..., surface={name}, comp=control)"
         "  [the feature carries its own z + extent]",
@@ -2458,7 +2551,17 @@ def outer_profile_group(cap, cap_idx, wall_idxs, faces, solid, emap,
             f"# break it with: run Form(tool=<ChamferMill>, surface={name})  [engine comp: control comp cannot",
             "# lift off an unbroken edge, and the deeper leg reaches about a reach's width round each corner]",
         ]
-    if chamfer is not None and not even and not marked:
+    if edge_round is not None:
+        extras += [
+            f"# break the top edge with: run Form(tool=<CornerRounder>, surface={name})"
+            f"  [its ground arc must be R{fmt(edge_round[0])}]",
+        ]
+        if strips_seen:
+            extras += [
+                "# one edge of the model is a bevel, not a round (see its own entry): this loop stands a",
+                "# square wall there, which leaves the bevel's material on; nothing proposed here cuts it",
+            ]
+    if chamfer is not None and not even and not marked and edge_round is None:
         extras += [
             "# the top edge is beveled unevenly (see the strips' own entries): no chamfer_depth is proposed;",
             "# type the one the print says, or break each edge with its own Form run",
@@ -2466,8 +2569,10 @@ def outer_profile_group(cap, cap_idx, wall_idxs, faces, solid, emap,
     # A wall that runs on below the base is the loop's here, but belongs to
     # whatever stands lower (the disc's rim, every rib's at once): it keeps
     # its own entry and stays free for the next cap's loop.
-    members = [w for w in wall_idxs if w not in deeper] + (chamfer[2] if even or marked else [])
-    primary = min(members)
+    members = ([w for w in wall_idxs if w not in deeper] + (chamfer[2] if even or marked else [])
+               + list(round_faces))
+    # The primary stays the wall the feature is named for, whatever strip or
+    # round has a lower number: the proposal is written at that face.
     return dict(primary=primary, members=members, name=name,
                 part=part, row="2.8" if had_arc else "2.2", whys=whys,
                 extras=extras, cap=cap_idx, z_cap=z_cap, z_base=z_base,
@@ -2507,6 +2612,7 @@ def recognize_outer_profiles(solid, faces, z_top, emap, face_index, claimed):
         wexp = BRepTools_WireExplorer(BRepTools.OuterWire_s(f.wrapped),
                                       f.wrapped)
         broken = False
+        mouths = False
         while wexp.More():
             edge = wexp.Current()
             wall = None
@@ -2516,7 +2622,12 @@ def recognize_outer_profiles(solid, faces, z_top, emap, face_index, claimed):
             if wall is None:
                 broken = True
                 break
-            if wall not in wall_idxs:
+            if claimed.get(wall, {}).get("name", "").endswith("_Pocket"):
+                # The wire runs round a proposed pocket's mouth here: the
+                # pocket opens out through this outline, and its mouth is no
+                # wall of the loop.
+                mouths = True
+            elif wall not in wall_idxs:
                 wall_idxs.append(wall)
             wexp.Next()
 
@@ -2535,7 +2646,8 @@ def recognize_outer_profiles(solid, faces, z_top, emap, face_index, claimed):
             taken = w in claimed or w in member_of
             runs_deeper = z_base_guess is not None and zmins[w] < z_base_guess - 10.0 * LIN_TOL
             if ((taken and not runs_deeper)
-                    or (wf.geomType() not in ("PLANE", "CYLINDER") and strip_of(wf) is None)
+                    or (wf.geomType() not in ("PLANE", "CYLINDER") and strip_of(wf) is None
+                        and top_round(wf, z_cap) is None)
                     or wf.BoundingBox().zmax > z_cap + 10.0 * LIN_TOL):
                 skip = True
         if skip:
@@ -2546,6 +2658,7 @@ def recognize_outer_profiles(solid, faces, z_top, emap, face_index, claimed):
         # loop in its place; the strips must agree on one leg and one angle.
         strips, walls, chamfer, refusal, uneven = [], [], None, None, None
         strip_over, strip_leg = {}, {}  # wall -> (leg, angle) of the strip over it; strip -> leg
+        rounds, round_over, ends, edge_round = {}, set(), [], None  # round -> radius; walls under one
         candidate = list(wall_idxs)  # every face on the cap's wire, for a refusal to land on
         try:
             legs = set()
@@ -2553,6 +2666,18 @@ def recognize_outer_profiles(solid, faces, z_top, emap, face_index, claimed):
                 wf = faces[w - 1]
                 angle = strip_of(wf)
                 if angle is None:
+                    # A quarter-round between the cap and a wall is the top
+                    # edge's round, seen through to the wall as a strip is.
+                    radius = top_round(wf, z_cap)
+                    below = ([j for j in across_edges(wf, faces, emap, face_index, at_bottom=True)
+                              if upright(faces[j - 1])] if radius is not None else [])
+                    if below:
+                        rounds[w] = round(radius, 6)
+                        round_over.update(below)
+                        for j in below:
+                            if j not in walls:
+                                walls.append(j)
+                        continue
                     if w not in walls:  # a strip's partner may have brought it in already
                         walls.append(w)
                     continue
@@ -2561,6 +2686,13 @@ def recognize_outer_profiles(solid, faces, z_top, emap, face_index, claimed):
                     walls.append(w)  # not a break on a wall: the group refuses it as before
                     continue
                 strips.append(w)
+                for edge in wf.Edges():
+                    for anc in emap.FindFromKey(edge.wrapped):
+                        j = face_index(anc)
+                        nf = faces[j - 1]
+                        if (j not in ends and nf.geomType() == "CYLINDER" and not upright(nf)
+                                and blend_radius(nf, nf.BoundingBox().zmin, axis_on_top=False) is None):
+                            ends.append(j)  # the blend along the bevel's end, to the wall beside it
                 bb = wf.BoundingBox()
                 leg = (round(bb.zmax - bb.zmin, 6), round(angle, 6))
                 legs.add(leg)
@@ -2597,6 +2729,20 @@ def recognize_outer_profiles(solid, faces, z_top, emap, face_index, claimed):
                 one_leg = len(legs) == 1 and all(w in strip_over for w in walls)
                 chamfer = (next(iter(legs))[0] if one_leg else None,
                            next(iter(angles)), strips, strip_over, strip_leg)
+            if rounds:
+                bare = [w for w in walls if w not in round_over and w not in strip_over]
+                if len(set(rounds.values())) > 1 or bare:
+                    raise Refusal(code="chamfer_uneven",
+                                  reason="the top edges under this cap do not carry one round (a radius "
+                                         "differs, or some walls have none) -- one feature carries one "
+                                         "edge_round",
+                                  refs=[f"F{j}" for j in sorted(rounds)])
+                edge_round = (next(iter(rounds.values())), sorted(rounds))
+                if strips:
+                    # A round and a bevel on one loop: the feature carries
+                    # the round, the loop is still read at the walls, and
+                    # the bevel is left out and says so.
+                    chamfer = (None, None, strips, strip_over, strip_leg)
         except Refusal as r:
             refusal = r
         wall_idxs = walls
@@ -2605,7 +2751,8 @@ def recognize_outer_profiles(solid, faces, z_top, emap, face_index, claimed):
             if refusal is not None:
                 raise refusal
             g = outer_profile_group(f, i, wall_idxs, faces, solid, emap,
-                                    face_index, z_top, z_solid_min, chamfer)
+                                    face_index, z_top, z_solid_min, chamfer,
+                                    edge_round, ends)
         except Refusal as r:
             for w in sorted(set(candidate) | set(wall_idxs)):
                 wall_fail[w] = r.rewrap(
@@ -2619,7 +2766,17 @@ def recognize_outer_profiles(solid, faces, z_top, emap, face_index, claimed):
         else:
             for m in g["members"]:
                 member_of[m] = g
-            if uneven is not None:
+            if edge_round is not None:
+                for j in strips:
+                    leg = fmt(strip_leg[j])
+                    wall_fail[j] = residue(
+                        code="chamfer_beside_round", row="no row",
+                        reason=f"top-edge bevel round cap F{i}, {leg}mm deep, on a loop whose other "
+                               f"edges are rounded R{fmt(edge_round[0])}: one feature carries a round or "
+                               f"a chamfer, not both -- {g['name']} proposes with the round and a "
+                               f"square wall along this edge, and the bevel is not cut",
+                        refs=[f"F{g['primary']}"])
+            elif uneven is not None:
                 seen = ", ".join(f"{fmt(d)} at {fmt(a)}deg" for d, a in uneven)
                 for j in strips:
                     wall_fail[j] = residue(
@@ -2635,7 +2792,10 @@ def recognize_outer_profiles(solid, faces, z_top, emap, face_index, claimed):
                 # of its own", code outer_profile_anchor_cap, retired Phase
                 # 28); it proposes as a bounded `Face` now, and this note only
                 # carries which profile it caps.
-                cap_note[i] = dict(anchor=g["name"])
+                # A cap a pocket opens through is not bounded by its own
+                # wire, which runs round the pocket's mouth: it may be a
+                # level instead (`recognize_levels`).
+                cap_note[i] = dict(anchor=g["name"], open=mouths)
     return member_of, wall_fail, cap_note
 
 
@@ -2842,7 +3002,7 @@ def recognize_levels(member_of, wall_fail, cap_note, floor_fail, faces, emap,
     def open_floor(i):
         # The cap of a refused boss keeps that refusal: it says why the boss
         # under it is not proposed, and a level would bury it.
-        if i in member_of or i in wall_fail or i in cap_note:
+        if i in member_of or i in wall_fail or (i in cap_note and not cap_note[i].get("open")):
             return None
         f = faces[i - 1]
         pnt, n = face_normal(f)
@@ -2851,7 +3011,12 @@ def recognize_levels(member_of, wall_fail, cap_note, floor_fail, faces, emap,
         for edge in f.Edges():
             for anc in emap.FindFromKey(edge.wrapped):
                 j = face_index(anc)
-                if j != i and j not in member_of and faces[j - 1].BoundingBox().zmax > pnt.Z() + 10.0 * LIN_TOL:
+                if j == i or faces[j - 1].BoundingBox().zmax <= pnt.Z() + 10.0 * LIN_TOL:
+                    continue
+                # What rises from a level is a boss standing on it. A bore's
+                # or a pocket's wall rising round a floor makes that floor
+                # the cavity's own, however the cavity was proposed.
+                if j not in member_of or member_of[j]["name"].endswith(("_Bore", "_Hole", "_Pocket")):
                     return None
         return round(pnt.Z(), 3)
 
@@ -2883,7 +3048,7 @@ def recognize_levels(member_of, wall_fail, cap_note, floor_fail, faces, emap,
         heads = sorted({g["name"] for g in settled if g["floor"][0] == z})
         floors = []
         for i in sorted(floor_fail):
-            if i in member_of or i in wall_fail or "anchor" in cap_note.get(i, {}):
+            if i in member_of or i in wall_fail or ("anchor" in cap_note.get(i, {}) and i not in tops):
                 continue
             f = faces[i - 1]
             pnt, n = face_normal(f)
