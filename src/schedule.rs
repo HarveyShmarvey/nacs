@@ -11,7 +11,9 @@ use crate::math::Portable as _;
 //     it is milled like a bore by the largest endmill that fits down it:
 //     cleared, then its wall traced, unless the wall pass alone sweeps the
 //     bore out (the tool reaches the centre, or a hole through the bore's
-//     floor takes what the pass leaves in the middle);
+//     floor takes what the pass leaves in the middle); a drilled hole
+//     deeper than five diameters pecks, one diameter a peck, since chips
+//     stop clearing a twist drill's flutes at about that depth;
 //   - a counterbore seat is plunged by the Endmill of the seat's diameter,
 //     a countersink by a ChamferMill;
 //   - floors, pockets and bosses take the largest declared Endmill; domes
@@ -144,6 +146,28 @@ fn point_lines(verb: &str, groups: &[(usize, String)]) -> Vec<String> {
         .collect()
 }
 
+/// A drilled hole deeper than this many diameters pecks. A shop rule of
+/// thumb, not a calculation: it is the number to edit for a parabolic drill
+/// or through-coolant.
+const PECK_BEYOND_DIAMETERS: f64 = 5.0;
+
+/// One pecking `points=[…]` line per tool, a diameter a peck.
+fn peck_lines(groups: &[(usize, f64, String)]) -> Vec<String> {
+    let mut tools: Vec<(usize, f64)> = Vec::new();
+    for (t, dia, _) in groups {
+        if !tools.iter().any(|(n, _)| n == t) {
+            tools.push((*t, *dia));
+        }
+    }
+    tools
+        .into_iter()
+        .map(|(t, dia)| {
+            let names: Vec<&str> = groups.iter().filter(|(n, _, _)| *n == t).map(|(_, _, s)| s.as_str()).collect();
+            format!("run Form(points=[{}], tool=T{t}, cycle=Peck, peck_increment={})", names.join(", "), num(dia))
+        })
+        .collect()
+}
+
 /// The lines and notes before the parser has judged them: the rules in the
 /// header, applied to every declared feature no run names, in declaration
 /// order within each bucket.
@@ -171,6 +195,7 @@ fn propose(p: &Part) -> Schedule {
         .collect();
 
     let mut drills: Vec<(usize, String)> = Vec::new();
+    let mut pecks: Vec<(usize, f64, String)> = Vec::new();
     let mut csinks: Vec<(usize, String)> = Vec::new();
     let mut cbores: Vec<(usize, String)> = Vec::new();
     // Height, name, and whether it is a Plane (whose Clear is the whole plan).
@@ -236,8 +261,9 @@ fn propose(p: &Part) -> Schedule {
             continue;
         }
         match f {
-            Feature::CylinderBore { dia, csink, cbore, chamfer, edge_round, .. } => {
+            Feature::CylinderBore { dia, extent, csink, cbore, chamfer, edge_round, .. } => {
                 match drill_for(p, *dia) {
+                    Some(t) if *extent > PECK_BEYOND_DIAMETERS * dia => pecks.push((t, *dia, name.to_string())),
                     Some(t) => drills.push((t, name.to_string())),
                     None => match largest(p, "Endmill", Some(*dia)) {
                         Some(t) => {
@@ -451,6 +477,7 @@ fn propose(p: &Part) -> Schedule {
     out.lines.extend(given_lines);
     out.lines.extend(lead_line);
     out.lines.extend(point_lines("Form", &drills));
+    out.lines.extend(peck_lines(&pecks));
     out.lines.extend(point_lines("Form", &csinks));
     out.lines.extend(point_lines("End", &cbores));
     out.lines.extend(floor_lines);
