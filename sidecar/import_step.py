@@ -2247,9 +2247,14 @@ def outer_profile_group(cap, cap_idx, wall_idxs, faces, solid, emap,
         cyl = BRepAdaptor_Surface(wf.wrapped).Cylinder()
         loc = cyl.Axis().Location()
         name = f"F{boss_wall}_Boss"
+        # A cone between the cap and the wall is the boss's top-edge break,
+        # as a strip is a profile's: one cone, so one leg and one angle.
+        broken = chamfer is not None and chamfer[0] is not None
+        break_keys = (f", chamfer_depth={fmt(chamfer[0])}, chamfer_angle={fmt(chamfer[1])}"
+                      if broken else "")
         part = (f"feature {name} CylinderBoss(dia={fmt(2.0 * cyl.Radius())}, "
                 f"extent={fmt(z_cap - z_base)}, x={fmt(loc.X())}, "
-                f"y={fmt(loc.Y())}, z={fmt(z_base)})")
+                f"y={fmt(loc.Y())}, z={fmt(z_base)}{break_keys})")
         overhang_why = (f"base at z={fmt(z_base)} on the head's own underside (an overhang: "
                         f"the wall is traced from above, the underside is the other setup's)")
         base_words = overhang_why if overhang else f"clean base at z={fmt(z_base)}"
@@ -2268,10 +2273,25 @@ def outer_profile_group(cap, cap_idx, wall_idxs, faces, solid, emap,
         ]
         if overhang:
             extras += overhang_extras
+        members = [boss_wall]
+        if broken:
+            strips = " ".join(f"F{j}" for j in chamfer[2])
+            whys[boss_wall] += (f"; top edge beveled {fmt(chamfer[0])} deep at {fmt(chamfer[1])}deg "
+                                f"included ({strips}) -- proposed as chamfer_depth")
+            for j in chamfer[2]:
+                whys[j] = (f"top-edge bevel of recognized boss {name} (top cap F{cap_idx}): a cone "
+                           f"between the cap and the wall -- proposed as the boss's chamfer_depth, "
+                           f"not a standalone face")
+            extras += [
+                f"# the top edge's {fmt(chamfer[0])}mm bevel is the boss's chamfer_depth, at the included angle the",
+                "# model measures; a print that says otherwise is typed here (the three chamfer words are",
+                f"# pick-two) -- break it with: run Form(tool=<ChamferMill>, surface={name})",
+            ]
+            members += chamfer[2]
         r = cyl.Radius()
         loop = [(loc.X() + r * math.cos(2.0 * math.pi * k / 128),
                  loc.Y() + r * math.sin(2.0 * math.pi * k / 128)) for k in range(128)]
-        return dict(primary=boss_wall, members=[boss_wall], name=name,
+        return dict(primary=boss_wall, members=members, name=name,
                     part=part, row="2.4", whys=whys, extras=extras,
                     cap=cap_idx, z_cap=z_cap, z_base=z_base, overhang=overhang,
                     inside=(ctr.x, ctr.y), loop=loop, deeper=deeper,
@@ -2775,7 +2795,8 @@ def settle_heads(member_of, wall_fail, cap_note, floor_fail, faces, emap,
         depth_old, depth_new = g["z_cap"] - z_base, g["z_cap"] - z_floor
         part = g["part"].replace(f"extent={fmt(depth_old)}", f"extent={fmt(depth_new)}", 1)
         if "CylinderBoss(" in part:
-            part = part.replace(f"z={fmt(z_base)})", f"z={fmt(z_floor)})", 1)
+            # The base key, whatever follows it (a chamfered boss has more keys).
+            part = part.replace(f", z={fmt(z_base)}", f", z={fmt(z_floor)}", 1)
         g["part"] = part
         under.sort()
         skirts.sort()

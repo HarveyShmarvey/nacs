@@ -1,0 +1,87 @@
+{
+  "faces": [
+    {
+      "checklist_row": "2.2",
+      "feature": "F1_Profile",
+      "id": "F1",
+      "part": "feature F1_Profile ProfileBoss(z=18.0, extent=18.0\n    0.0 0.0\n    0.0 40.0\n    40.0 40.0\n    40.0 0.0\n)",
+      "status": "proposed",
+      "surface": "plane",
+      "why": "outer profile under top cap F3: vertical wall loop F1 F2 F6 F4, top at z=10.0, base at z=0.0, material inside the loop"
+    },
+    {
+      "checklist_row": "2.2",
+      "feature": "F1_Profile",
+      "id": "F2",
+      "part": "feature F1_Profile ProfileBoss(z=18.0, extent=18.0\n    0.0 0.0\n    0.0 40.0\n    40.0 40.0\n    40.0 0.0\n)",
+      "status": "proposed",
+      "surface": "plane",
+      "why": "vertical wall of recognized outer profile F1_Profile (top cap F3)"
+    },
+    {
+      "checklist_row": "1.1",
+      "id": "F3",
+      "part": "feature F3_Face Face(z=10.0\n    loop\n        0.0 0.0\n        40.0 0.0\n        40.0 40.0\n        0.0 40.0\n    loop\n        12.01 19.601\n        12.01 20.399\n        12.089 21.192\n        12.247 21.974\n        12.482 22.736\n        12.792 23.471\n        13.174 24.171\n        13.623 24.83\n        14.136 25.441\n        14.707 25.998\n        15.33 26.496\n        16.0 26.928\n        16.71 27.292\n        17.452 27.583\n        18.22 27.799\n        19.005 27.938\n        19.801 27.998\n        20.598 27.978\n        21.389 27.878\n        22.167 27.701\n        22.923 27.447\n        23.65 27.119\n        24.34 26.72\n        24.988 26.255\n        25.586 25.727\n        26.128 25.142\n        26.61 24.507\n        27.026 23.826\n        27.372 23.107\n        27.645 22.358\n        27.841 21.585\n        27.96 20.797\n        28.0 20.0\n        27.96 19.203\n        27.841 18.415\n        27.645 17.642\n        27.372 16.893\n        27.026 16.174\n        26.61 15.493\n        26.128 14.858\n        25.586 14.273\n        24.988 13.745\n        24.34 13.28\n        23.65 12.881\n        22.923 12.553\n        22.167 12.299\n        21.389 12.122\n        20.598 12.022\n        19.801 12.002\n        19.005 12.062\n        18.22 12.201\n        17.452 12.417\n        16.71 12.708\n        16.0 13.072\n        15.33 13.504\n        14.707 14.002\n        14.136 14.559\n        13.623 15.17\n        13.174 15.829\n        12.792 16.529\n        12.482 17.264\n        12.247 18.026\n        12.089 18.808\n)",
+      "status": "proposed",
+      "surface": "plane",
+      "why": "planar, normal +Z, below the topmost height: a bounded face at z=10.0, 2 loops (outer + 1 inner); caps recognized outer profile F1_Profile"
+    },
+    {
+      "checklist_row": "2.2",
+      "feature": "F1_Profile",
+      "id": "F4",
+      "part": "feature F1_Profile ProfileBoss(z=18.0, extent=18.0\n    0.0 0.0\n    0.0 40.0\n    40.0 40.0\n    40.0 0.0\n)",
+      "status": "proposed",
+      "surface": "plane",
+      "why": "vertical wall of recognized outer profile F1_Profile (top cap F3)"
+    },
+    {
+      "checklist_row": "no row",
+      "code": "plane_downward",
+      "id": "F5",
+      "reason": "downward-facing planar face -- unreachable from above (undercut relative to the tool axis)",
+      "status": "unsupported",
+      "surface": "plane"
+    },
+    {
+      "checklist_row": "2.2",
+      "feature": "F1_Profile",
+      "id": "F6",
+      "part": "feature F1_Profile ProfileBoss(z=18.0, extent=18.0\n    0.0 0.0\n    0.0 40.0\n    40.0 40.0\n    40.0 0.0\n)",
+      "status": "proposed",
+      "surface": "plane",
+      "why": "vertical wall of recognized outer profile F1_Profile (top cap F3)"
+    },
+    {
+      "checklist_row": "2.4",
+      "feature": "F7_Boss",
+      "id": "F7",
+      "part": "feature F7_Boss CylinderBoss(dia=16.0, extent=8.0, x=20.0, y=20.0, z=10.0, chamfer_depth=1.0, chamfer_angle=90.0)",
+      "status": "proposed",
+      "surface": "cylinder",
+      "why": "cylindrical, axis +Z, full revolution, material inside (a standing boss), flat top cap F9, clean base at z=10.0; top edge beveled 1.0 deep at 90.0deg included (F8) -- proposed as chamfer_depth"
+    },
+    {
+      "checklist_row": "2.4",
+      "feature": "F7_Boss",
+      "id": "F8",
+      "part": "feature F7_Boss CylinderBoss(dia=16.0, extent=8.0, x=20.0, y=20.0, z=10.0, chamfer_depth=1.0, chamfer_angle=90.0)",
+      "status": "proposed",
+      "surface": "cone",
+      "why": "top-edge bevel of recognized boss F7_Boss (top cap F9): a cone between the cap and the wall -- proposed as the boss's chamfer_depth, not a standalone face"
+    },
+    {
+      "checklist_row": "1.1",
+      "id": "F9",
+      "part": "feature F9_Top Plane(z=18.0)",
+      "status": "proposed",
+      "surface": "plane",
+      "why": "planar, normal +Z, topmost planar face"
+    }
+  ],
+  "faces_total": 9,
+  "schema": "nacs-recognition-report",
+  "source": "boss_chamfer.step",
+  "units": "mm",
+  "version": 1
+}
