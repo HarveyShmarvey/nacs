@@ -3529,6 +3529,7 @@ fn test_gcode_safety_lint() {
         ("plate_conventional.cam/main.part", Some("plate_conventional.cam/geometry.part")),
         ("plate_angled.cam/main.part", Some("plate_angled.cam/geometry.part")),
         ("pocket_post_plunged.cam/main.part", None),
+        ("pocket_tall_post.cam/main.part", None),
         ("pocket_wall_lead.cam/main.part", None),
         // Phase 30 slice 3: the rail plate — three faces, dozens of lifts.
         ("rail_plate_offset.cam/main.part", Some("rail_plate_offset.cam/geometry.part")),

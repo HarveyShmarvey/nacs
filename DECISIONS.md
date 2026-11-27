@@ -97,6 +97,12 @@ that floor.
 another's footprint is an island by containment; a `fixture` is a keep-out.
 Overlaps the grammar cannot mean are refused at validate with both names.
 
+**A boss may stand taller than the cavity it is in (2026-11-26).** It is that
+cavity's island from floor to mouth. It was refused outright; now it is
+refused only when no other feature is declared to cut from the boss's top
+down to the cavity's mouth round it, since without that its upper part
+stands in uncut material. That other feature takes it as its island too.
+
 **An op works one planar region.** Its edges are read off the blank: wall,
 open, or bridged. A step is a pocket drawn past the stock. A boss touching the
 boundary is part of the shore, not an island.

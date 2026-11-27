@@ -1,0 +1,29 @@
+# pocket_tall_post.cam/main.part — a post that stands taller than the pocket it is in
+# (ROADMAP item 9): it rises from the pocket's floor through the pocket's mouth to the
+# blank's top. The level faced round it and the pocket cut round its foot both go
+# around it, and one wall pass finishes it from top to foot.
+units mm
+feed 800
+plunge 300
+rapid_z 5
+clearance_z 25
+spindle 3000
+
+stock Box(w=100, l=100, h=20, x=0, y=0, z=0)
+
+tool T5 Endmill(dia=10.0)
+
+feature Level Plane(z=-5)
+
+feature Pocket ProfilePocket(z=-5, extent=5.0
+    20 20
+    80 20
+    80 80
+    20 80
+)
+
+feature Post CylinderBoss(dia=12, extent=10, x=50, y=50, z=-10)
+
+run Clear(tool=T5, profile=Level, stepover=4.0)
+run Clear(tool=T5, profile=Pocket, stepover=4.0, pattern=spine)
+run Side(tool=T5, surface=Post, stepover=4.0)

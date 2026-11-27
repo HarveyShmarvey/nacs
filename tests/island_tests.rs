@@ -140,6 +140,41 @@ fn test_a_floating_boss_and_an_over_tall_one_refuse_by_name() {
     assert!(e.contains("'Post'") && e.contains("'Pocket'") && e.contains("taller"), "{e}");
 }
 
+/// A post through a pocket's mouth (ROADMAP item 9). A boss taller than the
+/// cavity it stands in is refused until something else is declared to cut
+/// down to the cavity's mouth round it; then it is the island of both, and
+/// no cut at either floor comes inside its wall.
+#[test]
+fn test_a_boss_taller_than_its_pocket_is_an_island_of_the_pocket_and_the_level_above() {
+    let p = parse::load_project("pocket_tall_post.cam").expect("the level round the post declares the material above the pocket removed");
+    let names = |host: &str| -> Vec<&str> { stock::islands_of(&p, host).into_iter().map(|(n, _)| n).collect() };
+    assert_eq!(names("Pocket"), ["Post"]);
+    assert_eq!(names("Level"), ["Post"]);
+
+    let g = gcode::program(&p).unwrap();
+    let golden = std::fs::read_to_string("tests/pocket_tall_post.golden.gcode").unwrap();
+    assert_eq!(g.trim(), golden.trim(), "pocket_tall_post golden drifted");
+    // The post is ⌀12 at (50, 50) and the tool ⌀10: no centre comes nearer
+    // than 11, at the level's floor or the pocket's.
+    for z in [-5.0, -10.0] {
+        let cuts = cuts_at(&g, z);
+        assert!(!cuts.is_empty(), "something cuts at z {z}");
+        for (a, b) in cuts {
+            let (dx, dy) = (b.x - a.x, b.y - a.y);
+            let t = if dx == 0.0 && dy == 0.0 { 0.0 } else { (((50.0 - a.x) * dx + (50.0 - a.y) * dy) / (dx * dx + dy * dy)).clamp(0.0, 1.0) };
+            let d = ((a.x + t * dx - 50.0).powi(2) + (a.y + t * dy - 50.0).powi(2)).sqrt();
+            assert!(d > 11.0 - 0.02, "a cut at z {z} from ({}, {}) to ({}, {}) passes {d} from the post's axis", a.x, a.y, b.x, b.y);
+        }
+    }
+
+    // A level that stops short of the pocket's mouth leaves a wall round the
+    // post's upper part, and the sentence says what to declare.
+    let sunk = "feature Pocket ProfilePocket(z=-5, extent=5.0\n    20 20\n    80 20\n    80 80\n    20 80\n)\n";
+    let post = "feature Post CylinderBoss(dia=12, extent=10, x=50, y=50, z=-10)\n";
+    let e = program(&format!("{sunk}{post}feature Level Plane(z=-3)\n")).unwrap_err();
+    assert!(e.contains("taller") && e.contains("down to z -5"), "{e}");
+}
+
 /// Fork 7: the kind is in the sentence, on both sides.
 #[test]
 fn test_the_kinds_that_cannot_stand_or_host_yet_say_so() {
