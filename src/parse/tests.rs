@@ -1992,7 +1992,15 @@ fn a_loop_point_restates_the_chamfer_leg_for_the_edges_from_it_on() {
     let err = ctl;
     assert!(err.contains("leaves its edges unbroken (chamfer_depth=0) under comp=control"), "{err}");
     // The deepest restated leg governs the wall check.
-    let deep = parse(&format!("{head}feature Pad ProfileBoss(extent=12.0, chamfer_depth=1.5\n    20 60\n    70 60 chamfer_depth=12.0\n    70 20 chamfer_depth=1.5\n    20 20\n)\nrun Form(tool=T3, surface=Pad)\n")).unwrap_err();
+    let deep = parse(&format!("{head}feature Pad ProfileBoss(extent=12.0, chamfer_depth=1.5\n    20 60\n    70 60 chamfer_depth=12.5\n    70 20 chamfer_depth=1.5\n    20 20\n)\nrun Form(tool=T3, surface=Pad)\n")).unwrap_err();
     let err = deep;
-    assert!(err.contains("as deep as the 12.000mm wall"), "{err}");
+    assert!(err.contains("deeper than the 12.000mm wall"), "{err}");
+    // A leg wider than the flank is cut in steps, which are laid out for one
+    // leg: beside other legs it is refused; alone it parses, as deep as its
+    // wall; under control comp it is refused.
+    let mixed = parse(&format!("{head}feature Pad ProfileBoss(extent=12.0, chamfer_depth=1.5\n    20 60\n    70 60 chamfer_depth=12.0\n    70 20 chamfer_depth=1.5\n    20 20\n)\nrun Form(tool=T3, surface=Pad)\n")).unwrap_err();
+    assert!(mixed.contains("restate the leg to more than one size"), "{mixed}");
+    parse(&format!("{head}feature Pad ProfileBoss(extent=12.0, chamfer_depth=12.0\n    20 60\n    70 60 chamfer_depth=0\n    70 20\n    20 20\n)\nrun Form(tool=T3, surface=Pad)\n")).expect("one deep leg and unbroken edges parse");
+    let ctl = parse(&format!("{head}feature Pad ProfileBoss(extent=12.0, chamfer_depth=12.0\n    20 60\n    70 60\n    70 20\n    20 20\n)\nrun Form(tool=T3, surface=Pad, comp=control)\n")).unwrap_err();
+    assert!(ctl.contains("a register holds one number"), "{ctl}");
 }

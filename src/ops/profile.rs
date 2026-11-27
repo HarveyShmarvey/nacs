@@ -564,6 +564,7 @@ pub fn finish_profile_chamfer(
     ec: &crate::parse::EdgeChamfer,
     pl: &crate::parse::ChamferPlacement,
     z_tip_for: &dyn Fn(crate::parse::ChamferLeg) -> f64,
+    slide: f64,
 ) -> Result<OpMoves, String> {
     let crate::parse::EdgeLoop::Polyline { points } = &ec.edge else {
         panic!("finish_profile_chamfer requires a polyline edge");
@@ -583,6 +584,32 @@ pub fn finish_profile_chamfer(
         runs = crate::parse::derive_chamfer_runs(ec, &path);
     }
     if !runs.is_empty() {
+        // A stepped pass (`slide` up the face) rides in over the face, and
+        // its path turns the loop's corners that much early. Where a run
+        // ends against an unbroken edge the bevel runs out square through
+        // that edge's wall, so the run is carried on by the slide at that
+        // end, out to where the unslid pass ends.
+        if slide > 0.0 && runs.len() > 1 {
+            let n = runs.len();
+            let cut: Vec<bool> = runs.iter().map(|r| r.leg.is_some()).collect();
+            for i in 0..n {
+                if !cut[i] || runs[i].path.len() < 2 {
+                    continue;
+                }
+                if !cut[(i + n - 1) % n] {
+                    let (a, b) = (runs[i].path[0], runs[i].path[1]);
+                    let t = segment_tangent(a, b, true);
+                    runs[i].path.insert(0, OffsetVertex { x: a.x - t.0 * slide, y: a.y - t.1 * slide, bulge: 0.0 });
+                }
+                if !cut[(i + 1) % n] {
+                    let m = runs[i].path.len();
+                    let (a, b) = (runs[i].path[m - 2], runs[i].path[m - 1]);
+                    let t = segment_tangent(a, b, false);
+                    runs[i].path[m - 1].bulge = 0.0;
+                    runs[i].path.push(OffsetVertex { x: b.x + t.0 * slide, y: b.y + t.1 * slide, bulge: 0.0 });
+                }
+            }
+        }
         return finish_profile_chamfer_runs(p, op, ec, pl, &path, &runs, z_tip_for);
     }
     let path = run_way(op, path, true);

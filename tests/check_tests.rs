@@ -3466,6 +3466,7 @@ fn test_gcode_safety_lint() {
         ("chamfer.cam/main.part", None),
         ("chamfer_profile.cam/main.part", None),
         ("chamfer_marks.cam/main.part", None),
+        ("chamfer_deep.cam/main.part", None),
         // K3's acceptance fixture: the derived S word must satisfy the same
         // spindle-before-feed ordering as any declared one.
         ("floor_derive.cam/main.part", None),
@@ -5789,6 +5790,39 @@ fn test_chamfer_golden() {
     }
 }
 
+/// A chamfer wider than the cutter's flank (`chamfer_deep.cam`): T3 holds
+/// 5.25 of face above its contact radius, the Pad's bevel is 10 wide and the
+/// Post's 8. Each is cut in seven passes. No pass goes below the declared
+/// placement's tip, the last pass is that placement, and a pass slid up the
+/// face rides in over the boss, carried out past the walls at the bevel's
+/// ends.
+#[test]
+fn test_a_chamfer_wider_than_the_flank_is_cut_in_steps() {
+    let main_src = fs::read_to_string("chamfer_deep.cam/main.part").expect("failed to read main.part");
+    let part = parse::parse(&main_src).expect("failed to parse fixture");
+    parse::validate(&part).expect("fixture must validate");
+    let generated = gcode::program(&part).expect("failed to generate program");
+    let golden = fs::read_to_string("tests/chamfer_deep.golden.gcode").expect("failed to read golden");
+    assert_eq!(generated.trim(), golden.trim(), "chamfer_deep.cam diverged from its golden");
+
+    let pad = generated.split("(--- chamfer edge (engine): Pad with T3 ---)").nth(1).expect("the Pad's chamfer op")
+        .split("(--- ").next().unwrap();
+    assert_eq!(pad.matches("(pass ").count(), 7, "{pad}");
+    let plunges: Vec<f64> = pad.lines()
+        .filter_map(|l| l.strip_prefix("G01 Z"))
+        .map(|rest| rest.split_whitespace().next().unwrap().parse().unwrap())
+        .collect();
+    assert_eq!(plunges.len(), 7, "one descent a pass: {pad}");
+    // The declared placement: 10 deep, the tip 0.5 below the face's foot.
+    assert!(plunges.iter().all(|z| *z >= -10.5 - 1e-9), "no pass below the declared tip: {plunges:?}");
+    assert_eq!(*plunges.last().unwrap(), -10.5, "the last pass is the declared placement");
+    // The top band of the last layer: slid 4.75 up the face, so the axis is
+    // 4.0 inside the wall at x=20, and the run goes on to 0.75 past each end
+    // wall (y=20 and y=60), where the unslid pass's offset would end.
+    let top = pad.split("(pass 5 of 7").nth(1).unwrap().split("(pass 6").next().unwrap();
+    assert!(top.contains("G01 X24.000 Y19.250") && top.contains("G01 X24.000 Y60.750"), "{top}");
+}
+
 #[test]
 fn test_chamfer_places_the_flank_not_the_flat() {
     // A bore of radius 20, chamfer_depth 1.0, derived tip_clearance 0.5. The
@@ -5884,10 +5918,11 @@ fn test_chamfer_refusals() {
         (format!("{ER_PREAMBLE}{CH_T3}feature F CylinderBore(dia=40.0, extent=12.0, x=30.0, y=50.0, edge_round=3.0, chamfer_depth=1.0)\n"),
          "rounded or beveled, not both"),
         // The leg consumes the wall.
-        (format!("{ER_PREAMBLE}{CH_T3}feature F CylinderBore(dia=40.0, extent=1.0, x=30.0, y=50.0, chamfer_depth=1.0)\nrun Clear(tool=T5, profile=F, stepover=4.0)\nrun Form(tool=T3, surface=F)\n"),
-         "as deep as the"),
-        // The face runs off the usable flank into the body.
-        (format!("{ER_PREAMBLE}{CH_T3}feature F CylinderBore(dia=40.0, extent=12.0, x=30.0, y=50.0, chamfer_depth=5.5)\nrun Clear(tool=T5, profile=F, stepover=4.0)\nrun Form(tool=T3, surface=F)\n"),
+        (format!("{ER_PREAMBLE}{CH_T3}feature F CylinderBore(dia=40.0, extent=1.0, x=30.0, y=50.0, chamfer_depth=1.5)\nrun Clear(tool=T5, profile=F, stepover=4.0)\nrun Form(tool=T3, surface=F)\n"),
+         "deeper than the"),
+        // The face runs off the usable flank into the body: cut in steps,
+        // which control comp's one register cannot hold.
+        (format!("{ER_PREAMBLE}{CH_T3}feature F CylinderBore(dia=40.0, extent=12.0, x=30.0, y=50.0, chamfer_depth=5.5)\nrun Clear(tool=T5, profile=F, stepover=4.0)\nrun Form(tool=T3, surface=F, comp=control)\n"),
          "runs past T3's usable flank"),
         // The axis must fit down the hole.
         (format!("{ER_PREAMBLE}{CH_T3}feature F CylinderBore(dia=1.2, extent=12.0, x=30.0, y=50.0, chamfer_depth=0.1)\nrun Form(tool=T3, surface=F)\n"),

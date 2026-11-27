@@ -819,9 +819,12 @@ One page. What is built, what is next, and the debts we know about.
    both. Where the other edges are square, the bevel is that one edge's
    `chamfer_depth` (`open_pocket`, `block_level`: a profile where a trim
    wire was).
+   Seventh pass: the engine cuts a chamfer wider than the cutter's flank
+   in steps (`chamfer_deep.cam`), so a bevel that deep is a `Form` like any
+   other chamfer.
    Still refused on that part, in the order to take them: the bevel itself
-   (a chamfer deeper than a cutter's flank, beside rounds), the groove (a
-   T-slot cutter). A slot in a side face waits on a quarter turn. Not
+   (a chamfer on one edge of a loop whose other edges are rounded), the
+   groove (a T-slot cutter). A slot in a side face waits on a quarter turn. Not
    built: an endmill with a corner radius, which is what leaves a floor
    fillet.
 

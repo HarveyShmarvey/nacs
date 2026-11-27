@@ -2444,6 +2444,10 @@ fn finish_chamfer(
         .expect("validate: a ChamferMill Finish requires a feature with a chamfer");
     let ch = tool.chamfer.as_ref().expect("a ChamferMill carries its record");
     let cone = tool.ground_cone().expect("a ChamferMill hands over its cone");
+    let passes = crate::parse::derive_chamfer_passes(&ec, &cone, crate::parse::derive_tip_clearance(op, ch));
+    if passes.len() > 1 {
+        return chamfer_stepped(p, op, &ec, &cone, crate::parse::derive_tip_clearance(op, ch), &passes).map(Into::into);
+    }
     let pl = crate::parse::derive_chamfer_placement(
         &ec,
         &cone,
@@ -2461,7 +2465,7 @@ fn finish_chamfer(
             let z_tip = |leg: crate::parse::ChamferLeg| {
                 crate::parse::derive_leg_placement(leg, ec.z_top, &cone, tip_clearance, op.wall_standoff, op.face_standoff).z_tip
             };
-            return crate::ops::profile::finish_profile_chamfer(p, op, &ec, &pl, &z_tip);
+            return crate::ops::profile::finish_profile_chamfer(p, op, &ec, &pl, &z_tip, 0.0);
         }
     };
     let rho = ec.axis_radius(pl.reach);
@@ -2471,6 +2475,77 @@ fn finish_chamfer(
         CompMode::Engine => chamfer_engine(p, op, cx, cy, rho, pl.z_tip, cw).map(Into::into),
         CompMode::Control => chamfer_control(p, op, cx, cy, wall_radius, rho, pl.z_tip, cw),
     }
+}
+
+// A chamfer wider than the cutter's flank, cut in the passes
+// `derive_chamfer_passes` lays out (DECISIONS.md -> "A chamfer wider than the
+// cutter's flank is cut in steps"). Each pass is the one-pass chamfer at that
+// pass's leg, the tool slid up its own flank by the pass's slide: the tip
+// clearance, less the slide. Sliding moves the axis in over the face and the
+// tip up together, so the flank stays on the face it is cutting. Engine comp
+// only; `validate` refuses the rest.
+fn chamfer_stepped(
+    p: &Part,
+    op: &Operation,
+    ec: &crate::parse::EdgeChamfer,
+    cone: &crate::parse::GroundCone,
+    tip_clearance: f64,
+    passes: &[crate::parse::ChamferPass],
+) -> Result<Vec<String>, String> {
+    let t = cone.phi_half.ptan();
+    let flank = cone.body_r - (cone.tip_r + tip_clearance);
+    let last = passes[passes.len() - 1];
+    let mut g = Vec::new();
+    for (k, pass) in passes.iter().enumerate() {
+        let leg = crate::parse::ChamferLeg::Depth(pass.depth);
+        let mut ec_k = ec.clone();
+        ec_k.spec.leg = leg;
+        for m in ec_k.marks.iter_mut() {
+            if m.leg.is_some() {
+                m.leg = Some(leg);
+            }
+        }
+        let tc = tip_clearance - pass.slide;
+        let pl = crate::parse::derive_chamfer_placement(&ec_k, cone, tc, op.wall_standoff, op.face_standoff);
+        let mut moves = match ec_k.circle() {
+            Some((cx, cy, _)) => {
+                let rho = ec_k.axis_radius(pl.reach);
+                if rho <= 0.0 {
+                    return Err(format!(
+                        "chamfer on '{}' with T{}: a step of the cut puts the axis on or past the boss's own centre — the chamfer is too wide for this boss to be cut in steps",
+                        op.feature_name, op.tool_num
+                    ));
+                }
+                chamfer_engine(p, op, cx, cy, rho, pl.z_tip, ec_k.boss)?
+            }
+            None => {
+                let z_tip = |l: crate::parse::ChamferLeg| {
+                    crate::parse::derive_leg_placement(l, ec_k.z_top, cone, tc, op.wall_standoff, op.face_standoff).z_tip
+                };
+                crate::ops::profile::finish_profile_chamfer(p, op, &ec_k, &pl, &z_tip, pass.slide)?.text
+            }
+        };
+        // One op, one header: the first pass keeps it and says how the cut
+        // is laid out; the rest say which pass they are.
+        let said = format!(
+            "(pass {} of {}: the leg {} deep, the flank slid {} up the face)",
+            k + 1, passes.len(), f(pass.depth), f(pass.slide)
+        );
+        if k == 0 {
+            moves[0] = format!("(--- chamfer edge (engine): {} with T{} ---)", op.feature_name, op.tool_num);
+            moves.insert(1, format!(
+                "(the face is {} wide and the flank holds {}: cut in {} passes, in layers {} deep, a layer wider than the flank in bands from the top of the face down)",
+                f(last.depth * t), f(flank), passes.len(), f(flank / 2.0 / t)
+            ));
+            moves.insert(2, said);
+        } else {
+            moves[0] = said;
+            // The block says its direction once, on the first pass.
+            moves.retain(|l| !l.starts_with("(direction:"));
+        }
+        g.extend(moves);
+    }
+    Ok(g)
 }
 
 // Engine comp: the axis ring as plain coordinates — `edge_round_engine` with
