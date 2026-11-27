@@ -299,6 +299,12 @@ The schedule writes the word on round walls and on a round blank's face.
 five diameters is scheduled `cycle=Peck` with a peck of one diameter; it was
 `cycle=Simple` at any depth. A rule of thumb, written as a number to edit.
 
+**The schedule tries the next endmill down (2026-11-27).** It judged each
+line by whether it parsed. It now also makes the program, and when the
+engine stops on a scheduled line's move into standing stock (the largest
+endmill in a gap narrower than itself), that line gets the next smaller
+Endmill, noted under `# smaller tool:`; with none left it is not written.
+
 **Two stock truths, composed.** The declared truth is the analytical
 op-history model (footprint plus floor per removal). The swept truth is the
 voxel field, a cache derived from the emitted moves and keyed by an input
