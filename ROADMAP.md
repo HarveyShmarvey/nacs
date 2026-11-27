@@ -832,7 +832,9 @@ One page. What is built, what is next, and the debts we know about.
    (`block_outline`, `split_hole` from both sides).
    Tenth pass: `nacs --schedule` makes the program its lines give, and a
    wall pass the largest endmill cannot make (the 9 mm gap round the boss)
-   takes the next endmill down.
+   takes the next endmill down. So does a slot too small for it, and an
+   island follows its pocket's tool (the 2 mm slot in the side face, as a
+   third setup imported on its own).
    Still refused on that part, in the order to take them: the rounds along
    the bevel's two ends (no tool in the grammar cuts them), the groove (a
    T-slot cutter). A slot in a side face waits on a quarter turn. Not

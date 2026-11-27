@@ -595,10 +595,24 @@ pub fn derive_schedule(p: &Part, main_src: &str, geom_src: Option<&str>, base: O
         let smaller = p.tools.get(&t).filter(|tool| tool.name == "Endmill").and_then(|tool| largest(p, "Endmill", Some(tool.dia)));
         match smaller {
             Some(s) => {
-                out.lines[i] = out.lines[i]
-                    .replace(&format!("tool=T{t},"), &format!("tool=T{s},"))
-                    .replace(&format!("stepover={}", half(p, t)), &format!("stepover={}", half(p, s)))
-                    .replace(&format!("stepdown={}", half(p, t)), &format!("stepdown={}", half(p, s)));
+                let retool = |line: &str| {
+                    line.replace(&format!("tool=T{t},"), &format!("tool=T{s},"))
+                        .replace(&format!("stepover={}", half(p, t)), &format!("stepover={}", half(p, s)))
+                        .replace(&format!("stepdown={}", half(p, t)), &format!("stepdown={}", half(p, s)))
+                };
+                out.lines[i] = retool(&out.lines[i]);
+                // What stands in a cavity is cut in the room the cavity's own
+                // tool had: an island's lines follow their pocket's down.
+                for j in 0..out.lines.len() {
+                    let on = out.lines[j].split(['=', ',', ')']).collect::<Vec<_>>();
+                    let island = on.windows(2).find(|w| w[0].ends_with("surface") || w[0].ends_with("profile")).map(|w| w[1].to_string());
+                    if let Some(island) = island {
+                        if j != i && out.lines[j].contains(&format!("(tool=T{t},")) && crate::stock::host_of(p, &island) == Some(name.as_str()) {
+                            out.lines[j] = retool(&out.lines[j]);
+                            out.notes.push(format!("{SMALLER}{island} stands in {name} and takes T{s} with it"));
+                        }
+                    }
+                }
                 out.notes.push(format!("{SMALLER}{verb} on {name} takes T{s}, the next endmill down: with T{t}, {why}"));
             }
             None => {
@@ -614,16 +628,21 @@ pub fn derive_schedule(p: &Part, main_src: &str, geom_src: Option<&str>, base: O
 /// choice, which `render` prints under its own word.
 const SMALLER: &str = "smaller tool: ";
 
-/// The scheduled line an engine refusal names: the refusal opens
-/// `<Verb> on '<feature>' with T<n>:`.
+/// The scheduled line an engine refusal names. The refusals a smaller tool
+/// answers quote the feature and then say the tool: `<Verb> on '<feature>'
+/// with T<n>: …` for a move into standing stock, `… feature '<feature>' is
+/// too small for tool T<n>: …` for a floor no pass fits in. The line is the
+/// first that runs that tool on that feature; its own verb is returned.
 fn named_line(lines: &[String], sentence: &str) -> Option<(usize, String, String, usize)> {
-    let (verb, rest) = sentence.split_once(" on '")?;
-    let (name, rest) = rest.split_once("' with T")?;
+    let (_, rest) = sentence.split_once('\'')?;
+    let (name, rest) = rest.split_once('\'')?;
+    let rest = rest.strip_prefix(" with T").or_else(|| rest.strip_prefix(" is too small for tool T"))?;
     let t: usize = rest.split(|c: char| !c.is_ascii_digit()).next()?.parse().ok()?;
     let i = lines.iter().position(|l| {
-        l.starts_with(&format!("run {verb}(tool=T{t},")) && (l.contains(&format!("={name})")) || l.contains(&format!("={name},")))
+        l.contains(&format!("(tool=T{t},")) && (l.contains(&format!("={name})")) || l.contains(&format!("={name},")))
     })?;
-    Some((i, verb.to_string(), name.to_string(), t))
+    let verb = lines[i].strip_prefix("run ")?.split('(').next()?.to_string();
+    Some((i, verb, name.to_string(), t))
 }
 
 /// The parser's sentence without the `file:line:` the candidate text owns.
