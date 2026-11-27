@@ -805,9 +805,11 @@ One page. What is built, what is next, and the debts we know about.
    the engine refused; it reads it now as the island of the pocket and of
    the level above. The block's top, below the boss's, proposes as that
    level: a `Plane` the whole blank clears to (`block_level` fixture).
-   Still refused on that part, in the order to take them: the outline of
-   the block, the bevel itself, the boss's top chamfer, a counterbore's
-   floor over a through hole. The groove and a slot in a
+   Fourth pass: the bevel on the boss's top edge, a cone the reader
+   refused as a frustum, is the boss's `chamfer_depth` (`boss_chamfer`
+   fixture).
+   Still refused on that part, in the order to take them: a counterbore's
+   floor over a through hole, the outline of the block, the bevel itself. The groove and a slot in a
    side face wait on a quarter turn. Not built: an endmill with a corner
    radius, which is what leaves a floor fillet.
 
