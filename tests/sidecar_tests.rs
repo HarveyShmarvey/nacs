@@ -233,6 +233,12 @@ const FIXTURES: &[(&str, &[&str], &str, &str)] = &[
         "tests/fixtures/open_pocket.report.golden.json",
         "tests/fixtures/open_pocket.proposed.golden.part",
     ),
+    (
+        "tests/fixtures/block_level.step",
+        &[],
+        "tests/fixtures/block_level.report.golden.json",
+        "tests/fixtures/block_level.proposed.golden.part",
+    ),
 ];
 
 /// The allowance (ROADMAP item 1, slice 11): `--allowance 1` grows a
@@ -2103,6 +2109,44 @@ fn test_a_pocket_that_runs_out_onto_a_bevel_proposes_open() {
     let part = parse::parse(&src).expect("the proposed pocket parses");
     let (program, _) = gcode::program_with_moves(&part).expect("the pocket clears");
     assert!(program.contains("(open edges: 1 of 30 — entered from air)"), "the bevel's side reads open: {program}");
+}
+
+/// ROADMAP item 9: the open_pocket block with a boss standing in the pocket,
+/// taller than the block. The block's top is below the part's topmost face
+/// and nothing beside it rises above it, so it proposes as a level: the
+/// whole blank cleared to it round the boss, and the pocket cut from it. The
+/// engine takes the boss as the island of both. Reads the committed goldens;
+/// `test_sidecar_golden` ties them to the sidecar.
+#[test]
+fn test_a_block_top_below_a_taller_boss_proposes_as_a_level() {
+    let proposed = fs::read_to_string("tests/fixtures/block_level.proposed.golden.part").expect("failed to read proposed golden");
+    assert!(proposed.contains("feature F2_Floor Plane(z=20.0)"), "{proposed}");
+    assert!(proposed.contains("feature F22_Boss CylinderBoss(dia=10.0, extent=12.0, x=28.0, y=20.0, z=14.0)"), "{proposed}");
+
+    // The outline's own block is left out: a pocket drawn out past the blank
+    // crosses it, and that pair is its own change.
+    let features: String = proposed.split("
+
+").filter(|b| !b.contains("feature F4_Trim")).collect::<Vec<_>>().join("
+
+");
+    let src = format!("units mm
+feed 800
+plunge 300
+rapid_z 31
+clearance_z 36
+spindle 3000
+                 stock Box(w=60, l=40, h=26, x=0, y=0, z=26)
+tool T6 Endmill(dia=6.0)
+{features}
+                 run Clear(tool=T6, profile=F2_Floor, stepover=3.0)
+run Clear(tool=T6, profile=F9_Pocket, stepover=3.0)
+");
+    let part = parse::parse(&src).expect("the proposals parse together");
+    let (program, _) = gcode::program_with_moves(&part).expect("the level and the pocket clear");
+    let level = program.split("(--- pocket clear: F9_Pocket").next().unwrap();
+    assert!(level.contains("(--- volume clear: F2_Floor") && level.contains("(islands: F22_Boss)"), "the level goes round the boss: {program}");
+    assert_eq!(program.matches("(islands: F22_Boss)").count(), 2, "and so does the pocket: {program}");
 }
 
 /// ROADMAP item 1 slice 9: a boss whose top edges carry two legs at one
