@@ -32,7 +32,7 @@ feature F9_Pocket ProfilePocket(z=26.0, extent=5.0, edge_round=1.0
     -1.02 28.0
 )
 
-# F16: outer profile under top cap F2: vertical wall loop F6 F21 F20 F16, top at z=26.0, base at z=14.0, material inside the loop; stepped base: the profile stops at the highest base z=14.0, and F6 to z=0.0 run on below it; the base at z=14.0 is the head's own underside (the face under the walls faces down): the wall is traced from above, the underside is the other setup's; top edge rounded R1.0 (F12 F13 F15) -- proposed as edge_round, the loop read at the walls; beveled instead where a strip stands (F1: 12.0 deep at 90.0deg included) -- that edge's first point carries chamfer_depth, and 0 on the next goes back to the round (CHECKLIST row 2.2)
+# F16: outer profile under top cap F2: vertical wall loop F6 F21 F20 F16, top at z=26.0, base at z=14.0, material inside the loop; stepped base: the profile stops at the highest base z=14.0, and F6 to z=0.0 run on below it; the base at z=14.0 is the head's own underside (the face under the walls faces down): the wall is traced from above, the underside is the other setup's; top edge rounded R1.0 (F12 F13 F15) -- proposed as edge_round, the loop read at the walls; beveled instead where a strip stands (F1: 12.0 deep at 90.0deg included) -- that edge's first point carries chamfer_depth, and 0 on the next goes back to the round; under the head nothing stands outside its outline down to z=10.0, so the wall is proposed down to there, past the underside at z=14.0: outside it is only the blank's side (CHECKLIST row 2.2)
 # consume with: run Side(tool=..., surface=F16_Profile, comp=control)  [the feature carries its own z + extent]
 # the loop is wound CW: material inside, tool outside (the winding convention,
 # DECISIONS.md -> "Row-2.4 side selector")
@@ -48,7 +48,9 @@ feature F9_Pocket ProfilePocket(z=26.0, extent=5.0, edge_round=1.0
 # the next point's 0 goes back to the round; the angle is the one the model measures --
 # cut it with: run Form(tool=<ChamferMill>, surface=F16_Profile)  [engine comp; a face wider than
 # the mill's flank is cut in steps]
-feature F16_Profile ProfileBoss(z=26.0, extent=12.0, edge_round=1.0, chamfer_angle=90.0
+# the wall is traced down to z=10.0, past the head's underside at z=14.0: under the
+# head nothing stands outside this outline, and the blank's side there is otherwise no setup's
+feature F16_Profile ProfileBoss(z=26.0, extent=16.0, edge_round=1.0, chamfer_angle=90.0
     0.0 0.0 chamfer_depth=12.0
     0.0 40.0 chamfer_depth=0.0
     60.0 40.0

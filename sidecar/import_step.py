@@ -2957,6 +2957,30 @@ def settle_heads(member_of, wall_fail, cap_note, floor_fail, faces, emap,
                     k = face_index(anc)
                     if k not in seen:
                         frontier.append(k)
+        if not fail and not floors:
+            # Nothing reaches out from under the head all the way down: what
+            # is under it is a neck on a foot no wider than the head (a
+            # groove under the head). Outside the head's outline there is
+            # then only the blank's own side down to the highest face under
+            # the head that looks up, and the wall is proposed down to it,
+            # so that side is not left standing between two setups.
+            pads = [faces[j - 1].BoundingBox().zmin for j, what in under if what == "the pad under the head"]
+            pads = [z for z in pads if z < z_base - 10.0 * LIN_TOL]
+            old = f"extent={fmt(g['z_cap'] - z_base)}"
+            if pads and old in g["part"]:
+                z_pad = max(pads)
+                g["part"] = g["part"].replace(old, f"extent={fmt(g['z_cap'] - z_pad)}", 1)
+                if "CylinderBoss(" in g["part"]:
+                    g["part"] = g["part"].replace(f", z={fmt(z_base)}", f", z={fmt(z_pad)}", 1)
+                p = g["primary"]
+                g["whys"][p] += (f"; under the head nothing stands outside its outline down to "
+                                 f"z={fmt(z_pad)}, so the wall is proposed down to there, past the "
+                                 f"underside at z={fmt(z_base)}: outside it is only the blank's side")
+                g["extras"] = g["extras"] + [
+                    f"# the wall is traced down to z={fmt(z_pad)}, past the head's underside at z={fmt(z_base)}: under the",
+                    "# head nothing stands outside this outline, and the blank's side there is otherwise no setup's",
+                ]
+                g["z_base"] = z_pad
         if fail or len(floors) != 1:
             continue  # the fallback below: the head keeps its base
         z_floor = next(iter(floors))

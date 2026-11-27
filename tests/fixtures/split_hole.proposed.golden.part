@@ -5,7 +5,7 @@
 # F3: planar, normal +Z, topmost planar face (CHECKLIST row 1.1)
 feature F3_Top Plane(z=20.0)
 
-# F10: outer profile under top cap F3: vertical wall loop F1 F2 F10 F4, top at z=20.0, base at z=12.0, material inside the loop; stepped base: the profile stops at the highest base z=12.0, and F1 to z=0.0, F2 to z=0.0, F4 to z=0.0 run on below it; the base at z=12.0 is the head's own underside (the face under the walls faces down): the wall is traced from above, the underside is the other setup's (CHECKLIST row 2.2)
+# F10: outer profile under top cap F3: vertical wall loop F1 F2 F10 F4, top at z=20.0, base at z=12.0, material inside the loop; stepped base: the profile stops at the highest base z=12.0, and F1 to z=0.0, F2 to z=0.0, F4 to z=0.0 run on below it; the base at z=12.0 is the head's own underside (the face under the walls faces down): the wall is traced from above, the underside is the other setup's; under the head nothing stands outside its outline down to z=8.0, so the wall is proposed down to there, past the underside at z=12.0: outside it is only the blank's side (CHECKLIST row 2.2)
 # consume with: run Side(tool=..., surface=F10_Profile, comp=control)  [the feature carries its own z + extent]
 # the loop is wound CW: material inside, tool outside (the winding convention,
 # DECISIONS.md -> "Row-2.4 side selector")
@@ -16,7 +16,9 @@ feature F3_Top Plane(z=20.0)
 # and belong to whatever stands lower -- declare that by hand or accept its own proposal
 # the base at z=12.0 is an overhang: the face under the walls faces down, so the
 # tool has air under it at the base; the underside itself is the other setup's
-feature F10_Profile ProfileBoss(z=20.0, extent=8.0
+# the wall is traced down to z=8.0, past the head's underside at z=12.0: under the
+# head nothing stands outside this outline, and the blank's side there is otherwise no setup's
+feature F10_Profile ProfileBoss(z=20.0, extent=12.0
     0.0 0.0
     0.0 30.0
     40.0 30.0

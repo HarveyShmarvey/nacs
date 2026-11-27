@@ -2208,7 +2208,7 @@ run Clear(tool=T6, profile=F9_Pocket, stepover=3.0)
 #[test]
 fn test_a_block_outline_reads_past_a_pocket_mouth_and_carries_its_rounds() {
     let proposed = fs::read_to_string("tests/fixtures/block_outline.proposed.golden.part").expect("failed to read proposed golden");
-    assert!(proposed.contains("feature F16_Profile ProfileBoss(z=26.0, extent=12.0, edge_round=1.0, chamfer_angle=90.0\n    0.0 0.0 chamfer_depth=12.0\n    0.0 40.0 chamfer_depth=0.0\n    60.0 40.0\n    60.0 0.0\n)"), "{proposed}");
+    assert!(proposed.contains("feature F16_Profile ProfileBoss(z=26.0, extent=16.0, edge_round=1.0, chamfer_angle=90.0\n    0.0 0.0 chamfer_depth=12.0\n    0.0 40.0 chamfer_depth=0.0\n    60.0 40.0\n    60.0 0.0\n)"), "{proposed}");
     assert!(proposed.contains("feature F2_Floor Plane(z=26.0)"), "the top is the level, not a bounded face: {proposed}");
     let report = fs::read_to_string("tests/fixtures/block_outline.report.golden.json").expect("failed to read report golden");
     let faces = face_entries(&report);
@@ -2224,17 +2224,23 @@ spindle 3000
 tool T6 Endmill(dia=6.0)
 tool T3 Endmill(dia=3.0)
                  tool T2 CornerRounder(radius=1.0, effective_dia=4.0, gauge_z=2.0, dia=6.0, pilot=3.9)
+tool T5 ChamferMill(angle=90.0, gauge_dia=8.0, gauge_z=3.75, dia=12.0, tip_dia=0.5)
 {proposed}
                  run Clear(tool=T6, profile=F29_Top, stepover=3.0)
 run Clear(tool=T6, profile=F2_Floor, stepover=3.0)
 run Clear(tool=T3, profile=F9_Pocket, stepover=1.5)
 run Side(tool=T6, surface=F16_Profile)
 run Form(tool=T2, surface=F16_Profile)
+run Form(tool=T5, surface=F16_Profile)
 ");
     let part = parse::parse(&src).expect("the pocket and the outline it opens through parse together");
     let (program, _) = gcode::program_with_moves(&part).expect("the outline is cut and its edge rounded");
     assert!(program.contains("(--- side contour (engine): F16_Profile with T6 ---)"), "{program}");
     assert!(program.contains("(--- break edge (engine): F16_Profile with T2 ---)"), "{program}");
+    // The outline runs down past the head's underside to the groove's floor,
+    // so the blank's side under the bevel's foot is cut away and the chamfer
+    // mill's tip, half a millimetre below that foot, is in air.
+    assert!(program.contains("(--- chamfer edge (engine): F16_Profile with T5 ---)"), "{program}");
 }
 
 /// ROADMAP item 9: a round boss whose top edge is broken by a bevel. The
