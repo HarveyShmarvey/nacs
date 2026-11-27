@@ -278,6 +278,10 @@ chord tolerances of one circle — as a single full-circle G02/G03; any other
 loop keeps its chords under the word. The default is chords, byte for byte.
 The schedule writes the word on round walls and on a round blank's face.
 
+**The schedule pecks a deep hole (2026-11-26).** A drilled hole deeper than
+five diameters is scheduled `cycle=Peck` with a peck of one diameter; it was
+`cycle=Simple` at any depth. A rule of thumb, written as a number to edit.
+
 **Two stock truths, composed.** The declared truth is the analytical
 op-history model (footprint plus floor per removal). The swept truth is the
 voxel field, a cache derived from the emitted moves and keyed by an input
