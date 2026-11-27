@@ -1093,6 +1093,9 @@ fn judge_standing(p: &Part, s_name: &str, s: &Feature, c_name: &str, c: &Feature
         // — a wall flush with the part's edge — is a bite out of the region
         // (`region::split_islands`), and means exactly what it looks like.
         Nesting::Straddles if matches!(c, Feature::Face { .. }) => {}
+        // A cavity that leaves this solid on its way out of the blank is a
+        // notch in the solid's wall, the same as a hole in it.
+        Nesting::Straddles if c_outline.as_deref().is_some_and(|o| runs_out_to_air(p, o, &so.outline)) => return Standing::Unrelated,
         Nesting::Straddles => {
             return Standing::Refused(straddle_sentence(s_name, &so.outline, c_name, c_outline.as_deref().unwrap_or(&[])))
         }
@@ -1260,14 +1263,28 @@ pub fn island_holes(p: &Part, host: &str, skin: f64) -> Vec<Vec<Pt>> {
 }
 
 /// A void against a standing solid: nested inside it is the solid's own hole
-/// (the hollow post — silent), straddling its wall refuses (lane D fork 5A).
+/// (the hollow post — silent), straddling its wall refuses (lane D fork 5A)
+/// unless the void leaves the solid on its way out of the blank.
 fn judge_void(p: &Part, v_name: &str, v: &Feature, s_name: &str, s: &Feature) -> Option<String> {
     let (vo, so) = (occupancy(p, v)?, occupancy(p, s)?);
     if vo.stands || !so.stands || vo.hi <= so.lo + Z_AGREE || vo.lo >= so.hi - Z_AGREE {
         return None;
     }
-    (plan_nesting(&vo.outline, &so.outline) == Nesting::Straddles)
+    (plan_nesting(&vo.outline, &so.outline) == Nesting::Straddles && !runs_out_to_air(p, &vo.outline, &so.outline))
         .then(|| straddle_sentence(v_name, &vo.outline, s_name, &so.outline))
+}
+
+/// Whether every part of `void` outside `solid` reaches past the blank. A
+/// pocket drawn out past the blank is open on that side; where it crosses a
+/// standing wall on the way out it is a notch in that wall, and what lies
+/// between the wall and the blank's edge is stock the wall's own cut removes.
+fn runs_out_to_air(p: &Part, void: &[Pt], solid: &[Pt]) -> bool {
+    let blank = crate::region::blank_of(p);
+    let outside = crate::offset::subtract_all(void, solid);
+    !outside.is_empty()
+        && outside.iter().all(|piece| {
+            piece.iter().any(|q| !point_in_polygon(&blank, q.x, q.y) && dist_to_polygon(&blank, q.x, q.y) > crate::CHORD_TOL_MM)
+        })
 }
 
 /// Every overlap the vocabulary cannot mean, refused by name with both

@@ -175,6 +175,62 @@ fn test_a_boss_taller_than_its_pocket_is_an_island_of_the_pocket_and_the_level_a
     assert!(e.contains("taller") && e.contains("down to z -5"), "{e}");
 }
 
+/// A pocket drawn out past the blank is open on that side. Where it crosses
+/// a boss's wall on the way out it is a notch in that wall, not a straddle:
+/// the stock between the wall and the blank's edge is the wall's own cut to
+/// remove. A pocket that crosses the wall and stays inside the blank is
+/// still refused.
+#[test]
+fn test_a_pocket_that_runs_out_of_the_blank_may_notch_a_boss() {
+    // The blank is 100 square; the block stands 2 in from it all round.
+    let block = "feature Block ProfileBoss(extent=10.0
+    2 2
+    2 98
+    98 98
+    98 2
+)
+";
+    let notch = "feature Notch ProfilePocket(extent=5.0
+    -0.02 40
+    30 40
+    30 60
+    -0.02 60
+)
+";
+    let p = program(&format!("{block}{notch}run Clear(tool=T5, profile=Notch, stepover=4.0)
+")).expect("the notch runs out to air");
+    let g = gcode::program(&p).unwrap();
+    assert!(g.contains("(open edges: 1 of 4 — entered from air)"), "{g}");
+
+    // The same pocket stopping 1 short of the blank's edge is half in the
+    // block and half in the stock round it, with a wall on every side.
+    let inside = "feature Notch ProfilePocket(extent=5.0
+    1 40
+    30 40
+    30 60
+    1 60
+)
+";
+    let e = program(&format!("{block}{inside}")).unwrap_err();
+    assert!(e.contains("'Notch' straddles 'Block''s wall"), "{e}");
+
+    // A block with a slot in from the far side: the pocket leaves it twice,
+    // once out of the blank and once into the slot, and the second refuses.
+    let slotted = "feature Block ProfileBoss(extent=10.0
+    2 2
+    2 98
+    98 98
+    98 62
+    20 62
+    20 38
+    98 38
+    98 2
+)
+";
+    let e = program(&format!("{slotted}{notch}")).unwrap_err();
+    assert!(e.contains("'Notch' straddles 'Block''s wall"), "{e}");
+}
+
 /// Fork 7: the kind is in the sentence, on both sides.
 #[test]
 fn test_the_kinds_that_cannot_stand_or_host_yet_say_so() {
