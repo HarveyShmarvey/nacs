@@ -5178,7 +5178,7 @@ pub fn reference_text() -> String {
                 let keys: Vec<String> = spec.keys.iter().map(|k| if k.required { format!("`{}`", k.name) } else { format!("`{}`?", k.name) }).collect();
                 let points = match spec.points {
                     crate::template::Points::None => String::new(),
-                    crate::template::Points::Planar => " — then the points, `x y` per line, a planar loop (a pocket CCW, a boss CW); a point may add `chamfer_depth=` or `chamfer_width=` to restate the leg for the edges from it on, 0 for none".to_string(),
+                    crate::template::Points::Planar => " — then the points, `x y` per line, a planar loop (a pocket CCW, a boss CW); a point may add `chamfer_depth=` or `chamfer_width=` to restate the leg for the edges from it on, 0 for none; beside `edge_round` the points alone give a leg, bevelling those edges where the rest are rounded".to_string(),
                     crate::template::Points::Wire => " — then the points, `x y z` per line, a closed wire".to_string(),
                     crate::template::Points::Loops => " — then `loop` and its points, the outer first (CCW), inner loops after (CW)".to_string(),
                 };

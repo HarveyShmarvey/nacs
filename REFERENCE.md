@@ -50,14 +50,14 @@ A project is a directory holding `main.part` (and, optionally, `geometry.part`).
 
 ### pockets and faces
 
-- **ProfilePocket** — `z`?, `extent`, `edge_round`?, `chamfer_depth`?, `chamfer_width`?, `chamfer_angle`? — then the points, `x y` per line, a planar loop (a pocket CCW, a boss CW); a point may add `chamfer_depth=` or `chamfer_width=` to restate the leg for the edges from it on, 0 for none
+- **ProfilePocket** — `z`?, `extent`, `edge_round`?, `chamfer_depth`?, `chamfer_width`?, `chamfer_angle`? — then the points, `x y` per line, a planar loop (a pocket CCW, a boss CW); a point may add `chamfer_depth=` or `chamfer_width=` to restate the leg for the edges from it on, 0 for none; beside `edge_round` the points alone give a leg, bevelling those edges where the rest are rounded
 - **Face** — `z` — then `loop` and its points, the outer first (CCW), inner loops after (CW)
 - **Plane** — `z`
 - **ContourPocket** — `extent` — then the points, `x y z` per line, a closed wire
 
 ### bosses and outside profiles
 
-- **ProfileBoss** — `z`?, `extent`, `edge_round`?, `chamfer_depth`?, `chamfer_width`?, `chamfer_angle`? — then the points, `x y` per line, a planar loop (a pocket CCW, a boss CW); a point may add `chamfer_depth=` or `chamfer_width=` to restate the leg for the edges from it on, 0 for none
+- **ProfileBoss** — `z`?, `extent`, `edge_round`?, `chamfer_depth`?, `chamfer_width`?, `chamfer_angle`? — then the points, `x y` per line, a planar loop (a pocket CCW, a boss CW); a point may add `chamfer_depth=` or `chamfer_width=` to restate the leg for the edges from it on, 0 for none; beside `edge_round` the points alone give a leg, bevelling those edges where the rest are rounded
 - **CylinderBoss** — `dia`, `extent`, `x`, `y`, `z`, `edge_round`?, `chamfer_depth`?, `chamfer_width`?, `chamfer_angle`?
 - **ContourBoss** — `extent` — then the points, `x y z` per line, a closed wire
 

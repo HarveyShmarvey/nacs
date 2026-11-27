@@ -1,0 +1,36 @@
+# round_bevel.cam — a rounded loop with one bevelled edge (ROADMAP item 9).
+# A feature carries one break on its top edge, a round or a chamfer. On a
+# loop with `edge_round` a point may still give its edges a bevel:
+# `chamfer_depth=` or `chamfer_width=` after the two coordinates, and 0 to
+# go back to the round. The feature line holds the round and, if the print
+# states it, the bevel's angle; it holds no leg of its own.
+#
+# The round's pass runs the whole loop, the bevelled edge included: what it
+# cuts there is inside what the bevel takes, which is why a bevel must be at
+# least the round's size. The chamfer's pass cuts the bevelled edge alone,
+# here in steps, since the face is wider than the mill's flank.
+units mm
+feed 800
+plunge 300
+rapid_z 5
+clearance_z 25
+spindle 3000
+
+stock Box(w=90, l=80, h=20, x=0, y=0, z=0)
+
+tool T5 Endmill(dia=10.0)
+tool T2 CornerRounder(radius=3.0, effective_dia=6.0, gauge_z=6.0, dia=12.0, pilot=5.94)
+tool T3 ChamferMill(angle=90.0, gauge_dia=8.0, gauge_z=3.75, dia=12.0, tip_dia=0.5)
+
+# CW: a boss bounds standing material, cut from outside.
+feature Pad ProfileBoss(extent=12.0, edge_round=3.0, chamfer_angle=90.0
+    20 20 chamfer_depth=10.0
+    20 60 chamfer_depth=0
+    70 60
+    70 20
+)
+
+run Clear(tool=T5, profile=Pad, stepover=4.0, stepdown=4.0)
+run Side(tool=T5, surface=Pad)
+run Form(tool=T2, surface=Pad)
+run Form(tool=T3, surface=Pad)

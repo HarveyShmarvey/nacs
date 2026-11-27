@@ -3467,6 +3467,7 @@ fn test_gcode_safety_lint() {
         ("chamfer_profile.cam/main.part", None),
         ("chamfer_marks.cam/main.part", None),
         ("chamfer_deep.cam/main.part", None),
+        ("round_bevel.cam/main.part", None),
         // K3's acceptance fixture: the derived S word must satisfy the same
         // spindle-before-feed ordering as any declared one.
         ("floor_derive.cam/main.part", None),
@@ -5821,6 +5822,40 @@ fn test_a_chamfer_wider_than_the_flank_is_cut_in_steps() {
     // wall (y=20 and y=60), where the unslid pass's offset would end.
     let top = pad.split("(pass 5 of 7").nth(1).unwrap().split("(pass 6").next().unwrap();
     assert!(top.contains("G01 X24.000 Y19.250") && top.contains("G01 X24.000 Y60.750"), "{top}");
+}
+
+/// A rounded loop with one bevelled edge (`round_bevel.cam`): the feature
+/// carries `edge_round`, and a point gives its edges a leg. The round's pass
+/// runs the whole loop; the chamfer's pass cuts the one bevelled edge and
+/// lifts off the rest. A leg on the feature line beside the round is still
+/// refused, and so is a bevel smaller than the round.
+#[test]
+fn test_a_rounded_loop_may_bevel_one_edge() {
+    let main_src = fs::read_to_string("round_bevel.cam/main.part").expect("failed to read main.part");
+    let part = parse::parse(&main_src).expect("failed to parse fixture");
+    parse::validate(&part).expect("fixture must validate");
+    let generated = gcode::program(&part).expect("failed to generate program");
+    let golden = fs::read_to_string("tests/round_bevel.golden.gcode").expect("failed to read golden");
+    assert_eq!(generated.trim(), golden.trim(), "round_bevel.cam diverged from its golden");
+
+    let round = generated.split("(--- break edge (engine): Pad with T2 ---)").nth(1).expect("the round's pass").split("(--- ").next().unwrap();
+    for wall in ["X17.000 Y", "Y63.000", "X73.000 Y", "Y17.000"] {
+        assert!(round.contains(wall), "the round runs all four edges, {wall}: {round}");
+    }
+    let bevel = generated.split("(--- chamfer edge (engine): Pad with T3 ---)").nth(1).expect("the bevel's pass").split("(--- ").next().unwrap();
+    // Every cutting move of the bevel is along the x=20 edge: no feed move
+    // travels in X between the end walls.
+    assert!(!bevel.lines().any(|l| l.starts_with("G01 X70") || l.starts_with("G01 X7")), "{bevel}");
+    assert_eq!(bevel.matches("(pass ").count(), 7, "{bevel}");
+
+    let head = main_src.split("feature Pad").next().unwrap();
+    let pad = |line: &str, points: &str| format!("{head}feature Pad ProfileBoss({line}\n{points})\nrun Form(tool=T3, surface=Pad)\n");
+    let err = parse::parse(&pad("extent=12.0, edge_round=3.0, chamfer_depth=4.0", "    20 20\n    20 60\n    70 60\n    70 20\n")).unwrap_err();
+    assert!(err.contains("rounded or beveled, not both"), "{err}");
+    let err = parse::parse(&pad("extent=12.0, edge_round=3.0", "    20 20 chamfer_depth=2.0\n    20 60 chamfer_depth=0\n    70 60\n    70 20\n")).unwrap_err();
+    assert!(err.contains("at least the round's size"), "{err}");
+    let err = parse::parse(&pad("extent=12.0, edge_round=3.0, chamfer_angle=90.0", "    20 20\n    20 60\n    70 60\n    70 20\n")).unwrap_err();
+    assert!(err.contains("no point giving a leg"), "{err}");
 }
 
 #[test]

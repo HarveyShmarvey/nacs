@@ -32,7 +32,7 @@ feature F9_Pocket ProfilePocket(z=26.0, extent=5.0, edge_round=1.0
     -1.02 28.0
 )
 
-# F16: outer profile under top cap F2: vertical wall loop F6 F21 F20 F16, top at z=26.0, base at z=14.0, material inside the loop; stepped base: the profile stops at the highest base z=14.0, and F6 to z=0.0 run on below it; the base at z=14.0 is the head's own underside (the face under the walls faces down): the wall is traced from above, the underside is the other setup's; top edge rounded R1.0 (F12 F13 F15) -- proposed as edge_round, the loop read at the walls; one edge is beveled instead (F1) -- a feature carries a round or a chamfer, not both, so the loop stands a square wall there and the bevel stays residue (CHECKLIST row 2.2)
+# F16: outer profile under top cap F2: vertical wall loop F6 F21 F20 F16, top at z=26.0, base at z=14.0, material inside the loop; stepped base: the profile stops at the highest base z=14.0, and F6 to z=0.0 run on below it; the base at z=14.0 is the head's own underside (the face under the walls faces down): the wall is traced from above, the underside is the other setup's; top edge rounded R1.0 (F12 F13 F15) -- proposed as edge_round, the loop read at the walls; beveled instead where a strip stands (F1: 12.0 deep at 90.0deg included) -- that edge's first point carries chamfer_depth, and 0 on the next goes back to the round (CHECKLIST row 2.2)
 # consume with: run Side(tool=..., surface=F16_Profile, comp=control)  [the feature carries its own z + extent]
 # the loop is wound CW: material inside, tool outside (the winding convention,
 # DECISIONS.md -> "Row-2.4 side selector")
@@ -44,11 +44,13 @@ feature F9_Pocket ProfilePocket(z=26.0, extent=5.0, edge_round=1.0
 # the base at z=14.0 is an overhang: the face under the walls faces down, so the
 # tool has air under it at the base; the underside itself is the other setup's
 # break the top edge with: run Form(tool=<CornerRounder>, surface=F16_Profile)  [its ground arc must be R1.0]
-# one edge of the model is a bevel, not a round (see its own entry): this loop stands a
-# square wall there, which leaves the bevel's material on; nothing proposed here cuts it
-feature F16_Profile ProfileBoss(z=26.0, extent=12.0, edge_round=1.0
-    0.0 0.0
-    0.0 40.0
+# where the model has a bevel, not a round, the edge's first point carries chamfer_depth and
+# the next point's 0 goes back to the round; the angle is the one the model measures --
+# cut it with: run Form(tool=<ChamferMill>, surface=F16_Profile)  [engine comp; a face wider than
+# the mill's flank is cut in steps]
+feature F16_Profile ProfileBoss(z=26.0, extent=12.0, edge_round=1.0, chamfer_angle=90.0
+    0.0 0.0 chamfer_depth=12.0
+    0.0 40.0 chamfer_depth=0.0
     60.0 40.0
     60.0 0.0
 )

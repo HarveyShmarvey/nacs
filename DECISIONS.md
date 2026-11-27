@@ -216,6 +216,14 @@ declared placement. Engine comp only (each pass rides its own offset), one
 leg on the loop (other edges 0). The leg may equal the wall's height; the
 stock check still wants room for the tip below the face's foot.
 
+**A rounded loop may bevel some of its edges (2026-11-27).** A feature still
+carries one break, and a leg on the feature line beside `edge_round` is
+refused. But on a `ProfilePocket` or `ProfileBoss` with `edge_round`, a point
+may give its edges a leg (`chamfer_depth=` or `chamfer_width=`), and `0` goes
+back to the round; `chamfer_angle` on the feature line is those bevels'
+angle. The round's pass still runs the whole loop, so a bevel must be at
+least the round's size. The chamfer's pass cuts the bevelled edges only.
+
 ## The program
 
 **Four safety rules, one test.** Units before motion, `G43 H` before a tool's
