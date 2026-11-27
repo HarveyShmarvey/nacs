@@ -2540,6 +2540,8 @@ fn chamfer_stepped(
             moves.insert(2, said);
         } else {
             moves[0] = said;
+            // The block says its direction once, on the first pass.
+            moves.retain(|l| !l.starts_with("(direction:"));
         }
         g.extend(moves);
     }
