@@ -2109,6 +2109,21 @@ fn test_a_pocket_that_runs_out_onto_a_bevel_proposes_open() {
     let part = parse::parse(&src).expect("the proposed pocket parses");
     let (program, _) = gcode::program_with_moves(&part).expect("the pocket clears");
     assert!(program.contains("(open edges: 1 of 30 — entered from air)"), "the bevel's side reads open: {program}");
+
+    // The whole proposal reads together: the pocket crosses the outline's
+    // wall on its way out of the blank, which is a notch in it.
+    let src = format!("units mm
+feed 800
+plunge 300
+rapid_z 25
+clearance_z 30
+spindle 3000
+                 stock Box(w=60, l=40, h=20, x=0, y=0, z=20)
+tool T6 Endmill(dia=6.0)
+{proposed}
+");
+    assert!(proposed.contains("feature F4_Trim ContourBoss("), "{proposed}");
+    parse::parse(&src).expect("the pocket and the outline it runs out through parse together");
 }
 
 /// ROADMAP item 9: the open_pocket block with a boss standing in the pocket,

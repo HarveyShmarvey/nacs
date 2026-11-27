@@ -103,6 +103,13 @@ refused only when no other feature is declared to cut from the boss's top
 down to the cavity's mouth round it, since without that its upper part
 stands in uncut material. That other feature takes it as its island too.
 
+**A pocket that runs out of the blank may notch a boss (2026-11-26).** A
+cavity crossing a standing wall was refused whatever else was true. It is
+allowed now when every part of the cavity outside the boss reaches past the
+blank: the pocket is open on that side, and the stock between the wall and
+the blank's edge is the wall's own cut to remove. A crossing that stays
+inside the blank is still refused.
+
 **An op works one planar region.** Its edges are read off the blank: wall,
 open, or bridged. A step is a pocket drawn past the stock. A boss touching the
 boundary is part of the shore, not an island.
