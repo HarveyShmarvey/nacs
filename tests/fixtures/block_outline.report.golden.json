@@ -1,0 +1,282 @@
+{
+  "allowance": 1.0,
+  "faces": [
+    {
+      "checklist_row": "no row",
+      "code": "chamfer_beside_round",
+      "id": "F1",
+      "reason": "top-edge bevel round cap F2, 12.0mm deep, on a loop whose other edges are rounded R1.0: one feature carries a round or a chamfer, not both -- F16_Profile proposes with the round and a square wall along this edge, and the bevel is not cut",
+      "refs": [
+        "F16"
+      ],
+      "status": "unsupported",
+      "surface": "plane"
+    },
+    {
+      "checklist_row": "1.1",
+      "id": "F2",
+      "part": "feature F2_Floor Plane(z=26.0)",
+      "status": "proposed",
+      "surface": "plane",
+      "why": "the level at z=26.0, below the part's topmost height and with nothing beside it rising above it: 1 face (F2) at one height; nothing stands above it outside a proposed feature, so the whole blank clears to it around what stands, the islands and voids derived from containment"
+    },
+    {
+      "checklist_row": "2.20",
+      "code": "cylinder_axis_tilted",
+      "id": "F3",
+      "reason": "cylindrical face with axis not parallel to +Z (oblique cylinder, CHECKLIST row 2.20)",
+      "status": "unsupported",
+      "surface": "cylinder"
+    },
+    {
+      "checklist_row": "2.1",
+      "feature": "F9_Pocket",
+      "id": "F4",
+      "part": "feature F9_Pocket ProfilePocket(z=26.0, extent=5.0, edge_round=1.0\n    -1.02 12.0\n    40.0 12.0\n    40.0 28.0\n    -1.02 28.0\n)",
+      "status": "proposed",
+      "surface": "cylinder",
+      "why": "mouth round of recognized pocket F9_Pocket (floor F9): a quarter-round between the walls' tops and the surrounding plane -- proposed as the pocket's edge_round, not a standalone face"
+    },
+    {
+      "checklist_row": "no row",
+      "code": "plane_downward",
+      "id": "F5",
+      "reason": "downward-facing planar face -- unreachable from above (undercut relative to the tool axis)",
+      "status": "unsupported",
+      "surface": "plane"
+    },
+    {
+      "checklist_row": "no row",
+      "code": "trim_wire_candidate_wall/trim_wire_open_loop",
+      "id": "F6",
+      "reason": "wall of refused trim-wire candidate on part bottom F23: trim-wire top edges do not chain into one closed loop (a broken or non-manifold rim)",
+      "refs": [
+        "F23"
+      ],
+      "status": "unsupported",
+      "surface": "plane"
+    },
+    {
+      "checklist_row": "2.1",
+      "feature": "F9_Pocket",
+      "id": "F7",
+      "part": "feature F9_Pocket ProfilePocket(z=26.0, extent=5.0, edge_round=1.0\n    -1.02 12.0\n    40.0 12.0\n    40.0 28.0\n    -1.02 28.0\n)",
+      "status": "proposed",
+      "surface": "plane",
+      "why": "vertical wall of recognized pocket F9_Pocket (floor F9)"
+    },
+    {
+      "checklist_row": "2.20",
+      "code": "cylinder_axis_tilted",
+      "id": "F8",
+      "reason": "cylindrical face with axis not parallel to +Z (oblique cylinder, CHECKLIST row 2.20)",
+      "status": "unsupported",
+      "surface": "cylinder"
+    },
+    {
+      "checklist_row": "2.1",
+      "feature": "F9_Pocket",
+      "id": "F9",
+      "part": "feature F9_Pocket ProfilePocket(z=26.0, extent=5.0, edge_round=1.0\n    -1.02 12.0\n    40.0 12.0\n    40.0 28.0\n    -1.02 28.0\n)",
+      "status": "proposed",
+      "surface": "plane",
+      "why": "pocket floor at z=21.0; vertical wall loop F7 F10 F26, mouth at z=26.0, depth 5.0, opens upward; 1 inner wire -- standing material inside the pocket proposes beside it; the floor runs out onto F1, which falls away from it -- that side is open, the loop drawn straight out past the blank; mouth rounded R1.0 (F4 F11 F14) -- proposed as edge_round, the mouth at the round's top"
+    },
+    {
+      "checklist_row": "2.1",
+      "feature": "F9_Pocket",
+      "id": "F10",
+      "part": "feature F9_Pocket ProfilePocket(z=26.0, extent=5.0, edge_round=1.0\n    -1.02 12.0\n    40.0 12.0\n    40.0 28.0\n    -1.02 28.0\n)",
+      "status": "proposed",
+      "surface": "plane",
+      "why": "vertical wall of recognized pocket F9_Pocket (floor F9)"
+    },
+    {
+      "checklist_row": "2.1",
+      "feature": "F9_Pocket",
+      "id": "F11",
+      "part": "feature F9_Pocket ProfilePocket(z=26.0, extent=5.0, edge_round=1.0\n    -1.02 12.0\n    40.0 12.0\n    40.0 28.0\n    -1.02 28.0\n)",
+      "status": "proposed",
+      "surface": "cylinder",
+      "why": "mouth round of recognized pocket F9_Pocket (floor F9): a quarter-round between the walls' tops and the surrounding plane -- proposed as the pocket's edge_round, not a standalone face"
+    },
+    {
+      "checklist_row": "2.2",
+      "feature": "F16_Profile",
+      "id": "F12",
+      "part": "feature F16_Profile ProfileBoss(z=26.0, extent=12.0, edge_round=1.0\n    0.0 0.0\n    0.0 40.0\n    60.0 40.0\n    60.0 0.0\n)",
+      "status": "proposed",
+      "surface": "cylinder",
+      "why": "top-edge round of recognized outer profile F16_Profile (top cap F2): a quarter-round between the cap and the wall under it -- proposed as the boss's edge_round, not a standalone face"
+    },
+    {
+      "checklist_row": "2.2",
+      "feature": "F16_Profile",
+      "id": "F13",
+      "part": "feature F16_Profile ProfileBoss(z=26.0, extent=12.0, edge_round=1.0\n    0.0 0.0\n    0.0 40.0\n    60.0 40.0\n    60.0 0.0\n)",
+      "status": "proposed",
+      "surface": "cylinder",
+      "why": "top-edge round of recognized outer profile F16_Profile (top cap F2): a quarter-round between the cap and the wall under it -- proposed as the boss's edge_round, not a standalone face"
+    },
+    {
+      "checklist_row": "2.1",
+      "feature": "F9_Pocket",
+      "id": "F14",
+      "part": "feature F9_Pocket ProfilePocket(z=26.0, extent=5.0, edge_round=1.0\n    -1.02 12.0\n    40.0 12.0\n    40.0 28.0\n    -1.02 28.0\n)",
+      "status": "proposed",
+      "surface": "cylinder",
+      "why": "mouth round of recognized pocket F9_Pocket (floor F9): a quarter-round between the walls' tops and the surrounding plane -- proposed as the pocket's edge_round, not a standalone face"
+    },
+    {
+      "checklist_row": "2.2",
+      "feature": "F16_Profile",
+      "id": "F15",
+      "part": "feature F16_Profile ProfileBoss(z=26.0, extent=12.0, edge_round=1.0\n    0.0 0.0\n    0.0 40.0\n    60.0 40.0\n    60.0 0.0\n)",
+      "status": "proposed",
+      "surface": "cylinder",
+      "why": "top-edge round of recognized outer profile F16_Profile (top cap F2): a quarter-round between the cap and the wall under it -- proposed as the boss's edge_round, not a standalone face"
+    },
+    {
+      "checklist_row": "2.2",
+      "feature": "F16_Profile",
+      "id": "F16",
+      "part": "feature F16_Profile ProfileBoss(z=26.0, extent=12.0, edge_round=1.0\n    0.0 0.0\n    0.0 40.0\n    60.0 40.0\n    60.0 0.0\n)",
+      "status": "proposed",
+      "surface": "plane",
+      "why": "outer profile under top cap F2: vertical wall loop F6 F21 F20 F16, top at z=26.0, base at z=14.0, material inside the loop; stepped base: the profile stops at the highest base z=14.0, and F6 to z=0.0 run on below it; the base at z=14.0 is the head's own underside (the face under the walls faces down): the wall is traced from above, the underside is the other setup's; top edge rounded R1.0 (F12 F13 F15) -- proposed as edge_round, the loop read at the walls; one edge is beveled instead (F1) -- a feature carries a round or a chamfer, not both, so the loop stands a square wall there and the bevel stays residue"
+    },
+    {
+      "checklist_row": "no row",
+      "code": "other_setup",
+      "id": "F17",
+      "reason": "planar face: the part's own material lies straight above it -- planar F5 is 2.0 up -- so nothing on this setup's tool axis reaches it; see what the other side makes of it with --up z-",
+      "refs": [
+        "F5"
+      ],
+      "status": "unsupported",
+      "surface": "plane"
+    },
+    {
+      "checklist_row": "no row",
+      "code": "other_setup",
+      "id": "F18",
+      "reason": "planar face: the part's own material lies straight above it -- planar F5 is 2.0 up -- so nothing on this setup's tool axis reaches it; see what the other side makes of it with --up z-",
+      "refs": [
+        "F5"
+      ],
+      "status": "unsupported",
+      "surface": "plane"
+    },
+    {
+      "checklist_row": "no row",
+      "code": "other_setup",
+      "id": "F19",
+      "reason": "planar face: the part's own material lies straight above it -- planar F5 is 2.0 up -- so nothing on this setup's tool axis reaches it; see what the other side makes of it with --up z-",
+      "refs": [
+        "F5"
+      ],
+      "status": "unsupported",
+      "surface": "plane"
+    },
+    {
+      "checklist_row": "2.2",
+      "feature": "F16_Profile",
+      "id": "F20",
+      "part": "feature F16_Profile ProfileBoss(z=26.0, extent=12.0, edge_round=1.0\n    0.0 0.0\n    0.0 40.0\n    60.0 40.0\n    60.0 0.0\n)",
+      "status": "proposed",
+      "surface": "plane",
+      "why": "vertical wall of recognized outer profile F16_Profile (top cap F2)"
+    },
+    {
+      "checklist_row": "2.2",
+      "feature": "F16_Profile",
+      "id": "F21",
+      "part": "feature F16_Profile ProfileBoss(z=26.0, extent=12.0, edge_round=1.0\n    0.0 0.0\n    0.0 40.0\n    60.0 40.0\n    60.0 0.0\n)",
+      "status": "proposed",
+      "surface": "plane",
+      "why": "vertical wall of recognized outer profile F16_Profile (top cap F2)"
+    },
+    {
+      "checklist_row": "no row",
+      "code": "trim_wire_candidate_wall/trim_wire_open_loop",
+      "id": "F22",
+      "reason": "wall of refused trim-wire candidate on part bottom F23: trim-wire top edges do not chain into one closed loop (a broken or non-manifold rim)",
+      "refs": [
+        "F23"
+      ],
+      "status": "unsupported",
+      "surface": "plane"
+    },
+    {
+      "checklist_row": "no row",
+      "code": "plane_downward",
+      "id": "F23",
+      "reason": "downward-facing planar face -- unreachable from above (undercut relative to the tool axis)",
+      "status": "unsupported",
+      "surface": "plane"
+    },
+    {
+      "checklist_row": "no row",
+      "code": "trim_wire_candidate_wall/trim_wire_open_loop",
+      "id": "F24",
+      "reason": "wall of refused trim-wire candidate on part bottom F23: trim-wire top edges do not chain into one closed loop (a broken or non-manifold rim)",
+      "refs": [
+        "F23"
+      ],
+      "status": "unsupported",
+      "surface": "plane"
+    },
+    {
+      "checklist_row": "no row",
+      "code": "other_setup",
+      "id": "F25",
+      "reason": "planar face: the part's own material lies straight above it -- planar F5 is 3.9 up -- so nothing on this setup's tool axis reaches it; see what the other side makes of it with --up z-",
+      "refs": [
+        "F5"
+      ],
+      "status": "unsupported",
+      "surface": "plane"
+    },
+    {
+      "checklist_row": "2.1",
+      "feature": "F9_Pocket",
+      "id": "F26",
+      "part": "feature F9_Pocket ProfilePocket(z=26.0, extent=5.0, edge_round=1.0\n    -1.02 12.0\n    40.0 12.0\n    40.0 28.0\n    -1.02 28.0\n)",
+      "status": "proposed",
+      "surface": "plane",
+      "why": "vertical wall of recognized pocket F9_Pocket (floor F9)"
+    },
+    {
+      "checklist_row": "2.4",
+      "id": "F27",
+      "part": "feature F27_Boss CylinderBoss(dia=8.0, extent=9.0, x=32.0, y=20.0, z=21.0)",
+      "status": "proposed",
+      "surface": "cylinder",
+      "why": "cylindrical, axis +Z, full revolution, material inside (a standing boss), flat top cap F29, clean base at z=21.0"
+    },
+    {
+      "checklist_row": "no row",
+      "code": "trim_wire_candidate_wall/trim_wire_open_loop",
+      "id": "F28",
+      "reason": "wall of refused trim-wire candidate on part bottom F23: trim-wire top edges do not chain into one closed loop (a broken or non-manifold rim)",
+      "refs": [
+        "F23"
+      ],
+      "status": "unsupported",
+      "surface": "plane"
+    },
+    {
+      "checklist_row": "1.1",
+      "id": "F29",
+      "part": "feature F29_Top Plane(z=30.0)",
+      "status": "proposed",
+      "surface": "plane",
+      "why": "planar, normal +Z, topmost planar face"
+    }
+  ],
+  "faces_total": 29,
+  "schema": "nacs-recognition-report",
+  "source": "block_outline.step",
+  "units": "mm",
+  "version": 1
+}

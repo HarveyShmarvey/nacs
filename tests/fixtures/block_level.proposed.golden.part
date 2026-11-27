@@ -9,20 +9,22 @@
 # cut from it by its own run
 feature F2_Floor Plane(z=20.0)
 
-# F4: through-trim wall loop F6 F8 F14 F4 on part-bottom anchor F17: straight top edges form a closed 3D wire (z 12.0..20.0), walls descend to the part bottom at z=0.0, material inside the loop (CHECKLIST row 2.8)
-# consume with: run Side(tool=..., surface=F4_Trim)  [an Endmill -- the wall is a flank cut; the wire carries its own Z range]
-# extent=20.0 reaches the part bottom below the wire's highest point; where the wire dips,
-# the pass rides below the bottom -- a through trim, nothing below to cut
-# the wire's XY projection is wound CW: material inside, tool outside (the winding convention, DECISIONS.md -> "Row-2.4 side selector")
-# every segment is a straight line (a curved trim edge refuses instead of tessellating), so the
-# comp=control rule for recognized contours does not bind -- either comp mode is legal
-feature F4_Trim ContourBoss(extent=20.0
-    0.0 0.0 12.0
-    0.0 40.0 12.0
-    8.0 40.0 20.0
-    60.0 40.0 20.0
-    60.0 0.0 20.0
-    8.0 0.0 20.0
+# F4: outer profile under top cap F2: vertical wall loop F4 F6 F8 F14, top at z=20.0, base at z=0.0, material inside the loop; top edge beveled at 90.0deg included with legs that differ edge to edge (F1: 8.0) -- the loop carries 8.0 as its chamfer_depth and its points restate the leg where it changes and 0 where a wall rises to the cap unbeveled (CHECKLIST row 2.2)
+# consume with: run Side(tool=..., surface=F4_Profile, comp=control)  [the feature carries its own z + extent]
+# the loop is wound CW: material inside, tool outside (the winding convention,
+# DECISIONS.md -> "Row-2.4 side selector")
+# comp=control is required on Contour runs: recognized boundaries carry rounded
+# corners tessellated to chords, and engine comp hard-errors on rounded-corner
+# offsets (DECISIONS.md -> "recognized contours propose comp=control")
+# the top edge's bevel is 8.0mm deep on most edges, at the included angle the model
+# measures, and the loop's points restate the leg where it changes (0 leaves an edge unbroken) --
+# break it with: run Form(tool=<ChamferMill>, surface=F4_Profile)  [engine comp: control comp cannot
+# lift off an unbroken edge, and the deeper leg reaches about a reach's width round each corner]
+feature F4_Profile ProfileBoss(z=20.0, extent=20.0, chamfer_depth=8.0, chamfer_angle=90.0
+    0.0 0.0
+    0.0 40.0 chamfer_depth=0.0
+    60.0 40.0
+    60.0 0.0
 )
 
 # F9: pocket floor at z=14.0; vertical wall loop F12 F5 F18 F24 F23, mouth at z=20.0, depth 6.0, opens upward; 1 inner wire -- standing material inside the pocket proposes beside it; the floor runs out onto F1, which falls away from it -- that side is open, the loop drawn straight out past the blank; floor fillet R1.0 (F10 F7 F19 F21 F20) -- the loop is drawn at the walls, the sharp corner; mouth rounded R1.0 (F3 F11 F13 F15 F16) -- proposed as edge_round, the mouth at the round's top (CHECKLIST row 2.7)
