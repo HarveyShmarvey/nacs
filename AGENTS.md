@@ -60,8 +60,9 @@ run two cargo commands at once. Run sidecar scripts with
 On Linux (a cloud session, WSL) `sh setup.sh` installs everything the lock
 needs; a cloud session runs it by itself at start and logs to
 `target/setup.log`. The sidecar's Python is `sidecar/.venv/bin/python`.
-`.claude/settings.json` says which commands run without asking. It refuses
-`gh pr merge` and a push to `main`: the human merges.
+`.claude/settings.json` says which commands run without asking. It allows
+`gh pr merge` and refuses a push to `main`: work reaches `main` only through
+a PR whose CI run is green.
 
 ## Rules
 
@@ -81,7 +82,8 @@ semantics beyond formatting, a change to `.part` syntax, deleting a feature.
 Everything else: do it, test it, open a PR.
 
 **No ceremony.** No DRAFT PRs, forks, blessings, CLOSE entries or walks. One
-branch per change, one PR, the human merges. If you want the user to check
+branch per change, one PR, merged by the human or, once CI is green, by the
+agent. If you want the user to check
 something in the window, run it yourself first and say exactly what to click
 and what they should see.
 
