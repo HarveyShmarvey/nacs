@@ -239,6 +239,12 @@ const FIXTURES: &[(&str, &[&str], &str, &str)] = &[
         "tests/fixtures/block_level.report.golden.json",
         "tests/fixtures/block_level.proposed.golden.part",
     ),
+    (
+        "tests/fixtures/boss_chamfer.step",
+        &[],
+        "tests/fixtures/boss_chamfer.report.golden.json",
+        "tests/fixtures/boss_chamfer.proposed.golden.part",
+    ),
 ];
 
 /// The allowance (ROADMAP item 1, slice 11): `--allowance 1` grows a
@@ -2162,6 +2168,36 @@ run Clear(tool=T6, profile=F9_Pocket, stepover=3.0)
     let level = program.split("(--- pocket clear: F9_Pocket").next().unwrap();
     assert!(level.contains("(--- volume clear: F2_Floor") && level.contains("(islands: F22_Boss)"), "the level goes round the boss: {program}");
     assert_eq!(program.matches("(islands: F22_Boss)").count(), 2, "and so does the pocket: {program}");
+}
+
+/// ROADMAP item 9: a round boss whose top edge is broken by a bevel. The
+/// cone between the cap and the wall is the boss's `chamfer_depth` and a
+/// member of the boss, not a refused frustum; the engine forms it once the
+/// floor round the boss is cleared. Reads the committed goldens;
+/// `test_sidecar_golden` ties them to the sidecar.
+#[test]
+fn test_a_cone_on_a_round_boss_top_edge_is_its_chamfer() {
+    let proposed = fs::read_to_string("tests/fixtures/boss_chamfer.proposed.golden.part").expect("failed to read proposed golden");
+    assert!(proposed.contains("feature F7_Boss CylinderBoss(dia=16.0, extent=8.0, x=20.0, y=20.0, z=10.0, chamfer_depth=1.0, chamfer_angle=90.0)"), "{proposed}");
+    let report = fs::read_to_string("tests/fixtures/boss_chamfer.report.golden.json").expect("failed to read report golden");
+    assert!(!report.contains("cone_frustum"), "the cone is the boss's: {report}");
+
+    let src = format!("units mm
+feed 800
+plunge 300
+rapid_z 23
+clearance_z 28
+spindle 3000
+                 stock Box(w=40, l=40, h=18, x=0, y=0, z=18)
+tool T6 Endmill(dia=6.0)
+                 tool T3 ChamferMill(angle=90.0, gauge_dia=8.0, gauge_z=3.75, dia=12.0, tip_dia=0.5)
+{proposed}
+                 run Clear(tool=T6, profile=F3_Face, stepover=3.0)
+run Form(tool=T3, surface=F7_Boss)
+");
+    let part = parse::parse(&src).expect("the proposal parses");
+    let (program, _) = gcode::program_with_moves(&part).expect("the engine forms the boss's edge");
+    assert!(program.contains("(--- chamfer edge (engine): F7_Boss with T3 ---)"), "{program}");
 }
 
 /// ROADMAP item 1 slice 9: a boss whose top edges carry two legs at one
