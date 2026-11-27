@@ -51,9 +51,9 @@ feature F8_Profile ProfileBoss(z=10.0, extent=4.0
 # or finish the wall with: run Side(tool=..., surface=F10_Hole, stepover=...)
 feature F10_Hole CylinderBore(dia=8.0, extent=10.0, x=30.0, y=12.0)
 
-# F11: cylindrical, axis +Z, full revolution, material outside (a bore), opens upward; bottom is not a flat floor or drill point -- proposed wall-only as a milled bore (CHECKLIST row 2.3)
+# F11: cylindrical, axis +Z, full revolution, material outside (a bore), opens upward; flat floor F13 -- a milled bore, with a smaller hole on the same axis opening in the floor (a counterbore) (CHECKLIST row 2.3)
 # finish the wall with: run Side(tool=..., surface=F11_Bore, stepover=...)  [stepover is the ring spacing up the wall]
-# wall-only proposal: the bottom face is not reproducible by drill or a flat-floor bore (see its own report entry)
+# a flat floor is milled, not drilled -- a twist drill leaves a conical point, so no drill run is suggested
 feature F11_Bore CylinderBore(dia=12.0, extent=4.0, x=15.0, y=28.0)
 
 # F12: cylindrical, axis +Z, full revolution, material outside (a bore), opens upward; bottom opens through -- a drillable through hole; rim at z=6.0, 4.0 below the stock top z=10.0, with open air straight above it to the top -- proposed from the top, where a drill through the blank starts, extent 10.0 the whole way down; what the model has above the rim is another feature's to cut (CHECKLIST row 2.3)

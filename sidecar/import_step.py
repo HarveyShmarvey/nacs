@@ -525,7 +525,9 @@ def hole_or_bore_group(i, face, c, faces, solid, emap, face_index):
                                depth to the TIP (a Form at points sends the tip to depth)
       flat island-free +Z   -> milled bore   -> `_Bore` grouped with the floor,
         plane                  consume with Side (a twist drill can't leave
-                               a flat bottom, so no drill run is suggested)
+                               a flat bottom, so no drill run is suggested);
+                               a smaller hole on the same axis may open in
+                               the floor (a counterbore over a through hole)
       anything else         -> wall-only `_Bore` -- the bottom face keeps its
                                own classification (a true residue statement)
 
@@ -580,7 +582,22 @@ def hole_or_bore_group(i, face, c, faces, solid, emap, face_index):
     air_past = (BRepClass3d_SolidClassifier(solid.wrapped, probe, LIN_TOL).State()
                 == TopAbs_State.TopAbs_OUT)
 
-    kind, angle = "other", None
+    def coaxial_opening(nb):
+        # The floor's one inner wire is a circle on the bore's axis: a
+        # smaller hole going on down from the floor, which proposes by its
+        # own wall. Anything else inside the floor is standing material.
+        inner = nb.innerWires()
+        if len(inner) != 1:
+            return False
+        for e in inner[0].Edges():
+            if e.geomType() != "CIRCLE":
+                return False
+            ctr = BRepAdaptor_Curve(e.wrapped).Circle().Location()
+            if math.dist((ctr.X(), ctr.Y()), axis_xy) > tol:
+                return False
+        return True
+
+    kind, angle, opening = "other", None, False
     if neighbors and air_past and all(not_a_floor(j) for j in neighbors):
         kind = "through"
     elif len(neighbors) == 1:
@@ -589,6 +606,8 @@ def hole_or_bore_group(i, face, c, faces, solid, emap, face_index):
             nz = face_normal(nb)[1].Z()
             if nz > COS_TOL and not nb.innerWires():
                 kind = "flat"
+            elif nz > COS_TOL and coaxial_opening(nb):
+                kind, opening = "flat", True
         else:
             angle = drill_point_cone(nb, axis_xy, c["dia"] / 2.0, bb.zmin)
             if angle is not None:
@@ -674,6 +693,9 @@ def hole_or_bore_group(i, face, c, faces, solid, emap, face_index):
         members.append(floor_idx)
         whys[floor_idx] = (f"flat floor of recognized bore {name} "
                            f"(wall {fid})")
+        if opening:
+            why_wall += ", with a smaller hole on the same axis opening in the floor (a counterbore)"
+            whys[floor_idx] += "; a smaller hole on the same axis opens in it and proposes by its own wall"
         extras = [
             f"# finish the wall with: run Side(tool=..., surface={name}, "
             "stepover=...)  [stepover is the ring spacing up the wall]",
