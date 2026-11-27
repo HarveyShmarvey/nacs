@@ -1683,7 +1683,6 @@ G00 Z5.000
 G00 X19.250 Y20.000
 G00 Z25.000
 (pass 2 of 7: the leg 5.250 deep, the flank slid 0.000 up the face)
-(direction: climb — the material on the tool's right under M03)
 (lead: 12.000mm along the path's normal, in air)
 G00 Z25.000
 G00 X7.250 Y20.000
@@ -1695,7 +1694,6 @@ G00 Z5.000
 G00 X19.250 Y20.000
 G00 Z25.000
 (pass 3 of 7: the leg 7.875 deep, the flank slid 2.625 up the face)
-(direction: climb — the material on the tool's right under M03)
 (lead: 12.000mm along the path's normal, in air)
 G00 Z25.000
 G00 X13.390 Y13.390
@@ -1709,7 +1707,6 @@ G00 Z5.000
 G00 X21.875 Y21.875
 G00 Z25.000
 (pass 4 of 7: the leg 7.875 deep, the flank slid 0.000 up the face)
-(direction: climb — the material on the tool's right under M03)
 (lead: 12.000mm along the path's normal, in air)
 G00 Z25.000
 G00 X7.250 Y20.000
@@ -1721,7 +1718,6 @@ G00 Z5.000
 G00 X19.250 Y20.000
 G00 Z25.000
 (pass 5 of 7: the leg 10.000 deep, the flank slid 4.750 up the face)
-(direction: climb — the material on the tool's right under M03)
 (lead: 12.000mm along the path's normal, in air)
 G00 Z25.000
 G00 X15.515 Y15.515
@@ -1735,7 +1731,6 @@ G00 Z5.000
 G00 X24.000 Y24.000
 G00 Z25.000
 (pass 6 of 7: the leg 10.000 deep, the flank slid 2.125 up the face)
-(direction: climb — the material on the tool's right under M03)
 (lead: 12.000mm along the path's normal, in air)
 G00 Z25.000
 G00 X12.890 Y12.890
@@ -1749,7 +1744,6 @@ G00 Z5.000
 G00 X21.375 Y21.375
 G00 Z25.000
 (pass 7 of 7: the leg 10.000 deep, the flank slid 0.000 up the face)
-(direction: climb — the material on the tool's right under M03)
 (lead: 12.000mm along the path's normal, in air)
 G00 Z25.000
 G00 X7.250 Y20.000
