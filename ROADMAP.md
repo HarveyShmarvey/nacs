@@ -795,10 +795,18 @@ One page. What is built, what is next, and the debts we know about.
    with a groove round three sides, a bevel, rounds and a pocket on each
    face. First pass: a hole the groove crosses proposed twice, once for
    each stretch of wall, and was drilled twice; it proposes once now, from
-   either side. Still refused on that part, in the order to take them: the
-   top pocket that opens onto the bevel, the bevel itself, the 1 mm edge
-   rounds, the boss's top chamfer, a counterbore's floor over a through
-   hole. The groove and a slot in a side face wait on a quarter turn.
+   either side.
+   Second pass: the top pocket proposes. Its floor fillet is read through
+   to the walls (no floor radius in the grammar: a flat endmill cuts the
+   corner square, and the note says so), its rounded mouth is `edge_round`,
+   and the side that runs out onto the bevel is open, drawn out past the
+   blank so the clearing enters there in air.
+   Still refused on that part, in the order to take them: the boss that
+   stands taller than the pocket it is in (the engine's refusal), the top
+   face and outline of the block, the bevel itself, the boss's top chamfer,
+   a counterbore's floor over a through hole. The groove and a slot in a
+   side face wait on a quarter turn. Not built: an endmill with a corner
+   radius, which is what leaves a floor fillet.
 
 ## Debts
 
