@@ -826,6 +826,10 @@ One page. What is built, what is next, and the debts we know about.
    leg on that edge's first point, and the sidecar writes the block's bevel
    that way (`block_outline`). From the top the part's program now cuts the
    outline, its rounds and the bevel.
+   Ninth pass: a head over a groove is proposed down to the groove's floor,
+   past its own underside, since nothing under it stands outside its
+   outline; the blank's side beside the groove was no setup's to cut
+   (`block_outline`, `split_hole` from both sides).
    Still refused on that part, in the order to take them: the rounds along
    the bevel's two ends (no tool in the grammar cuts them), the groove (a
    T-slot cutter). A slot in a side face waits on a quarter turn. Not
