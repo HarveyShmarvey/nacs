@@ -904,6 +904,53 @@ def place_sunken_bores(z_top, member_of, solid, blank_top=None):
                 f"the step above it is another feature's material")
 
 
+def join_split_holes(member_of, faces):
+    """A hole the model interrupts is one hole. A groove or a slot across a
+    drilled hole leaves two wall faces on one axis with air between, and
+    each proposed as its own hole from the top, so the schedule drilled the
+    place twice. Two plain drilled holes from the stock top on one axis at
+    one diameter are one drill run: the deeper keeps its line and the
+    shallower's faces become its members. A hole placed by `z=` (a mouth
+    chamfer, a round) and a milled bore are left alone: their rim is where
+    something else starts."""
+    def plain(g):
+        geom = g.get("geom")
+        return (geom is not None and g["name"].endswith("_Hole")
+                and not {"z", "chamfer_depth", "edge_round"} & set(geom))
+
+    holes = sorted((g for g in {id(g): g for g in member_of.values()}.values() if plain(g)),
+                   key=lambda g: -g["geom"]["depth"])
+    kept = []
+    for g in holes:
+        a = g["geom"]
+        whole = next((k for k in kept
+                      if abs(k["geom"]["x"] - a["x"]) < LIN_TOL
+                      and abs(k["geom"]["y"] - a["y"]) < LIN_TOL
+                      and abs(k["geom"]["dia"] - a["dia"]) < LIN_TOL), None)
+        if whole is None:
+            kept.append(g)
+            continue
+        p, q = whole["primary"], g["primary"]
+        lo, hi = sorted((faces[p - 1].BoundingBox(), faces[q - 1].BoundingBox()),
+                        key=lambda bb: bb.zmin)
+        gap = (f"{fmt(hi.zmin - lo.zmax)} of air between them, z={fmt(lo.zmax)} to "
+               f"z={fmt(hi.zmin)}" if hi.zmin - lo.zmax > LIN_TOL else "one above the other")
+        for m in g["members"]:
+            whole["members"].append(m)
+            whole["whys"][m] = g["whys"][m]
+            member_of[m] = whole
+        whole["whys"][q] = (f"a stretch of recognized hole {whole['name']} (wall F{p}): the "
+                            f"same axis and diameter, {gap} -- one drill run cuts both, "
+                            f"so it is proposed once")
+        whole["whys"][p] += (f"; wall F{q} is the same hole, {gap} -- one hole, drilled "
+                             f"once from the top")
+        whole["extras"] = whole["extras"] + [
+            f"# the model interrupts this hole (walls F{p} and F{q}, {gap}): drilled",
+            "# through the uncut blank it is one plain hole; drilled after the gap is cut, the",
+            "# drill breaks out and starts again on the far side",
+        ]
+
+
 def recognize_lip_rounds(faces, z_top, member_of, face_index):
     """The mouth-round pass (DECISIONS.md -> "sidecar recognition of a bore's
     mouth round"): a full-revolution toroidal blend tangent to a graduated
@@ -3341,6 +3388,9 @@ def recognize(step_path, solid_sel=None, up="z+", allowance=None, blank=None, gi
     # Then the rim, against the rim the round pass may have lifted: a bore
     # below the stock top is placed by `z=` (Phase 45).
     place_sunken_bores(z_top, member_of, solid, blank_top)
+    # Once every hole says where it starts: two stretches of one drilled
+    # hole across a gap are one hole.
+    join_split_holes(member_of, faces)
     pocket_member_of, floor_fail = recognize_pockets(
         solid, faces, z_top, emap, face_index, member_of)
     member_of.update(pocket_member_of)
