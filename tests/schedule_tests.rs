@@ -70,6 +70,25 @@ fn test_the_schedule_runs_the_shop_order_with_the_projects_own_tools_and_the_res
 
 /// A drilled hole deeper than five diameters pecks, a diameter a peck; one
 /// at five diameters or under is a single plunge, on its own line.
+/// A boss in a pocket with a 9 mm gap on one side: the 10 mm endmill, the
+/// largest, cannot pass, and the engine refuses its wall pass. The schedule
+/// gives that one line the next endmill down and says so; the result runs.
+#[test]
+fn test_a_wall_pass_the_largest_endmill_cannot_make_takes_the_next_one_down() {
+    let src = format!(
+        "{HEADER}{TOOLS}tool T5 Endmill(dia=4.0)\n\
+         feature Well ProfilePocket(extent=5.0\n    30 36\n    77 36\n    77 84\n    30 84\n)\n\
+         feature Post CylinderBoss(dia=25.0, extent=5.0, x=55.5, y=60.0, z=-5.0)\n"
+    );
+    let (_, s) = schedule_of(&src);
+    assert!(s.lines.contains(&"run Side(tool=T5, surface=Post, stepover=2, compress=arcs)".to_string()), "{:?}", s.lines);
+    assert!(s.lines.contains(&"run Side(tool=T1, surface=Well)".to_string()), "only the line that failed changes: {:?}", s.lines);
+    assert!(s.notes.iter().any(|n| n.contains("Side on Post takes T5, the next endmill down: with T1,")), "{:?}", s.notes);
+    let whole = format!("{src}{}\n", s.lines.join("\n"));
+    let part = parse::parse(&whole).expect("the schedule parses");
+    nacs::gcode::program_with_moves(&part).expect("and the program it makes runs");
+}
+
 #[test]
 fn test_a_deep_hole_pecks() {
     let src = format!("{HEADER}{TOOLS}        feature Deep CylinderBore(dia=6.0, extent=30.5, x=30, y=30)

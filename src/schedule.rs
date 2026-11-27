@@ -570,7 +570,60 @@ pub fn derive_schedule(p: &Part, main_src: &str, geom_src: Option<&str>, base: O
             Err(e) => out.notes.push(format!("not written, `{line}`: {}", strip_location(&e))),
         }
     }
+    // The lines parse; the program they make may still stop, on a move into
+    // stock no op removes: the largest endmill sent into a gap narrower than
+    // itself. The op the engine names is given the next endmill down and the
+    // program is made again; with none left the line is not written. Each
+    // round shrinks a tool or drops a line, so the loop ends.
+    for _ in 0..out.lines.len() * (p.tools.len() + 1) + 1 {
+        let mut text = main_src.to_string();
+        if !text.ends_with('\n') {
+            text.push('\n');
+        }
+        for line in &out.lines {
+            text.push_str(line);
+            text.push('\n');
+        }
+        let Ok(part) = parse::parse_project_with_base(&text, geom_src, base) else { break };
+        let Err(e) = crate::gcode::program_with_moves(&part) else { break };
+        let sentence = strip_location(&e);
+        let Some((i, verb, name, t)) = named_line(&out.lines, &sentence) else {
+            out.notes.push(format!("the program with these lines stops: {sentence}"));
+            break;
+        };
+        let why = sentence.split_once(": ").map_or(sentence.as_str(), |(_, w)| w);
+        let smaller = p.tools.get(&t).filter(|tool| tool.name == "Endmill").and_then(|tool| largest(p, "Endmill", Some(tool.dia)));
+        match smaller {
+            Some(s) => {
+                out.lines[i] = out.lines[i]
+                    .replace(&format!("tool=T{t},"), &format!("tool=T{s},"))
+                    .replace(&format!("stepover={}", half(p, t)), &format!("stepover={}", half(p, s)))
+                    .replace(&format!("stepdown={}", half(p, t)), &format!("stepdown={}", half(p, s)));
+                out.notes.push(format!("{SMALLER}{verb} on {name} takes T{s}, the next endmill down: with T{t}, {why}"));
+            }
+            None => {
+                let line = out.lines.remove(i);
+                out.notes.push(format!("not written, `{line}`: {sentence}"));
+            }
+        }
+    }
     out
+}
+
+/// Marks the note of a line written with a smaller tool than the first
+/// choice, which `render` prints under its own word.
+const SMALLER: &str = "smaller tool: ";
+
+/// The scheduled line an engine refusal names: the refusal opens
+/// `<Verb> on '<feature>' with T<n>:`.
+fn named_line(lines: &[String], sentence: &str) -> Option<(usize, String, String, usize)> {
+    let (verb, rest) = sentence.split_once(" on '")?;
+    let (name, rest) = rest.split_once("' with T")?;
+    let t: usize = rest.split(|c: char| !c.is_ascii_digit()).next()?.parse().ok()?;
+    let i = lines.iter().position(|l| {
+        l.starts_with(&format!("run {verb}(tool=T{t},")) && (l.contains(&format!("={name})")) || l.contains(&format!("={name},")))
+    })?;
+    Some((i, verb.to_string(), name.to_string(), t))
 }
 
 /// The parser's sentence without the `file:line:` the candidate text owns.
@@ -612,8 +665,17 @@ pub fn render(s: &Schedule) -> String {
         }
     }
     for n in &s.notes {
-        out.push_str("# not scheduled: ");
-        out.push_str(n);
+        // A line written with a smaller tool is scheduled; its note says why.
+        match n.strip_prefix(SMALLER) {
+            Some(rest) => {
+                out.push_str("# smaller tool: ");
+                out.push_str(rest);
+            }
+            None => {
+                out.push_str("# not scheduled: ");
+                out.push_str(n);
+            }
+        }
         out.push('\n');
     }
     out
