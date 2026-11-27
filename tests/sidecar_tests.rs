@@ -2202,17 +2202,17 @@ run Clear(tool=T6, profile=F9_Pocket, stepover=3.0)
 /// ROADMAP item 9: the outline of a head whose top a pocket opens through.
 /// The top face's boundary runs round the pocket's mouth, three top edges
 /// are rounded and the fourth is a bevel as deep as the head. The outline
-/// proposes as a profile carrying the round, the bevel stays refused with
-/// its own reason, and the top stays the level. Reads the committed goldens;
+/// proposes as a profile carrying the round, the bevel is the leg its edge's
+/// first point states, and the top stays the level. Reads the committed goldens;
 /// `test_sidecar_golden` ties them to the sidecar.
 #[test]
 fn test_a_block_outline_reads_past_a_pocket_mouth_and_carries_its_rounds() {
     let proposed = fs::read_to_string("tests/fixtures/block_outline.proposed.golden.part").expect("failed to read proposed golden");
-    assert!(proposed.contains("feature F16_Profile ProfileBoss(z=26.0, extent=12.0, edge_round=1.0\n    0.0 0.0\n    0.0 40.0\n    60.0 40.0\n    60.0 0.0\n)"), "{proposed}");
+    assert!(proposed.contains("feature F16_Profile ProfileBoss(z=26.0, extent=12.0, edge_round=1.0, chamfer_angle=90.0\n    0.0 0.0 chamfer_depth=12.0\n    0.0 40.0 chamfer_depth=0.0\n    60.0 40.0\n    60.0 0.0\n)"), "{proposed}");
     assert!(proposed.contains("feature F2_Floor Plane(z=26.0)"), "the top is the level, not a bounded face: {proposed}");
     let report = fs::read_to_string("tests/fixtures/block_outline.report.golden.json").expect("failed to read report golden");
     let faces = face_entries(&report);
-    assert_eq!(faces[0].code.as_deref(), Some("chamfer_beside_round"), "the bevel says why it is left out: {report}");
+    assert_eq!(faces[0].status, "proposed", "the bevel is the outline's one bevelled edge: {report}");
 
     let src = format!("units mm
 feed 800

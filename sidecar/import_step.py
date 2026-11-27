@@ -2469,12 +2469,17 @@ def outer_profile_group(cap, cap_idx, wall_idxs, faces, solid, emap,
             edge_legs.append(leg)
             if leg is not None:
                 length[leg] = length.get(leg, 0.0) + math.dist(a, b)
-        default_leg = max(sorted(length), key=length.get)
+        # On a rounded loop the feature has no leg of its own: every edge
+        # is rounded unless a point bevels it, and 0 goes back to the round.
+        default_leg = max(sorted(length), key=length.get) if edge_round is None else None
         for i, leg in enumerate(edge_legs):
             before = default_leg if i == 0 else edge_legs[i - 1]
             if leg != before:
                 marks[i] = leg
-        keys += f", chamfer_depth={fmt(default_leg)}, chamfer_angle={fmt(chamfer[1])}"
+        if edge_round is None:
+            keys += f", chamfer_depth={fmt(default_leg)}, chamfer_angle={fmt(chamfer[1])}"
+        else:
+            keys += f", chamfer_angle={fmt(chamfer[1])}"
 
     def point_line(i, x, y):
         line = f"    {fmt(x)} {fmt(y)}"
@@ -2508,6 +2513,12 @@ def outer_profile_group(cap, cap_idx, wall_idxs, faces, solid, emap,
             whys[j] = (f"top-edge bevel of recognized outer profile {name} (top cap F{cap_idx}): "
                        f"a strip between the cap and the walls -- proposed as the boss's "
                        f"chamfer_depth, not a standalone face")
+    elif marked and edge_round is not None:
+        for j in chamfer[2]:
+            whys[j] = (f"top-edge bevel of recognized outer profile {name} (top cap F{cap_idx}): "
+                       f"a strip between the cap and the wall under it, {fmt(chamfer[4][j])} deep, on a "
+                       f"loop whose other edges are rounded -- proposed as chamfer_depth on that edge's "
+                       f"first point")
     elif marked:
         strips = " ".join(f"F{j}" for j in chamfer[2])
         legs_seen = ", ".join(fmt(d) for d in sorted({d for d in edge_legs if d is not None}))
@@ -2531,11 +2542,16 @@ def outer_profile_group(cap, cap_idx, wall_idxs, faces, solid, emap,
             whys[j] = (f"top-edge round of recognized outer profile {name} (top cap F{cap_idx}): "
                        f"a quarter-round between the cap and the wall under it -- proposed as the "
                        f"boss's edge_round, not a standalone face")
-        if strips_seen:
+        if strips_seen and marked:
             strips = " ".join(f"F{j}" for j in strips_seen)
-            whys[primary] += (f"; one edge is beveled instead ({strips}) -- a feature carries a round "
-                              f"or a chamfer, not both, so the loop stands a square wall there and "
-                              f"the bevel stays residue")
+            legs_seen = ", ".join(fmt(d) for d in sorted({d for d in edge_legs if d is not None}))
+            whys[primary] += (f"; beveled instead where a strip stands ({strips}: {legs_seen} deep at "
+                              f"{fmt(chamfer[1])}deg included) -- that edge's first point carries "
+                              f"chamfer_depth, and 0 on the next goes back to the round")
+        elif strips_seen:
+            strips = " ".join(f"F{j}" for j in strips_seen)
+            whys[primary] += (f"; some edges are beveled instead, at more than one angle ({strips}) -- "
+                              f"the loop stands a square wall there and the bevels stay residue")
     extras = [
         f"# consume with: run Side(tool=..., surface={name}, comp=control)"
         "  [the feature carries its own z + extent]",
@@ -2566,7 +2582,7 @@ def outer_profile_group(cap, cap_idx, wall_idxs, faces, solid, emap,
     ]
     if overhang:
         extras += overhang_extras
-    if marked:
+    if marked and edge_round is None:
         extras += [
             f"# the top edge's bevel is {fmt(default_leg)}mm deep on most edges, at the included angle the model",
             "# measures, and the loop's points restate the leg where it changes (0 leaves an edge unbroken) --",
@@ -2578,10 +2594,17 @@ def outer_profile_group(cap, cap_idx, wall_idxs, faces, solid, emap,
             f"# break the top edge with: run Form(tool=<CornerRounder>, surface={name})"
             f"  [its ground arc must be R{fmt(edge_round[0])}]",
         ]
-        if strips_seen:
+        if strips_seen and marked:
             extras += [
-                "# one edge of the model is a bevel, not a round (see its own entry): this loop stands a",
-                "# square wall there, which leaves the bevel's material on; nothing proposed here cuts it",
+                "# where the model has a bevel, not a round, the edge's first point carries chamfer_depth and",
+                "# the next point's 0 goes back to the round; the angle is the one the model measures --",
+                f"# cut it with: run Form(tool=<ChamferMill>, surface={name})  [engine comp; a face wider than",
+                "# the mill's flank is cut in steps]",
+            ]
+        elif strips_seen:
+            extras += [
+                "# some edges of the model are bevels at more than one angle (see their own entries): this",
+                "# loop stands a square wall there; nothing proposed here cuts them",
             ]
     if chamfer is not None and not even and not marked and edge_round is None:
         extras += [
@@ -2759,12 +2782,10 @@ def recognize_outer_profiles(solid, faces, z_top, emap, face_index, claimed):
                                          "differs, or some walls have none) -- one feature carries one "
                                          "edge_round",
                                   refs=[f"F{j}" for j in sorted(rounds)])
+                # A bevel on the same loop keeps its strips' reading: the
+                # loop's points say which edges it is on (one angle), or the
+                # strips stay residue (two).
                 edge_round = (next(iter(rounds.values())), sorted(rounds))
-                if strips:
-                    # A round and a bevel on one loop: the feature carries
-                    # the round, the loop is still read at the walls, and
-                    # the bevel is left out and says so.
-                    chamfer = (None, None, strips, strip_over, strip_leg)
         except Refusal as r:
             refusal = r
         wall_idxs = walls
@@ -2788,17 +2809,7 @@ def recognize_outer_profiles(solid, faces, z_top, emap, face_index, claimed):
         else:
             for m in g["members"]:
                 member_of[m] = g
-            if edge_round is not None:
-                for j in strips:
-                    leg = fmt(strip_leg[j])
-                    wall_fail[j] = residue(
-                        code="chamfer_beside_round", row="no row",
-                        reason=f"top-edge bevel round cap F{i}, {leg}mm deep, on a loop whose other "
-                               f"edges are rounded R{fmt(edge_round[0])}: one feature carries a round or "
-                               f"a chamfer, not both -- {g['name']} proposes with the round and a "
-                               f"square wall along this edge, and the bevel is not cut",
-                        refs=[f"F{g['primary']}"])
-            elif uneven is not None:
+            if uneven is not None:
                 seen = ", ".join(f"{fmt(d)} at {fmt(a)}deg" for d, a in uneven)
                 for j in strips:
                     wall_fail[j] = residue(

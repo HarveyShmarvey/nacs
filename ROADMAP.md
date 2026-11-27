@@ -822,9 +822,13 @@ One page. What is built, what is next, and the debts we know about.
    Seventh pass: the engine cuts a chamfer wider than the cutter's flank
    in steps (`chamfer_deep.cam`), so a bevel that deep is a `Form` like any
    other chamfer.
-   Still refused on that part, in the order to take them: the bevel itself
-   (a chamfer on one edge of a loop whose other edges are rounded), the
-   groove (a T-slot cutter). A slot in a side face waits on a quarter turn. Not
+   Eighth pass: a rounded loop may bevel one edge (`round_bevel.cam`), a
+   leg on that edge's first point, and the sidecar writes the block's bevel
+   that way (`block_outline`). From the top the part's program now cuts the
+   outline, its rounds and the bevel.
+   Still refused on that part, in the order to take them: the rounds along
+   the bevel's two ends (no tool in the grammar cuts them), the groove (a
+   T-slot cutter). A slot in a side face waits on a quarter turn. Not
    built: an endmill with a corner radius, which is what leaves a floor
    fillet.
 

@@ -1809,6 +1809,8 @@ pub fn parse_into(src: &str, p: &mut Part, base_dir: Option<&std::path::Path>) -
     let mut contour_extent: f64 = 0.0;
     let mut contour_edge_round: Option<f64> = None;
     let mut contour_chamfer: Option<ChamferSpec> = None;
+    // The angle of a bevel on a rounded loop, whose legs only its points give.
+    let mut contour_bevel_angle: Option<f64> = None;
     // The points' own restatements of the leg (slice 9), by point index.
     let mut contour_marks: Vec<ChamferMark> = Vec::new();
     let mut contour_is_boss = false;
@@ -1903,7 +1905,9 @@ pub fn parse_into(src: &str, p: &mut Part, base_dir: Option<&std::path::Path>) -
                                 return Err(format!("line {}: a loop point is `x y`, optionally followed by chamfer_depth= or chamfer_width= for the edges from it on; `{key}=` is neither", lineno + 1));
                             }
                         };
-                        if contour_chamfer.is_none() {
+                        // On a rounded loop a point may bevel its edges
+                        // instead: the feature declares no leg of its own.
+                        if contour_chamfer.is_none() && contour_edge_round.is_none() {
                             return Err(format!("line {}: this loop point restates a chamfer the feature does not declare — put chamfer_depth= (or chamfer_width=) on the feature line as the loop's own leg, and 0 on the points whose edges stay unbroken", lineno + 1));
                         }
                         contour_marks.push(ChamferMark { at: contour_points.len(), leg });
@@ -1929,7 +1933,32 @@ pub fn parse_into(src: &str, p: &mut Part, base_dir: Option<&std::path::Path>) -
                     }
                 } else {
                     let taken = std::mem::take(&mut contour_points);
-                    let marks = std::mem::take(&mut contour_marks);
+                    let mut marks = std::mem::take(&mut contour_marks);
+                    // A rounded loop whose points bevel some edges: every
+                    // edge is rounded unless a point gives it a leg, and 0
+                    // goes back to the round. Held as a chamfer whose own
+                    // leg is the first one a point gives, unbroken from the
+                    // first point until a point says otherwise.
+                    if let (None, Some(r)) = (contour_chamfer, contour_edge_round) {
+                        match marks.iter().find_map(|m| m.leg) {
+                            Some(leg) => {
+                                for m in &marks {
+                                    let (ChamferLeg::Depth(v) | ChamferLeg::Width(v)) = match m.leg { Some(l) => l, None => continue };
+                                    if v < r {
+                                        return Err(format!("line {}: a {v}mm bevel on an edge of a loop rounded R{r} — the round's pass runs the whole loop, and a bevel smaller than the round would not take the round with it; give the bevel at least the round's size", lineno + 1));
+                                    }
+                                }
+                                contour_chamfer = Some(ChamferSpec { leg, angle: contour_bevel_angle });
+                                if !marks.iter().any(|m| m.at == 0) {
+                                    marks.insert(0, ChamferMark { at: 0, leg: None });
+                                }
+                            }
+                            None if contour_bevel_angle.is_some() || !marks.is_empty() => {
+                                return Err(format!("line {}: chamfer_angle beside edge_round with no point giving a leg — on a rounded loop a bevel is one edge's, said on its first point (chamfer_depth= or chamfer_width= after `x y`)", lineno + 1));
+                            }
+                            None => {}
+                        }
+                    }
                     if contour_is_boss {
                         Feature::ProfileBoss { points: taken, z: contour_z, extent: contour_extent, edge_round: contour_edge_round, chamfer: contour_chamfer, chamfer_marks: marks }
                     } else {
@@ -2463,7 +2492,15 @@ pub fn parse_into(src: &str, p: &mut Part, base_dir: Option<&std::path::Path>) -
                     contour_z = get_num_opt(&map, "z", lineno)?;
                     contour_extent = get_num(&map, "extent", lineno)?;
                     contour_edge_round = get_num_opt(&map, "edge_round", lineno)?;
-                    contour_chamfer = get_chamfer_spec(&map, lineno)?;
+                    // A leg beside edge_round is refused as ever; the angle
+                    // alone is the angle of the bevels the points declare.
+                    contour_bevel_angle = None;
+                    contour_chamfer = if contour_edge_round.is_some() && !map.contains_key("chamfer_depth") && !map.contains_key("chamfer_width") {
+                        contour_bevel_angle = get_num_opt(&map, "chamfer_angle", lineno)?;
+                        None
+                    } else {
+                        get_chamfer_spec(&map, lineno)?
+                    };
                     let (known, tolerated) = feature_keys("ProfilePocket").expect("the table names the block variants");
                     reject_unknown_keys(
                         &map,
