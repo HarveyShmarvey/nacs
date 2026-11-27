@@ -2809,9 +2809,33 @@ def recognize_levels(member_of, wall_fail, cap_note, floor_fail, faces, emap,
     voids from containment. The Plane says nothing about where the floor
     ends, so it is proposed only when nothing stands above that height
     outside a proposed feature; anything that does is named and the floors
-    stay refused as `level_obstructed`."""
+    stay refused as `level_obstructed`.
+
+    A refused floor that nothing beside it rises above is a level too, heads
+    or none: a block's top with a boss standing higher somewhere else on the
+    part. Every face on its edges runs down from it or is a proposed
+    feature's, so the floor ends in air or in a declared cut all the way
+    round, and the same test for what stands above decides it."""
     settled = [g for g in {id(g): g for g in member_of.values()}.values() if g.get("floor")]
-    heights = sorted({g["floor"][0] for g in settled})
+
+    def open_floor(i):
+        # The cap of a refused boss keeps that refusal: it says why the boss
+        # under it is not proposed, and a level would bury it.
+        if i in member_of or i in wall_fail or i in cap_note:
+            return None
+        f = faces[i - 1]
+        pnt, n = face_normal(f)
+        if n.Z() <= COS_TOL:
+            return None
+        for edge in f.Edges():
+            for anc in emap.FindFromKey(edge.wrapped):
+                j = face_index(anc)
+                if j != i and j not in member_of and faces[j - 1].BoundingBox().zmax > pnt.Z() + 10.0 * LIN_TOL:
+                    return None
+        return round(pnt.Z(), 3)
+
+    tops = {i: z for i in sorted(floor_fail) for z in [open_floor(i)] if z is not None}
+    heights = sorted({g["floor"][0] for g in settled} | set(tops.values()))
     if not heights:
         return
     standing_loops = [g["loop"] for g in {id(g): g for g in member_of.values()}.values()
@@ -2845,6 +2869,9 @@ def recognize_levels(member_of, wall_fail, cap_note, floor_fail, faces, emap,
             if n.Z() <= COS_TOL or abs(pnt.Z() - z) > 10.0 * LIN_TOL:
                 continue
             clean = True
+            if i in tops:
+                floors.append(i)
+                continue
             for edge in f.Edges():
                 for anc in emap.FindFromKey(edge.wrapped):
                     j = face_index(anc)
@@ -2860,6 +2887,8 @@ def recognize_levels(member_of, wall_fail, cap_note, floor_fail, faces, emap,
                           if j not in floors and f.BoundingBox().zmax > z + 10.0 * LIN_TOL
                           and not silhouette(j, z) and not covered(j))
         ids = " ".join(f"F{i}" for i in floors)
+        if blockers and not heads:
+            continue  # a top with something undeclared above it keeps its own refusal
         if blockers:
             named = " ".join(f"F{j}" for j in blockers)
             for i in floors:
@@ -2876,8 +2905,11 @@ def recognize_levels(member_of, wall_fail, cap_note, floor_fail, faces, emap,
                        for anc in emap.FindFromKey(edge.wrapped) if silhouette(face_index(anc), z)})
         skirts = sorted({j for g in settled if g["floor"][0] == z for j in g["under"]
                          if "foot bevel" in wall_fail.get(j, {}).get("reason", "")})
-        whys = {i: f"floor at z={fmt(z)}, one face of the level {name} the heads stand over" for i in floors}
-        whys[primary] = (f"the level at z={fmt(z)} the heads {' '.join(heads)} stand over: {len(floors)} "
+        whys = {i: f"floor at z={fmt(z)}, one face of the level {name}"
+                   + (" the heads stand over" if heads else "") for i in floors}
+        lead = (f"the level at z={fmt(z)} the heads {' '.join(heads)} stand over" if heads else
+                f"the level at z={fmt(z)}, below the part's topmost height and with nothing beside it rising above it")
+        whys[primary] = (f"{lead}: {len(floors)} "
                          f"face{'' if len(floors) == 1 else 's'} ({ids}) at one height"
                          + (f", open along {' '.join(f'F{j}' for j in rims)} (the blank's silhouette)" if rims else "")
                          + "; nothing stands above it outside a proposed feature, so the whole blank clears "
@@ -2888,6 +2920,12 @@ def recognize_levels(member_of, wall_fail, cap_note, floor_fail, faces, emap,
             f"# then finish with: run End(tool=..., surface={name}, stepover=...)",
             f"# the islands are derived from containment: every proposed boss standing to z={fmt(z)} (the heads",
             "# named above), and every bore whose mouth opens in this floor is a void the paths bridge or go around",
+        ] if heads else [
+            f"# consume with: run Clear(tool=..., profile={name}, stepover=...)  [the whole blank down to "
+            f"z={fmt(z)}, around what stands higher]",
+            f"# then finish with: run End(tool=..., surface={name}, stepover=...)",
+            "# what stands higher is an island by containment, and a pocket or bore that opens in this floor is",
+            "# cut from it by its own run",
         ]
         if skirts:
             extras += [

@@ -801,10 +801,13 @@ One page. What is built, what is next, and the debts we know about.
    corner square, and the note says so), its rounded mouth is `edge_round`,
    and the side that runs out onto the bevel is open, drawn out past the
    blank so the clearing enters there in air.
-   Still refused on that part, in the order to take them: the boss that
-   stands taller than the pocket it is in (the engine's refusal), the top
-   face and outline of the block, the bevel itself, the boss's top chamfer,
-   a counterbore's floor over a through hole. The groove and a slot in a
+   Third pass: the boss in that pocket stands taller than the block, which
+   the engine refused; it reads it now as the island of the pocket and of
+   the level above. The block's top, below the boss's, proposes as that
+   level: a `Plane` the whole blank clears to (`block_level` fixture).
+   Still refused on that part, in the order to take them: the outline of
+   the block, the bevel itself, the boss's top chamfer, a counterbore's
+   floor over a through hole. The groove and a slot in a
    side face wait on a quarter turn. Not built: an endmill with a corner
    radius, which is what leaves a floor fillet.
 

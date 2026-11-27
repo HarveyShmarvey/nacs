@@ -1,0 +1,232 @@
+{
+  "faces": [
+    {
+      "checklist_row": "1.2",
+      "code": "plane_oblique",
+      "id": "F1",
+      "reason": "oblique planar face -- no tilted-plane primitive (CHECKLIST row 1.2 is todo)",
+      "status": "unsupported",
+      "surface": "plane"
+    },
+    {
+      "checklist_row": "1.1",
+      "id": "F2",
+      "part": "feature F2_Floor Plane(z=20.0)",
+      "status": "proposed",
+      "surface": "plane",
+      "why": "the level at z=20.0, below the part's topmost height and with nothing beside it rising above it: 1 face (F2) at one height; nothing stands above it outside a proposed feature, so the whole blank clears to it around what stands, the islands and voids derived from containment"
+    },
+    {
+      "checklist_row": "2.7",
+      "feature": "F9_Pocket",
+      "id": "F3",
+      "part": "feature F9_Pocket ProfilePocket(z=20.0, extent=6.0, edge_round=1.0\n    -0.02 8.0\n    40.0 8.0\n    40.603 8.036\n    41.197 8.145\n    41.773 8.325\n    42.324 8.573\n    42.84 8.885\n    43.316 9.257\n    43.743 9.684\n    44.115 10.16\n    44.427 10.676\n    44.675 11.227\n    44.855 11.803\n    44.964 12.397\n    45.0 13.0\n    45.0 27.0\n    44.964 27.603\n    44.855 28.197\n    44.675 28.773\n    44.427 29.324\n    44.115 29.84\n    43.743 30.316\n    43.316 30.743\n    42.84 31.115\n    42.324 31.427\n    41.773 31.675\n    41.197 31.855\n    40.603 31.964\n    40.0 32.0\n    -0.02 32.0\n)",
+      "status": "proposed",
+      "surface": "cylinder",
+      "why": "mouth round of recognized pocket F9_Pocket (floor F9): a quarter-round between the walls' tops and the surrounding plane -- proposed as the pocket's edge_round, not a standalone face"
+    },
+    {
+      "checklist_row": "2.8",
+      "feature": "F4_Trim",
+      "id": "F4",
+      "part": "feature F4_Trim ContourBoss(extent=20.0\n    0.0 0.0 12.0\n    0.0 40.0 12.0\n    8.0 40.0 20.0\n    60.0 40.0 20.0\n    60.0 0.0 20.0\n    8.0 0.0 20.0\n)",
+      "status": "proposed",
+      "surface": "plane",
+      "why": "through-trim wall loop F6 F8 F14 F4 on part-bottom anchor F17: straight top edges form a closed 3D wire (z 12.0..20.0), walls descend to the part bottom at z=0.0, material inside the loop"
+    },
+    {
+      "checklist_row": "2.7",
+      "feature": "F9_Pocket",
+      "id": "F5",
+      "part": "feature F9_Pocket ProfilePocket(z=20.0, extent=6.0, edge_round=1.0\n    -0.02 8.0\n    40.0 8.0\n    40.603 8.036\n    41.197 8.145\n    41.773 8.325\n    42.324 8.573\n    42.84 8.885\n    43.316 9.257\n    43.743 9.684\n    44.115 10.16\n    44.427 10.676\n    44.675 11.227\n    44.855 11.803\n    44.964 12.397\n    45.0 13.0\n    45.0 27.0\n    44.964 27.603\n    44.855 28.197\n    44.675 28.773\n    44.427 29.324\n    44.115 29.84\n    43.743 30.316\n    43.316 30.743\n    42.84 31.115\n    42.324 31.427\n    41.773 31.675\n    41.197 31.855\n    40.603 31.964\n    40.0 32.0\n    -0.02 32.0\n)",
+      "status": "proposed",
+      "surface": "plane",
+      "why": "vertical wall of recognized pocket F9_Pocket (floor F9)"
+    },
+    {
+      "checklist_row": "2.8",
+      "feature": "F4_Trim",
+      "id": "F6",
+      "part": "feature F4_Trim ContourBoss(extent=20.0\n    0.0 0.0 12.0\n    0.0 40.0 12.0\n    8.0 40.0 20.0\n    60.0 40.0 20.0\n    60.0 0.0 20.0\n    8.0 0.0 20.0\n)",
+      "status": "proposed",
+      "surface": "plane",
+      "why": "vertical wall of recognized trim wire F4_Trim (part-bottom anchor F17)"
+    },
+    {
+      "checklist_row": "2.7",
+      "feature": "F9_Pocket",
+      "id": "F7",
+      "part": "feature F9_Pocket ProfilePocket(z=20.0, extent=6.0, edge_round=1.0\n    -0.02 8.0\n    40.0 8.0\n    40.603 8.036\n    41.197 8.145\n    41.773 8.325\n    42.324 8.573\n    42.84 8.885\n    43.316 9.257\n    43.743 9.684\n    44.115 10.16\n    44.427 10.676\n    44.675 11.227\n    44.855 11.803\n    44.964 12.397\n    45.0 13.0\n    45.0 27.0\n    44.964 27.603\n    44.855 28.197\n    44.675 28.773\n    44.427 29.324\n    44.115 29.84\n    43.743 30.316\n    43.316 30.743\n    42.84 31.115\n    42.324 31.427\n    41.773 31.675\n    41.197 31.855\n    40.603 31.964\n    40.0 32.0\n    -0.02 32.0\n)",
+      "status": "proposed",
+      "surface": "cylinder",
+      "why": "floor fillet R1.0 of recognized pocket F9_Pocket (floor F9): the pocket is drawn to the wall behind it; an endmill with a 1.0 corner radius leaves this fillet, a flat one cuts the corner square"
+    },
+    {
+      "checklist_row": "2.8",
+      "feature": "F4_Trim",
+      "id": "F8",
+      "part": "feature F4_Trim ContourBoss(extent=20.0\n    0.0 0.0 12.0\n    0.0 40.0 12.0\n    8.0 40.0 20.0\n    60.0 40.0 20.0\n    60.0 0.0 20.0\n    8.0 0.0 20.0\n)",
+      "status": "proposed",
+      "surface": "plane",
+      "why": "vertical wall of recognized trim wire F4_Trim (part-bottom anchor F17)"
+    },
+    {
+      "checklist_row": "2.7",
+      "feature": "F9_Pocket",
+      "id": "F9",
+      "part": "feature F9_Pocket ProfilePocket(z=20.0, extent=6.0, edge_round=1.0\n    -0.02 8.0\n    40.0 8.0\n    40.603 8.036\n    41.197 8.145\n    41.773 8.325\n    42.324 8.573\n    42.84 8.885\n    43.316 9.257\n    43.743 9.684\n    44.115 10.16\n    44.427 10.676\n    44.675 11.227\n    44.855 11.803\n    44.964 12.397\n    45.0 13.0\n    45.0 27.0\n    44.964 27.603\n    44.855 28.197\n    44.675 28.773\n    44.427 29.324\n    44.115 29.84\n    43.743 30.316\n    43.316 30.743\n    42.84 31.115\n    42.324 31.427\n    41.773 31.675\n    41.197 31.855\n    40.603 31.964\n    40.0 32.0\n    -0.02 32.0\n)",
+      "status": "proposed",
+      "surface": "plane",
+      "why": "pocket floor at z=14.0; vertical wall loop F12 F5 F18 F24 F23, mouth at z=20.0, depth 6.0, opens upward; 1 inner wire -- standing material inside the pocket proposes beside it; the floor runs out onto F1, which falls away from it -- that side is open, the loop drawn straight out past the blank; floor fillet R1.0 (F10 F7 F19 F21 F20) -- the loop is drawn at the walls, the sharp corner; mouth rounded R1.0 (F3 F11 F13 F15 F16) -- proposed as edge_round, the mouth at the round's top"
+    },
+    {
+      "checklist_row": "2.7",
+      "feature": "F9_Pocket",
+      "id": "F10",
+      "part": "feature F9_Pocket ProfilePocket(z=20.0, extent=6.0, edge_round=1.0\n    -0.02 8.0\n    40.0 8.0\n    40.603 8.036\n    41.197 8.145\n    41.773 8.325\n    42.324 8.573\n    42.84 8.885\n    43.316 9.257\n    43.743 9.684\n    44.115 10.16\n    44.427 10.676\n    44.675 11.227\n    44.855 11.803\n    44.964 12.397\n    45.0 13.0\n    45.0 27.0\n    44.964 27.603\n    44.855 28.197\n    44.675 28.773\n    44.427 29.324\n    44.115 29.84\n    43.743 30.316\n    43.316 30.743\n    42.84 31.115\n    42.324 31.427\n    41.773 31.675\n    41.197 31.855\n    40.603 31.964\n    40.0 32.0\n    -0.02 32.0\n)",
+      "status": "proposed",
+      "surface": "cylinder",
+      "why": "floor fillet R1.0 of recognized pocket F9_Pocket (floor F9): the pocket is drawn to the wall behind it; an endmill with a 1.0 corner radius leaves this fillet, a flat one cuts the corner square"
+    },
+    {
+      "checklist_row": "2.7",
+      "feature": "F9_Pocket",
+      "id": "F11",
+      "part": "feature F9_Pocket ProfilePocket(z=20.0, extent=6.0, edge_round=1.0\n    -0.02 8.0\n    40.0 8.0\n    40.603 8.036\n    41.197 8.145\n    41.773 8.325\n    42.324 8.573\n    42.84 8.885\n    43.316 9.257\n    43.743 9.684\n    44.115 10.16\n    44.427 10.676\n    44.675 11.227\n    44.855 11.803\n    44.964 12.397\n    45.0 13.0\n    45.0 27.0\n    44.964 27.603\n    44.855 28.197\n    44.675 28.773\n    44.427 29.324\n    44.115 29.84\n    43.743 30.316\n    43.316 30.743\n    42.84 31.115\n    42.324 31.427\n    41.773 31.675\n    41.197 31.855\n    40.603 31.964\n    40.0 32.0\n    -0.02 32.0\n)",
+      "status": "proposed",
+      "surface": "cylinder",
+      "why": "mouth round of recognized pocket F9_Pocket (floor F9): a quarter-round between the walls' tops and the surrounding plane -- proposed as the pocket's edge_round, not a standalone face"
+    },
+    {
+      "checklist_row": "2.7",
+      "feature": "F9_Pocket",
+      "id": "F12",
+      "part": "feature F9_Pocket ProfilePocket(z=20.0, extent=6.0, edge_round=1.0\n    -0.02 8.0\n    40.0 8.0\n    40.603 8.036\n    41.197 8.145\n    41.773 8.325\n    42.324 8.573\n    42.84 8.885\n    43.316 9.257\n    43.743 9.684\n    44.115 10.16\n    44.427 10.676\n    44.675 11.227\n    44.855 11.803\n    44.964 12.397\n    45.0 13.0\n    45.0 27.0\n    44.964 27.603\n    44.855 28.197\n    44.675 28.773\n    44.427 29.324\n    44.115 29.84\n    43.743 30.316\n    43.316 30.743\n    42.84 31.115\n    42.324 31.427\n    41.773 31.675\n    41.197 31.855\n    40.603 31.964\n    40.0 32.0\n    -0.02 32.0\n)",
+      "status": "proposed",
+      "surface": "plane",
+      "why": "vertical wall of recognized pocket F9_Pocket (floor F9)"
+    },
+    {
+      "checklist_row": "2.7",
+      "feature": "F9_Pocket",
+      "id": "F13",
+      "part": "feature F9_Pocket ProfilePocket(z=20.0, extent=6.0, edge_round=1.0\n    -0.02 8.0\n    40.0 8.0\n    40.603 8.036\n    41.197 8.145\n    41.773 8.325\n    42.324 8.573\n    42.84 8.885\n    43.316 9.257\n    43.743 9.684\n    44.115 10.16\n    44.427 10.676\n    44.675 11.227\n    44.855 11.803\n    44.964 12.397\n    45.0 13.0\n    45.0 27.0\n    44.964 27.603\n    44.855 28.197\n    44.675 28.773\n    44.427 29.324\n    44.115 29.84\n    43.743 30.316\n    43.316 30.743\n    42.84 31.115\n    42.324 31.427\n    41.773 31.675\n    41.197 31.855\n    40.603 31.964\n    40.0 32.0\n    -0.02 32.0\n)",
+      "status": "proposed",
+      "surface": "torus",
+      "why": "mouth round of recognized pocket F9_Pocket (floor F9): a quarter-round between the walls' tops and the surrounding plane -- proposed as the pocket's edge_round, not a standalone face"
+    },
+    {
+      "checklist_row": "2.8",
+      "feature": "F4_Trim",
+      "id": "F14",
+      "part": "feature F4_Trim ContourBoss(extent=20.0\n    0.0 0.0 12.0\n    0.0 40.0 12.0\n    8.0 40.0 20.0\n    60.0 40.0 20.0\n    60.0 0.0 20.0\n    8.0 0.0 20.0\n)",
+      "status": "proposed",
+      "surface": "plane",
+      "why": "vertical wall of recognized trim wire F4_Trim (part-bottom anchor F17)"
+    },
+    {
+      "checklist_row": "2.7",
+      "feature": "F9_Pocket",
+      "id": "F15",
+      "part": "feature F9_Pocket ProfilePocket(z=20.0, extent=6.0, edge_round=1.0\n    -0.02 8.0\n    40.0 8.0\n    40.603 8.036\n    41.197 8.145\n    41.773 8.325\n    42.324 8.573\n    42.84 8.885\n    43.316 9.257\n    43.743 9.684\n    44.115 10.16\n    44.427 10.676\n    44.675 11.227\n    44.855 11.803\n    44.964 12.397\n    45.0 13.0\n    45.0 27.0\n    44.964 27.603\n    44.855 28.197\n    44.675 28.773\n    44.427 29.324\n    44.115 29.84\n    43.743 30.316\n    43.316 30.743\n    42.84 31.115\n    42.324 31.427\n    41.773 31.675\n    41.197 31.855\n    40.603 31.964\n    40.0 32.0\n    -0.02 32.0\n)",
+      "status": "proposed",
+      "surface": "cylinder",
+      "why": "mouth round of recognized pocket F9_Pocket (floor F9): a quarter-round between the walls' tops and the surrounding plane -- proposed as the pocket's edge_round, not a standalone face"
+    },
+    {
+      "checklist_row": "2.7",
+      "feature": "F9_Pocket",
+      "id": "F16",
+      "part": "feature F9_Pocket ProfilePocket(z=20.0, extent=6.0, edge_round=1.0\n    -0.02 8.0\n    40.0 8.0\n    40.603 8.036\n    41.197 8.145\n    41.773 8.325\n    42.324 8.573\n    42.84 8.885\n    43.316 9.257\n    43.743 9.684\n    44.115 10.16\n    44.427 10.676\n    44.675 11.227\n    44.855 11.803\n    44.964 12.397\n    45.0 13.0\n    45.0 27.0\n    44.964 27.603\n    44.855 28.197\n    44.675 28.773\n    44.427 29.324\n    44.115 29.84\n    43.743 30.316\n    43.316 30.743\n    42.84 31.115\n    42.324 31.427\n    41.773 31.675\n    41.197 31.855\n    40.603 31.964\n    40.0 32.0\n    -0.02 32.0\n)",
+      "status": "proposed",
+      "surface": "torus",
+      "why": "mouth round of recognized pocket F9_Pocket (floor F9): a quarter-round between the walls' tops and the surrounding plane -- proposed as the pocket's edge_round, not a standalone face"
+    },
+    {
+      "checklist_row": "no row",
+      "code": "trim_wire_anchor_bottom",
+      "id": "F17",
+      "reason": "part-bottom anchor of recognized trim wire(s) F4_Trim -- the through-trim walls descend to it; a downward face has no proposal of its own (unreachable from above)",
+      "refs": [
+        "F4_Trim"
+      ],
+      "status": "unsupported",
+      "surface": "plane"
+    },
+    {
+      "checklist_row": "2.7",
+      "feature": "F9_Pocket",
+      "id": "F18",
+      "part": "feature F9_Pocket ProfilePocket(z=20.0, extent=6.0, edge_round=1.0\n    -0.02 8.0\n    40.0 8.0\n    40.603 8.036\n    41.197 8.145\n    41.773 8.325\n    42.324 8.573\n    42.84 8.885\n    43.316 9.257\n    43.743 9.684\n    44.115 10.16\n    44.427 10.676\n    44.675 11.227\n    44.855 11.803\n    44.964 12.397\n    45.0 13.0\n    45.0 27.0\n    44.964 27.603\n    44.855 28.197\n    44.675 28.773\n    44.427 29.324\n    44.115 29.84\n    43.743 30.316\n    43.316 30.743\n    42.84 31.115\n    42.324 31.427\n    41.773 31.675\n    41.197 31.855\n    40.603 31.964\n    40.0 32.0\n    -0.02 32.0\n)",
+      "status": "proposed",
+      "surface": "cylinder",
+      "why": "vertical wall of recognized pocket F9_Pocket (floor F9)"
+    },
+    {
+      "checklist_row": "2.7",
+      "feature": "F9_Pocket",
+      "id": "F19",
+      "part": "feature F9_Pocket ProfilePocket(z=20.0, extent=6.0, edge_round=1.0\n    -0.02 8.0\n    40.0 8.0\n    40.603 8.036\n    41.197 8.145\n    41.773 8.325\n    42.324 8.573\n    42.84 8.885\n    43.316 9.257\n    43.743 9.684\n    44.115 10.16\n    44.427 10.676\n    44.675 11.227\n    44.855 11.803\n    44.964 12.397\n    45.0 13.0\n    45.0 27.0\n    44.964 27.603\n    44.855 28.197\n    44.675 28.773\n    44.427 29.324\n    44.115 29.84\n    43.743 30.316\n    43.316 30.743\n    42.84 31.115\n    42.324 31.427\n    41.773 31.675\n    41.197 31.855\n    40.603 31.964\n    40.0 32.0\n    -0.02 32.0\n)",
+      "status": "proposed",
+      "surface": "torus",
+      "why": "floor fillet R1.0 of recognized pocket F9_Pocket (floor F9): the pocket is drawn to the wall behind it; an endmill with a 1.0 corner radius leaves this fillet, a flat one cuts the corner square"
+    },
+    {
+      "checklist_row": "2.7",
+      "feature": "F9_Pocket",
+      "id": "F20",
+      "part": "feature F9_Pocket ProfilePocket(z=20.0, extent=6.0, edge_round=1.0\n    -0.02 8.0\n    40.0 8.0\n    40.603 8.036\n    41.197 8.145\n    41.773 8.325\n    42.324 8.573\n    42.84 8.885\n    43.316 9.257\n    43.743 9.684\n    44.115 10.16\n    44.427 10.676\n    44.675 11.227\n    44.855 11.803\n    44.964 12.397\n    45.0 13.0\n    45.0 27.0\n    44.964 27.603\n    44.855 28.197\n    44.675 28.773\n    44.427 29.324\n    44.115 29.84\n    43.743 30.316\n    43.316 30.743\n    42.84 31.115\n    42.324 31.427\n    41.773 31.675\n    41.197 31.855\n    40.603 31.964\n    40.0 32.0\n    -0.02 32.0\n)",
+      "status": "proposed",
+      "surface": "torus",
+      "why": "floor fillet R1.0 of recognized pocket F9_Pocket (floor F9): the pocket is drawn to the wall behind it; an endmill with a 1.0 corner radius leaves this fillet, a flat one cuts the corner square"
+    },
+    {
+      "checklist_row": "2.7",
+      "feature": "F9_Pocket",
+      "id": "F21",
+      "part": "feature F9_Pocket ProfilePocket(z=20.0, extent=6.0, edge_round=1.0\n    -0.02 8.0\n    40.0 8.0\n    40.603 8.036\n    41.197 8.145\n    41.773 8.325\n    42.324 8.573\n    42.84 8.885\n    43.316 9.257\n    43.743 9.684\n    44.115 10.16\n    44.427 10.676\n    44.675 11.227\n    44.855 11.803\n    44.964 12.397\n    45.0 13.0\n    45.0 27.0\n    44.964 27.603\n    44.855 28.197\n    44.675 28.773\n    44.427 29.324\n    44.115 29.84\n    43.743 30.316\n    43.316 30.743\n    42.84 31.115\n    42.324 31.427\n    41.773 31.675\n    41.197 31.855\n    40.603 31.964\n    40.0 32.0\n    -0.02 32.0\n)",
+      "status": "proposed",
+      "surface": "cylinder",
+      "why": "floor fillet R1.0 of recognized pocket F9_Pocket (floor F9): the pocket is drawn to the wall behind it; an endmill with a 1.0 corner radius leaves this fillet, a flat one cuts the corner square"
+    },
+    {
+      "checklist_row": "2.4",
+      "id": "F22",
+      "part": "feature F22_Boss CylinderBoss(dia=10.0, extent=12.0, x=28.0, y=20.0, z=14.0)",
+      "status": "proposed",
+      "surface": "cylinder",
+      "why": "cylindrical, axis +Z, full revolution, material inside (a standing boss), flat top cap F25, clean base at z=14.0"
+    },
+    {
+      "checklist_row": "2.7",
+      "feature": "F9_Pocket",
+      "id": "F23",
+      "part": "feature F9_Pocket ProfilePocket(z=20.0, extent=6.0, edge_round=1.0\n    -0.02 8.0\n    40.0 8.0\n    40.603 8.036\n    41.197 8.145\n    41.773 8.325\n    42.324 8.573\n    42.84 8.885\n    43.316 9.257\n    43.743 9.684\n    44.115 10.16\n    44.427 10.676\n    44.675 11.227\n    44.855 11.803\n    44.964 12.397\n    45.0 13.0\n    45.0 27.0\n    44.964 27.603\n    44.855 28.197\n    44.675 28.773\n    44.427 29.324\n    44.115 29.84\n    43.743 30.316\n    43.316 30.743\n    42.84 31.115\n    42.324 31.427\n    41.773 31.675\n    41.197 31.855\n    40.603 31.964\n    40.0 32.0\n    -0.02 32.0\n)",
+      "status": "proposed",
+      "surface": "cylinder",
+      "why": "vertical wall of recognized pocket F9_Pocket (floor F9)"
+    },
+    {
+      "checklist_row": "2.7",
+      "feature": "F9_Pocket",
+      "id": "F24",
+      "part": "feature F9_Pocket ProfilePocket(z=20.0, extent=6.0, edge_round=1.0\n    -0.02 8.0\n    40.0 8.0\n    40.603 8.036\n    41.197 8.145\n    41.773 8.325\n    42.324 8.573\n    42.84 8.885\n    43.316 9.257\n    43.743 9.684\n    44.115 10.16\n    44.427 10.676\n    44.675 11.227\n    44.855 11.803\n    44.964 12.397\n    45.0 13.0\n    45.0 27.0\n    44.964 27.603\n    44.855 28.197\n    44.675 28.773\n    44.427 29.324\n    44.115 29.84\n    43.743 30.316\n    43.316 30.743\n    42.84 31.115\n    42.324 31.427\n    41.773 31.675\n    41.197 31.855\n    40.603 31.964\n    40.0 32.0\n    -0.02 32.0\n)",
+      "status": "proposed",
+      "surface": "plane",
+      "why": "vertical wall of recognized pocket F9_Pocket (floor F9)"
+    },
+    {
+      "checklist_row": "1.1",
+      "id": "F25",
+      "part": "feature F25_Top Plane(z=26.0)",
+      "status": "proposed",
+      "surface": "plane",
+      "why": "planar, normal +Z, topmost planar face"
+    }
+  ],
+  "faces_total": 25,
+  "schema": "nacs-recognition-report",
+  "source": "block_level.step",
+  "units": "mm",
+  "version": 1
+}
