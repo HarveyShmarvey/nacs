@@ -4703,7 +4703,14 @@ impl ImportSetup {
         if !origin.is_empty() {
             // A second setup takes the word too: it is read on the given
             // blank, and the `given from` line says where the first zero went.
-            out.extend(["--origin".to_string(), origin_words(origin)?.join(",")]);
+            // A value that opens with a minus sign reads as a flag when it
+            // is its own word, so it rides on the flag's.
+            let words = origin_words(origin)?.join(",");
+            if words.starts_with('-') {
+                out.push(format!("--origin={words}"));
+            } else {
+                out.extend(["--origin".to_string(), words]);
+            }
         }
         Ok(out)
     }
@@ -4767,7 +4774,9 @@ impl ImportSetup {
         // origin, is a program written at the model's own zero.
         let earlier_zero = std::fs::read_to_string(resolved.join("report.json")).ok().and_then(|text| report_origin_at(&text));
         if let Some([x, y, z]) = earlier_zero {
-            out.extend(["--given-origin".to_string(), format!("{x},{y},{z}")]);
+            // One word with its flag: a negative first number (a zero at
+            // the blank's middle is often -0) would read as a flag alone.
+            out.push(format!("--given-origin={x},{y},{z}"));
         }
         Ok(out)
     }
