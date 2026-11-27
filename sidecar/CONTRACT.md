@@ -293,6 +293,10 @@ them:
 | `pocket_walls_descend` | no row | the loop's mouth is not above the floor (a plateau top) |
 | `pocket_mouth_lipped` | no row | a face across a mouth-rim edge is not an upward plane (the load-bearing undercut check) |
 | `pocket_capped` | no row | the probe above the mouth over the floor centroid is inside material |
+| `pocket_floor_fillet_split` | 2.1 | a floor fillet (a quarter-round between the floor and a wall) that does not meet one wall along one edge, so the wall behind it cannot be read; `refs` the fillet |
+| `pocket_floor_unwalled` | 1.1 | every edge of the floor falls away: nothing stands beside it |
+| `pocket_open_side_bent` | 1.2 | the side the floor runs out on (a face falling away from its edge) is not one straight edge |
+| `pocket_open_side_blocked` | 1.2 | the floor runs out onto a falling face, but the part stands above the floor's height past that side, so the side cannot be drawn open to the blank |
 | `outer_profile_wall_not_vertical` | 1.2 | a planar wall whose normal is not horizontal; `refs` the wall |
 | `outer_profile_wall_cylinder_tilted` | 1.2 | a cylindrical wall whose axis is not +Z; `refs` the wall |
 | `outer_profile_wall_not_plane_or_cylinder` | no row | a wall of another surface type; `refs` the wall |

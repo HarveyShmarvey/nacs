@@ -1534,12 +1534,72 @@ def see_through(w, faces, emap, face_index, below):
     return walls
 
 
-def pocket_group(floor, floor_idx, faces, solid, emap, face_index):
+def blend_radius(face, z_low, axis_on_top):
+    """The radius of a quarter-round blend that rises one radius from
+    `z_low`: a cylinder with a level axis along a straight edge, a torus
+    with an upright axis round a corner. None for anything else. A floor's
+    fillet has its axis at its top, one radius above the floor; a mouth's
+    round has its axis at its foot, the wall's top."""
+    kind = face.geomType()
+    ad = BRepAdaptor_Surface(face.wrapped)
+    if kind == "CYLINDER":
+        cyl = ad.Cylinder()
+        if abs(cyl.Axis().Direction().Z()) > 1.0 - COS_TOL:
+            return None
+        r, zc = cyl.Radius(), cyl.Location().Z()
+    elif kind == "TORUS":
+        tor = ad.Torus()
+        if abs(tor.Axis().Direction().Z()) < COS_TOL:
+            return None
+        r, zc = tor.MinorRadius(), tor.Location().Z()
+    else:
+        return None
+    bb = face.BoundingBox()
+    tol = 10.0 * LIN_TOL
+    if abs(bb.zmin - z_low) > tol or abs(bb.zmax - z_low - r) > tol:
+        return None
+    if abs(zc - (z_low + r if axis_on_top else z_low)) > tol:
+        return None
+    return r
+
+
+def pocket_group(floor, floor_idx, faces, solid, emap, face_index, blank_side=0.0):
     """Graduation checks + boundary extraction for one pocket-floor
     candidate. Returns the group dict on success; raises Refusal naming the
     failed check otherwise. The checks ARE the pocket's orientation/undercut
-    gate (the Phase 4 co-requisite), mirroring the per-face classifiers."""
+    gate (the Phase 4 co-requisite), mirroring the per-face classifiers.
+    `blank_side` is how far the blank stands outside the model on its sides,
+    which an open side's loop has to pass."""
     z_floor = face_normal(floor)[0].Z()
+
+    def is_air(x, y, z):
+        return (BRepClass3d_SolidClassifier(solid.wrapped, gp_Pnt(x, y, z), LIN_TOL).State()
+                == TopAbs_State.TopAbs_OUT)
+
+    def falls_away(edge):
+        """The plan direction out of the floor across this straight edge, if
+        the surface past it drops away: just outside the edge, a point a
+        little under the floor's height is in air. None if anything stands
+        or lies level there."""
+        c = BRepAdaptor_Curve(edge)
+        if c.GetType() != GeomAbs_CurveType.GeomAbs_Line:
+            return None
+        d = c.Line().Direction()
+        length = math.hypot(d.X(), d.Y())
+        if length < LIN_TOL:
+            return None
+        nx, ny = d.Y() / length, -d.X() / length
+        t0, t1 = c.FirstParameter(), c.LastParameter()
+        out = None
+        for frac in (0.25, 0.5, 0.75):
+            p = c.Value(t0 + (t1 - t0) * frac)
+            sides = [s for s in (1.0, -1.0)
+                     if is_air(p.X() + s * nx * REACH_NUDGE, p.Y() + s * ny * REACH_NUDGE,
+                               z_floor - 0.1 * REACH_NUDGE)]
+            if len(sides) != 1 or (out is not None and sides[0] != out):
+                return None
+            out = sides[0]
+        return (out * nx, out * ny)
 
     # Check 1 -- RETIRED (Phase 26 slice 4). A floor with inner wires used to
     # refuse here ("island pocketing is not supported"): ops::clear cleared
@@ -1595,13 +1655,25 @@ def pocket_group(floor, floor_idx, faces, solid, emap, face_index):
     # Walk the outer wire in connected order, collecting the 2D loop (check
     # 2 -- lines and circular arcs only -- lives in edge_polyline) and the
     # wall face owning each boundary edge (the other ancestor across it).
-    pts, wall_idxs, had_arc = [], [], False
-    kinds = {}
+    #
+    # Two more things a face on the wire can be (ROADMAP item 9):
+    #   a floor fillet  a quarter-round blend between the floor and a wall.
+    #                   The wall is the face across the blend's top edge and
+    #                   the loop runs along that edge, the sharp corner: the
+    #                   grammar has no floor radius, so the note says what
+    #                   leaves the fillet;
+    #   a falling side  a face that drops away from the floor's edge (a
+    #                   bevel the pocket runs out onto). Nothing stands
+    #                   there, so the side is open and the loop is drawn
+    #                   straight out past the blank, where the engine reads
+    #                   an edge as open.
+    segs, wall_idxs, had_arc = [], [], False  # segs: (points start to end, outward or None)
+    kinds, fillets, falling = {}, {}, {}
     wexp = BRepTools_WireExplorer(BRepTools.OuterWire_s(floor.wrapped),
                                   floor.wrapped)
     while wexp.More():
         edge = wexp.Current()
-        ept, arc = edge_polyline(edge)
+        ept, arc = edge_points(edge)
         had_arc = had_arc or arc
         wall = None
         for anc in emap.FindFromKey(edge):
@@ -1611,11 +1683,96 @@ def pocket_group(floor, floor_idx, faces, solid, emap, face_index):
             raise Refusal(code="pocket_edge_unwalled",
                           reason="pocket boundary edge has no adjacent wall "
                                  "face (non-manifold or seam edge)")
-        if wall not in wall_idxs:
-            wall_idxs.append(wall)
-            kinds[wall] = wall_kind(wall)
-        pts += pushed_out(wall, ept) if kinds[wall] == "silhouette" else ept
+        outward = None
+        wf = faces[wall - 1]
+        r = blend_radius(wf, z_floor, axis_on_top=True)
+        upright = (wf.geomType() == "PLANE" and abs(face_normal(wf)[1].Z()) < 1.0 - COS_TOL) or (
+            wf.geomType() == "CYLINDER"
+            and abs(BRepAdaptor_Surface(wf.wrapped).Cylinder().Axis().Direction().Z()) >= COS_TOL)
+        if r is not None and not upright:
+            tops = [e for e in wf.Edges() if e.BoundingBox().zmin >= z_floor + r - 10.0 * LIN_TOL]
+            behind = across_edges(wf, faces, emap, face_index, at_bottom=False)
+            if len(tops) != 1 or len(behind) != 1:
+                raise Refusal(code="pocket_floor_fillet_split", row="2.1",
+                              reason=f"floor fillet F{wall} does not meet one wall along one "
+                                     "edge -- the wall behind it cannot be read",
+                              refs=[f"F{wall}"])
+            top, arc = edge_points(tops[0].wrapped)
+            had_arc = had_arc or arc
+            # The blend's own edge, turned to run the way the floor's does.
+            if math.dist(top[0], ept[-1]) < math.dist(top[-1], ept[-1]):
+                top.reverse()
+            ept = top
+            fillets[wall] = r
+            wall = behind[0]
+        elif not upright:
+            outward = falls_away(edge)
+            if outward is not None:
+                falling[wall] = True
+        if outward is None:
+            if wall not in wall_idxs:
+                wall_idxs.append(wall)
+                kinds[wall] = wall_kind(wall)
+            if kinds[wall] == "silhouette":
+                ept = pushed_out(wall, ept)
+        segs.append((ept, outward))
         wexp.Next()
+
+    # The loop: each edge without its start point (the edge before ends
+    # there), and a falling side replaced by the two wall ends beside it
+    # carried straight out past the blank.
+    bb_all = solid.BoundingBox()
+    corners = [(x, y) for x in (bb_all.xmin, bb_all.xmax) for y in (bb_all.ymin, bb_all.ymax)]
+
+    def carried_out(p, n):
+        reach = max((cx - p[0]) * n[0] + (cy - p[1]) * n[1] for cx, cy in corners)
+        d = reach + blank_side + SILHOUETTE_PUSH
+        return (p[0] + n[0] * d, p[1] + n[1] * d)
+
+    pts = []
+    n_segs = len(segs)
+    if n_segs and all(s[1] is not None for s in segs):
+        raise Refusal(code="pocket_floor_unwalled", row="1.1",
+                      reason="every edge of this floor falls away -- a face with nothing "
+                             "standing beside it, not a pocket")
+    for k, (ept, outward) in enumerate(segs):
+        if outward is None:
+            pts += ept[1:]
+            continue
+        before = segs[k - 1]
+        if before[1] is not None:
+            continue  # the run's first edge drew it
+        j = k
+        while segs[(j + 1) % n_segs][1] is not None:
+            j += 1
+            if math.dist(segs[j % n_segs][1], outward) > LIN_TOL:
+                raise Refusal(code="pocket_open_side_bent", row="1.2",
+                              reason="the side this floor runs out on is not one straight "
+                                     "edge -- only a straight open side is drawn out to the blank")
+        p, q = before[0][-1], segs[(j + 1) % n_segs][0][0]
+        p_out, q_out = carried_out(p, outward), carried_out(q, outward)
+        # What the loop now holds past the floor must be air above the
+        # floor: the part has nothing there for the clearing to cut.
+        lift = z_floor + max(fillets.values(), default=0.0) + 10.0 * LIN_TOL
+        inter = IntCurvesFace_ShapeIntersector()
+        inter.Load(solid.wrapped, LIN_TOL)
+        for a in range(8):
+            for b in range(8):
+                u, v = (a + 0.5) / 8.0, (b + 0.5) / 8.0
+                x0, y0 = p[0] + (q[0] - p[0]) * u, p[1] + (q[1] - p[1]) * u
+                x1, y1 = p_out[0] + (q_out[0] - p_out[0]) * u, p_out[1] + (q_out[1] - p_out[1]) * u
+                x, y = x0 + (x1 - x0) * v, y0 + (y1 - y0) * v
+                if not (bb_all.xmin < x < bb_all.xmax and bb_all.ymin < y < bb_all.ymax):
+                    continue
+                inter.Perform(gp_Lin(gp_Pnt(x, y, lift), gp_Dir(0, 0, 1)), 0.0, bb_all.zmax - lift + 1.0)
+                if not is_air(x, y, lift) or inter.NbPnt() > 0:
+                    raise Refusal(code="pocket_open_side_blocked", row="1.2",
+                                  reason="the floor runs out onto a falling face, but the part "
+                                         "stands above the floor's height past that side -- the "
+                                         "side cannot be drawn open to the blank")
+        pts += [p_out, q_out, q]
+    if falling:
+        pts = drop_collinear(pts)
     standing = [w for w in wall_idxs if kinds[w] == "wall"]
     open_along = [w for w in wall_idxs if kinds[w] == "silhouette"]
     rims = [w for w in wall_idxs if kinds[w] == "void"]
@@ -1719,7 +1876,9 @@ def pocket_group(floor, floor_idx, faces, solid, emap, face_index):
     # surrounding +Z plane -- then the mouth is the strip's top, the walls'
     # tops are a leg below it, and every wall must carry the same bevel.
     chamfer = None  # (depth, included angle, strip faces)
+    edge_round = None  # (radius, blend faces)
     bevels = {}
+    rounds = set()
     for w in standing:
         wf = faces[w - 1]
         for edge in wf.Edges():
@@ -1740,6 +1899,16 @@ def pocket_group(floor, floor_idx, faces, solid, emap, face_index):
                         nbb = nb.BoundingBox()
                         bevels[w] = (round(nbb.zmax - nbb.zmin, 6), round(angle, 6), j)
                         continue
+                # A round at the mouth is the pocket's `edge_round`, read
+                # the way the bevel is: a quarter-round from the wall's top
+                # to the surrounding plane.
+                radius = blend_radius(nb, z_mouth, axis_on_top=False)
+                if radius is not None:
+                    above = across_edges(nb, faces, emap, face_index, at_bottom=False)
+                    if above and all(faces[k - 1].geomType() == "PLANE" and face_normal(faces[k - 1])[1].Z() > COS_TOL for k in above):
+                        bevels[w] = (round(radius, 6), "round", j)
+                        rounds.add(j)
+                        continue
                 raise Refusal(code="pocket_mouth_lipped",
                               reason="pocket mouth rim is capped by an "
                                      "overhanging lip -- undercut relative "
@@ -1747,13 +1916,16 @@ def pocket_group(floor, floor_idx, faces, solid, emap, face_index):
     legs = {(b[0], b[1]) if b else None for b in bevels.values()}
     if len(legs) > 1:
         raise Refusal(code="chamfer_uneven",
-                      reason="the walls of this mouth do not carry one bevel "
-                             "(a leg or an angle differs, or some walls have none) "
-                             "-- one feature carries one chamfer",
+                      reason="the walls of this mouth do not carry one bevel or one round "
+                             "(a leg, an angle or a radius differs, or some walls have none) "
+                             "-- one feature carries one chamfer or one edge_round",
                       refs=[f"F{b[2]}" for b in bevels.values() if b])
     if legs and None not in legs:
         d, a = next(iter(legs))
-        chamfer = (d, a, sorted({b[2] for b in bevels.values()}))
+        if a == "round":
+            edge_round = (d, sorted(rounds))
+        else:
+            chamfer = (d, a, sorted({b[2] for b in bevels.values()}))
 
     # Check 6 -- belt-and-suspenders solid probe, mirroring the bore's:
     # a point just above the mouth over the floor's centroid must be
@@ -1777,6 +1949,8 @@ def pocket_group(floor, floor_idx, faces, solid, emap, face_index):
     name = f"F{floor_idx}_Pocket"
     if chamfer is not None:
         z_mouth += chamfer[0]  # the mouth is the bevel's top
+    if edge_round is not None:
+        z_mouth += edge_round[0]  # and the round's
     depth = z_mouth - z_floor
     # The recognized geometry KNOWS its own vertical occupancy, so it authors
     # `z` + `extent` outright rather than leaving a number for a human to
@@ -1784,6 +1958,8 @@ def pocket_group(floor, floor_idx, faces, solid, emap, face_index):
     # explicitly also drops the old "measured from the stock top" caveat: a
     # mouth below the stock top is now stated, not assumed.
     keys = f"z={fmt(z_mouth)}, extent={fmt(depth)}"
+    if edge_round is not None:
+        keys += f", edge_round={fmt(edge_round[0])}"
     if chamfer is not None:
         keys += f", chamfer_depth={fmt(chamfer[0])}, chamfer_angle={fmt(chamfer[1])}"
     part = "\n".join([f"feature {name} ProfilePocket({keys}"]
@@ -1805,6 +1981,27 @@ def pocket_group(floor, floor_idx, faces, solid, emap, face_index):
                        f"{fmt(depth)}, opens upward{around}{edges}"}
     for w in standing:
         whys[w] = f"vertical wall of recognized pocket {name} (floor F{floor_idx})"
+    if falling:
+        sides = " ".join(f"F{w}" for w in falling)
+        whys[floor_idx] += (f"; the floor runs out onto {sides}, which falls away from it -- "
+                            "that side is open, the loop drawn straight out past the blank")
+    if fillets:
+        blends = " ".join(f"F{w}" for w in fillets)
+        radii = "/".join(fmt(r) for r in sorted(set(fillets.values())))
+        whys[floor_idx] += (f"; floor fillet R{radii} ({blends}) -- the loop is drawn at the "
+                            "walls, the sharp corner")
+        for w, r in fillets.items():
+            whys[w] = (f"floor fillet R{fmt(r)} of recognized pocket {name} (floor F{floor_idx}): "
+                       f"the pocket is drawn to the wall behind it; an endmill with a {fmt(r)} "
+                       "corner radius leaves this fillet, a flat one cuts the corner square")
+    if edge_round is not None:
+        blends = " ".join(f"F{j}" for j in edge_round[1])
+        whys[floor_idx] += (f"; mouth rounded R{fmt(edge_round[0])} ({blends}) -- proposed as "
+                            "edge_round, the mouth at the round's top")
+        for j in edge_round[1]:
+            whys[j] = (f"mouth round of recognized pocket {name} (floor F{floor_idx}): a "
+                       f"quarter-round between the walls' tops and the surrounding plane -- "
+                       f"proposed as the pocket's edge_round, not a standalone face")
     if chamfer is not None:
         strips = " ".join(f"F{j}" for j in chamfer[2])
         whys[floor_idx] += (f"; mouth beveled {fmt(chamfer[0])} deep at {fmt(chamfer[1])}deg included "
@@ -1842,19 +2039,39 @@ def pocket_group(floor, floor_idx, faces, solid, emap, face_index):
             "# standing material this reader could not name is NOT in the "
             "proposal, and would be cleared through.",
         ]
+    if falling:
+        extras += [
+            f"# open toward {' '.join(f'F{w}' for w in falling)}: the floor runs out onto a face that falls away, so",
+            "# that side is drawn straight out past the blank, where the engine reads it open;",
+            "# everything the loop holds past the floor is air in the model above this floor",
+        ]
+    if fillets:
+        radii = "/".join(fmt(r) for r in sorted(set(fillets.values())))
+        extras += [
+            f"# the model has a floor fillet R{radii}: the loop is the walls' own line, so a flat",
+            "# endmill cuts the corner square, past the model; an endmill with that corner",
+            "# radius leaves the fillet",
+        ]
+    if edge_round is not None:
+        extras += [
+            f"# break the mouth with: run Form(tool=<CornerRounder>, surface={name})"
+            f"  [its ground arc must be R{fmt(edge_round[0])}]",
+        ]
     if chamfer is not None:
         extras += [
             f"# the mouth's {fmt(chamfer[0])}mm bevel is the pocket's chamfer_depth, at the included angle the",
             "# model measures; a print that says otherwise is typed here (the three chamfer words are",
             "# pick-two) -- break it with: run Form(tool=<ChamferMill>, surface=" + name + ")",
         ]
-    members = [floor_idx] + standing + (chamfer[2] if chamfer is not None else [])
+    members = ([floor_idx] + standing + sorted(fillets)
+               + (chamfer[2] if chamfer is not None else [])
+               + (edge_round[1] if edge_round is not None else []))
     return dict(primary=floor_idx, members=members, name=name,
                 part=part, row="2.7" if had_arc else "2.1", whys=whys,
                 extras=extras)
 
 
-def recognize_pockets(solid, faces, z_top, emap, face_index, claimed):
+def recognize_pockets(solid, faces, z_top, emap, face_index, claimed, blank_side=0.0):
     """The grouping pass, run BEFORE per-face classification: every planar
     +Z face below the topmost height is a pocket-floor candidate -- unless
     the hole pass already `claimed` it (an absorbed bore floor is the bore's
@@ -1873,7 +2090,7 @@ def recognize_pockets(solid, faces, z_top, emap, face_index, claimed):
         if not (n.Z() > COS_TOL and pnt.Z() < z_top - LIN_TOL):
             continue
         try:
-            g = pocket_group(f, i, faces, solid, emap, face_index)
+            g = pocket_group(f, i, faces, solid, emap, face_index, blank_side)
         except Refusal as r:
             floor_fail[i] = r.entry()
         else:
@@ -3354,8 +3571,9 @@ def recognize(step_path, solid_sel=None, up="z+", allowance=None, blank=None, gi
     # pockets, the profiles) keep z_top; the bores, authored from the stock
     # top, read this.
     top_margin = allowance["top"]
+    side_margin = max(allowance[k] for k in MARGIN_KEYS[2:])
     if blank is not None:
-        _, top_margin = blank_margins(blank, faces, solid.BoundingBox())
+        side_margin, top_margin = blank_margins(blank, faces, solid.BoundingBox())
         if top_margin > 0.0:
             meta["allowance"] = top_margin
     blank_top = None if z_top is None else z_top + top_margin
@@ -3392,7 +3610,7 @@ def recognize(step_path, solid_sel=None, up="z+", allowance=None, blank=None, gi
     # hole across a gap are one hole.
     join_split_holes(member_of, faces)
     pocket_member_of, floor_fail = recognize_pockets(
-        solid, faces, z_top, emap, face_index, member_of)
+        solid, faces, z_top, emap, face_index, member_of, side_margin)
     member_of.update(pocket_member_of)
     outer_member_of, wall_fail, cap_note = recognize_outer_profiles(
         solid, faces, z_top, emap, face_index, member_of)

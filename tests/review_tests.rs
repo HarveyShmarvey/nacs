@@ -32,6 +32,7 @@ const FIXTURES: &[(&str, &str)] = &[
     ("tests/fixtures/step_hole.report.golden.json", "tests/fixtures/step_hole.proposed.golden.part"),
     ("tests/fixtures/split_hole.report.golden.json", "tests/fixtures/split_hole.proposed.golden.part"),
     ("tests/fixtures/split_hole_back.report.golden.json", "tests/fixtures/split_hole_back.proposed.golden.part"),
+    ("tests/fixtures/open_pocket.report.golden.json", "tests/fixtures/open_pocket.proposed.golden.part"),
 ];
 
 fn read_golden(path: &str) -> review::Report {

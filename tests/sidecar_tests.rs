@@ -225,6 +225,14 @@ const FIXTURES: &[(&str, &[&str], &str, &str)] = &[
         "tests/fixtures/split_hole_back.report.golden.json",
         "tests/fixtures/split_hole_back.proposed.golden.part",
     ),
+    // ROADMAP item 9: a pocket with a floor fillet and a rounded mouth that
+    // runs out onto a bevel. It proposes, open on the bevel's side.
+    (
+        "tests/fixtures/open_pocket.step",
+        &[],
+        "tests/fixtures/open_pocket.report.golden.json",
+        "tests/fixtures/open_pocket.proposed.golden.part",
+    ),
 ];
 
 /// The allowance (ROADMAP item 1, slice 11): `--allowance 1` grows a
@@ -2069,6 +2077,32 @@ fn test_a_hole_across_a_groove_proposes_once() {
         let (program, _) = gcode::program_with_moves(&part).expect("the split hole drills once through the blank");
         assert!(program.contains("M30"), "{golden}: {program}");
     }
+}
+
+/// ROADMAP item 9: a pocket that runs out onto a bevel. The floor's fillet
+/// is read through to the walls behind it, the mouth's round is the
+/// pocket's `edge_round`, and the side where the bevel falls away is drawn
+/// out past the blank, so the clearing enters from that side in air.
+/// Reads the committed goldens; `test_sidecar_golden` ties them to the
+/// sidecar.
+#[test]
+fn test_a_pocket_that_runs_out_onto_a_bevel_proposes_open() {
+    let proposed = fs::read_to_string("tests/fixtures/open_pocket.proposed.golden.part").expect("failed to read proposed golden");
+    assert!(proposed.contains("feature F9_Pocket ProfilePocket(z=20.0, extent=6.0, edge_round=1.0\n    -0.02 8.0\n    40.0 8.0\n"), "the walls' own line, past the blank on the open side: {proposed}");
+    assert!(proposed.contains("    40.0 32.0\n    -0.02 32.0\n)"), "{proposed}");
+    let report = fs::read_to_string("tests/fixtures/open_pocket.report.golden.json").expect("failed to read report golden");
+    let faces = face_entries(&report);
+    assert_eq!(faces.iter().filter(|f| f.status == "proposed").count(), 21, "the fillets and the rounds are the pocket's faces: {report}");
+    assert_eq!(faces[0].code.as_deref(), Some("plane_oblique"), "the bevel itself is still refused: {report}");
+
+    let pocket = proposed.split("\n\n").find(|b| b.contains("feature F9_Pocket")).unwrap();
+    let pocket: String = pocket.lines().filter(|l| !l.starts_with('#')).collect::<Vec<_>>().join("\n");
+    let src = format!("units mm\nfeed 800\nplunge 300\nrapid_z 25\nclearance_z 30\nspindle 3000\n\
+                 stock Box(w=60, l=40, h=20, x=0, y=0, z=20)\ntool T6 Endmill(dia=6.0)\n{pocket}\n\
+                 run Clear(tool=T6, profile=F9_Pocket, stepover=3.0)\n");
+    let part = parse::parse(&src).expect("the proposed pocket parses");
+    let (program, _) = gcode::program_with_moves(&part).expect("the pocket clears");
+    assert!(program.contains("(open edges: 1 of 30 — entered from air)"), "the bevel's side reads open: {program}");
 }
 
 /// ROADMAP item 1 slice 9: a boss whose top edges carry two legs at one
