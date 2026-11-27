@@ -83,7 +83,28 @@ fn test_a_wall_pass_the_largest_endmill_cannot_make_takes_the_next_one_down() {
     let (_, s) = schedule_of(&src);
     assert!(s.lines.contains(&"run Side(tool=T5, surface=Post, stepover=2, compress=arcs)".to_string()), "{:?}", s.lines);
     assert!(s.lines.contains(&"run Side(tool=T1, surface=Well)".to_string()), "only the line that failed changes: {:?}", s.lines);
-    assert!(s.notes.iter().any(|n| n.contains("Side on Post takes T5, the next endmill down: with T1,")), "{:?}", s.notes);
+    assert!(s.notes.iter().any(|n| n.contains("takes T5, the next endmill down: with T1,")), "{:?}", s.notes);
+    assert!(s.notes.iter().any(|n| n.contains("Post stands in Well and takes T5 with it")), "{:?}", s.notes);
+    let whole = format!("{src}{}\n", s.lines.join("\n"));
+    let part = parse::parse(&whole).expect("the schedule parses");
+    nacs::gcode::program_with_moves(&part).expect("and the program it makes runs");
+}
+
+/// A slot 3 mm wide round an island: no pass of the 10 mm endmill fits, and
+/// the engine says the pocket is too small for the tool. The schedule steps
+/// each line on the slot and its island down to the 2 mm endmill, and the
+/// result runs.
+#[test]
+fn test_a_slot_too_small_for_the_largest_endmill_takes_the_next_one_down() {
+    let src = format!(
+        "{HEADER}{TOOLS}tool T5 Endmill(dia=2.0)\n\
+         feature Slot ProfilePocket(extent=2.0\n    30 40\n    76 40\n    76 80\n    30 80\n)\n\
+         feature Isle ProfileBoss(extent=2.0\n    33 77\n    73 77\n    73 43\n    33 43\n)\n"
+    );
+    let (_, s) = schedule_of(&src);
+    for line in ["run Clear(tool=T5, profile=Slot, stepover=1)", "run Side(tool=T5, surface=Slot)", "run Side(tool=T5, surface=Isle)"] {
+        assert!(s.lines.contains(&line.to_string()), "{line}: {:?} / {:?}", s.lines, s.notes);
+    }
     let whole = format!("{src}{}\n", s.lines.join("\n"));
     let part = parse::parse(&whole).expect("the schedule parses");
     nacs::gcode::program_with_moves(&part).expect("and the program it makes runs");

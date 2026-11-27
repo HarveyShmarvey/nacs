@@ -304,6 +304,8 @@ line by whether it parsed. It now also makes the program, and when the
 engine stops on a scheduled line's move into standing stock (the largest
 endmill in a gap narrower than itself), that line gets the next smaller
 Endmill, noted under `# smaller tool:`; with none left it is not written.
+The same for a floor the engine says is too small for the tool, and what
+stands in a cavity follows the cavity's tool down.
 
 **Two stock truths, composed.** The declared truth is the analytical
 op-history model (footprint plus floor per removal). The swept truth is the
