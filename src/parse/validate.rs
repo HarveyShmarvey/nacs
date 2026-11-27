@@ -271,20 +271,39 @@ pub(super) fn check_chamfer_op(
         | Feature::ProfileBoss { extent, .. } => *extent,
         _ => unreachable!("derive_chamfer answered for this feature"),
     };
-    if pl.depth >= extent {
+    if pl.depth > extent + 1e-9 {
         return Err(format!(
-            "Form operation feature '{f}': the {:.3}mm chamfer depth is as deep as the {:.3}mm wall it lives on — the break consumes that much wall, so there would be nothing left of the flank below it",
+            "Form operation feature '{f}': the {:.3}mm chamfer depth is deeper than the {:.3}mm wall it lives on — the bevel may take the whole wall, not more",
             pl.depth, extent
         ));
     }
 
     // The flank has to hold the whole face plus the clearance below it: past
-    // the body OD the cone runs out into shank.
-    if pl.r_contact + pl.width > cone.body_r + 1e-9 {
+    // the body OD the cone runs out into shank. A face wider than that is
+    // cut in steps (`derive_chamfer_passes`), where steps can be laid out.
+    let passes = derive_chamfer_passes(&ec, &cone, derive_tip_clearance(op, ch));
+    if pl.r_contact >= cone.body_r {
         return Err(format!(
-            "Form operation feature '{f}': the face's outer contact ({:.3}mm off the axis — tip flat {:.3}/2 + tip_clearance {:.3} + width {:.3}) runs past T{}'s usable flank (body radius {:.3}mm) — the cone runs out into the body. Use a larger mill, a smaller tip_clearance, or a smaller chamfer",
-            pl.r_contact + pl.width, ch.tip_dia, pl.r_contact - ch.tip_dia / 2.0, pl.width, op.tool_num, cone.body_r
+            "Form operation feature '{f}': tip flat {:.3}/2 + tip_clearance {:.3} puts the contact {:.3}mm off the axis, at or past T{}'s body radius {:.3}mm — no flank is left to cut with. Use a smaller tip_clearance",
+            ch.tip_dia, pl.r_contact - ch.tip_dia / 2.0, pl.r_contact, op.tool_num, cone.body_r
         ));
+    }
+    if passes.len() > 1 {
+        let wide = format!(
+            "the face's outer contact ({:.3}mm off the axis — tip flat {:.3}/2 + tip_clearance {:.3} + width {:.3}) runs past T{}'s usable flank (body radius {:.3}mm), so the chamfer is cut in steps",
+            pl.r_contact + pl.width, ch.tip_dia, pl.r_contact - ch.tip_dia / 2.0, pl.width, op.tool_num, cone.body_r
+        );
+        if op.comp == CompMode::Control {
+            return Err(format!(
+                "Form operation feature '{f}': {wide}, each riding its own offset, and under comp=control a register holds one number — use engine comp, a larger mill, or a smaller chamfer"
+            ));
+        }
+        let cut: Vec<ChamferLeg> = legs.iter().flatten().copied().collect();
+        if cut.windows(2).any(|w| w[0] != w[1]) {
+            return Err(format!(
+                "Form operation feature '{f}': {wide}, and the loop's points restate the leg to more than one size — steps are laid out for one leg on the edges that carry it, with 0 on the rest. Give the deep edge its own feature, or use a larger mill"
+            ));
+        }
     }
 
     match &ec.edge {
@@ -303,11 +322,15 @@ pub(super) fn check_chamfer_op(
             }
         }
         EdgeLoop::Polyline { points } => {
-            if let Err(why) = derive_edge_round_path(points, pl.reach) {
-                return Err(format!(
-                    "Form operation feature '{f}': T{}'s axis path {} — the chamfer cannot be placed where the tool cannot ride. Open the plan corners, or reduce the tip_clearance",
-                    op.tool_num, why
-                ));
+            // Every pass's own path: a stepped pass rides further in, over
+            // the face it is cutting.
+            for pass in &passes {
+                if let Err(why) = derive_edge_round_path(points, pl.reach - pass.slide) {
+                    return Err(format!(
+                        "Form operation feature '{f}': T{}'s axis path {} — the chamfer cannot be placed where the tool cannot ride. Open the plan corners, or reduce the tip_clearance",
+                        op.tool_num, why
+                    ));
+                }
             }
         }
     }
@@ -318,7 +341,7 @@ pub(super) fn check_chamfer_op(
     ] {
         if present {
             return Err(format!(
-                "Form operation feature '{f}' with a ChamferMill takes no {name}: the face is stamped by the cutting flank in ONE pass, not approximated by spaced passes, so there is nothing to space"
+                "Form operation feature '{f}' with a ChamferMill takes no {name}: the face is stamped by the cutting flank, in one pass or in the steps the flank's own length sets, not approximated by spaced passes, so there is nothing to space"
             ));
         }
     }

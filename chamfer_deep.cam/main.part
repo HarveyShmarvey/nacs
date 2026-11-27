@@ -1,0 +1,40 @@
+# chamfer_deep.cam — a chamfer wider than the cutter's flank (ROADMAP item 9).
+# The mill here holds 5.25 of face on its flank above the contact radius.
+# A wider face is cut in steps: layers, each a chamfer half a flank deeper
+# than the one before, and a layer wider than the flank in bands from the
+# top of the face down, each band overlapping the one above. In that order
+# the cutter's body only passes where an earlier pass has cut. The last
+# pass is the declared placement. Engine comp only: every pass rides its own
+# offset.
+#
+#   Pad   one edge bevelled 10 deep, most of its 12 wall, the other
+#         three left square: the bevel runs out through the walls beside it.
+#   Post  a round boss with an 8 deep chamfer all round.
+units mm
+feed 800
+plunge 300
+rapid_z 5
+clearance_z 25
+spindle 3000
+
+stock Box(w=160, l=80, h=20, x=0, y=0, z=0)
+
+tool T5 Endmill(dia=10.0)
+tool T3 ChamferMill(angle=90.0, gauge_dia=8.0, gauge_z=3.75, dia=12.0, tip_dia=0.5)
+
+# CW: a boss bounds standing material, cut from outside.
+feature Pad ProfileBoss(extent=12.0, chamfer_depth=10.0, chamfer_angle=90.0
+    20 20
+    20 60 chamfer_depth=0
+    70 60
+    70 20
+)
+
+feature Post CylinderBoss(dia=40.0, extent=12.0, x=125.0, y=40.0, z=-12.0, chamfer_depth=8.0)
+
+run Clear(tool=T5, profile=Pad, stepover=4.0, stepdown=4.0)
+run Side(tool=T5, surface=Pad)
+run Clear(tool=T5, profile=Post, stepover=4.0, stepdown=4.0)
+run Side(tool=T5, surface=Post, stepover=4.0)
+run Form(tool=T3, surface=Pad)
+run Form(tool=T3, surface=Post)

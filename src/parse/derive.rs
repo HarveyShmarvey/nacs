@@ -1147,6 +1147,56 @@ pub fn derive_leg_placement(
     }
 }
 
+/// One pass of a chamfer cut in steps: the leg it cuts to, and how far up
+/// the face the flank is slid from the placement that puts the face's bottom
+/// corner on it.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct ChamferPass {
+    pub depth: f64,
+    pub slide: f64,
+}
+
+/// The passes a chamfer is cut in. One, the leg as declared, when the face
+/// fits on the cutter's flank above the contact radius. A wider face is cut
+/// in layers, each a chamfer half a flank deeper than the one before, and a
+/// layer wider than the flank in bands from the top of the face down, each
+/// band overlapping the one above by a layer's width. In that order the
+/// cutter's body, which starts where the flank ends, only ever passes where
+/// an earlier pass has cut. The last pass is the declared placement.
+pub fn derive_chamfer_passes(ec: &EdgeChamfer, cone: &GroundCone, tip_clearance: f64) -> Vec<ChamferPass> {
+    let t = cone.phi_half.ptan();
+    let depth_of = |leg: ChamferLeg| match leg {
+        ChamferLeg::Depth(d) => d,
+        ChamferLeg::Width(w) => w / t,
+    };
+    let legs = derive_chamfer_legs(ec);
+    let depth = if legs.is_empty() {
+        depth_of(ec.spec.leg)
+    } else {
+        legs.iter().flatten().map(|l| depth_of(*l)).fold(0.0, f64::max)
+    };
+    let width = depth * t;
+    let flank = cone.body_r - (cone.tip_r + tip_clearance);
+    if flank <= 0.0 || width <= flank + 1e-9 {
+        return vec![ChamferPass { depth, slide: 0.0 }];
+    }
+    let layer = flank / 2.0;
+    let n = (width / layer - 1e-9).ceil() as usize;
+    let mut out = Vec::new();
+    for k in 1..=n {
+        let w = if k == n { width } else { layer * k as f64 };
+        let mut slide = (w - flank).max(0.0);
+        loop {
+            out.push(ChamferPass { depth: w / t, slide });
+            if slide <= 0.0 {
+                break;
+            }
+            slide = (slide - (flank - layer)).max(0.0);
+        }
+    }
+    out
+}
+
 /// The tip clearance a chamfer pass runs at: the authored value, or the
 /// derived default `max(0.5mm, tip_dia/2)` — non-zero in every limit (zero IS
 /// the rejected deepest-legal placement), growing with the very flat whose

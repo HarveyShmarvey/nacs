@@ -207,6 +207,15 @@ claims one band per stretch, each at its own depth.
 (2026-11-01: the real part's rib heads, 1.5 on the straight edges and 1.0 on
 the arc a bolt hole notches.)
 
+**A chamfer wider than the cutter's flank is cut in steps (2026-11-27).** It
+was refused. Now the chamfer mill cuts it in layers, each a chamfer half a
+flank deeper than the last, and a layer wider than the flank in bands from
+the top of the face down, each overlapping the one above; the cutter's body
+then only passes where an earlier pass has cut, and the last pass is the
+declared placement. Engine comp only (each pass rides its own offset), one
+leg on the loop (other edges 0). The leg may equal the wall's height; the
+stock check still wants room for the tip below the face's foot.
+
 ## The program
 
 **Four safety rules, one test.** Units before motion, `G43 H` before a tool's

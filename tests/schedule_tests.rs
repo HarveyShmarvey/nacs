@@ -129,7 +129,7 @@ fn test_a_line_the_parser_refuses_becomes_a_note_with_the_parsers_sentence() {
     );
     assert!(!s.lines.iter().any(|l| l.starts_with("run Form(")), "{:?}", s.lines);
     let note = s.notes.iter().find(|n| n.starts_with("not written, `run Form(tool=T3, surface=Thin)`: ")).unwrap_or_else(|| panic!("{:?}", s.notes));
-    assert!(note.contains("as deep as the 1.000mm wall"), "{note}");
+    assert!(note.contains("deeper than the 1.000mm wall"), "{note}");
     // Still a project that parses with the schedule appended.
     let full = format!("{src}\n{}", schedule::render(&s));
     parse::parse(&full).unwrap_or_else(|e| panic!("{e}\n{full}"));
