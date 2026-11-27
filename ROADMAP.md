@@ -791,6 +791,15 @@ One page. What is built, what is next, and the debts we know about.
    `nacs --options` prints the same page. Not built: a trackball orbit
    (the camera holds no roll).
 
+9. **A second part of the user's own (2026-11-26).** A block from FreeCAD
+   with a groove round three sides, a bevel, rounds and a pocket on each
+   face. First pass: a hole the groove crosses proposed twice, once for
+   each stretch of wall, and was drilled twice; it proposes once now, from
+   either side. Still refused on that part, in the order to take them: the
+   top pocket that opens onto the bevel, the bevel itself, the 1 mm edge
+   rounds, the boss's top chamfer, a counterbore's floor over a through
+   hole. The groove and a slot in a side face wait on a quarter turn.
+
 ## Debts
 
 - **The capture box** on the acrylic window waits on an egui release carrying

@@ -1,0 +1,133 @@
+{
+  "faces": [
+    {
+      "checklist_row": "no row",
+      "code": "trim_wire_candidate_wall/trim_wire_open_loop",
+      "id": "F1",
+      "reason": "wall of refused trim-wire candidate on part bottom F5: trim-wire top edges do not chain into one closed loop (a broken or non-manifold rim)",
+      "refs": [
+        "F5"
+      ],
+      "status": "unsupported",
+      "surface": "plane"
+    },
+    {
+      "checklist_row": "no row",
+      "code": "trim_wire_candidate_wall/trim_wire_open_loop",
+      "id": "F2",
+      "reason": "wall of refused trim-wire candidate on part bottom F5: trim-wire top edges do not chain into one closed loop (a broken or non-manifold rim)",
+      "refs": [
+        "F5"
+      ],
+      "status": "unsupported",
+      "surface": "plane"
+    },
+    {
+      "checklist_row": "1.1",
+      "id": "F3",
+      "part": "feature F3_Top Plane(z=20.0)",
+      "status": "proposed",
+      "surface": "plane",
+      "why": "planar, normal +Z, topmost planar face"
+    },
+    {
+      "checklist_row": "no row",
+      "code": "trim_wire_candidate_wall/trim_wire_open_loop",
+      "id": "F4",
+      "reason": "wall of refused trim-wire candidate on part bottom F5: trim-wire top edges do not chain into one closed loop (a broken or non-manifold rim)",
+      "refs": [
+        "F5"
+      ],
+      "status": "unsupported",
+      "surface": "plane"
+    },
+    {
+      "checklist_row": "no row",
+      "code": "plane_downward",
+      "id": "F5",
+      "reason": "downward-facing planar face -- unreachable from above (undercut relative to the tool axis)",
+      "status": "unsupported",
+      "surface": "plane"
+    },
+    {
+      "checklist_row": "no row",
+      "code": "trim_wire_candidate_wall/trim_wire_open_loop",
+      "id": "F6",
+      "reason": "wall of refused trim-wire candidate on part bottom F5: trim-wire top edges do not chain into one closed loop (a broken or non-manifold rim)",
+      "refs": [
+        "F5"
+      ],
+      "status": "unsupported",
+      "surface": "plane"
+    },
+    {
+      "checklist_row": "no row",
+      "code": "other_setup",
+      "id": "F7",
+      "reason": "planar face: the part's own material lies straight above it -- planar F9 is 3.9 up -- so nothing on this setup's tool axis reaches it; see what the other side makes of it with --up z-",
+      "refs": [
+        "F9"
+      ],
+      "status": "unsupported",
+      "surface": "plane"
+    },
+    {
+      "checklist_row": "no row",
+      "code": "other_setup",
+      "id": "F8",
+      "reason": "planar face: the part's own material lies straight above it -- planar F9 is 2.0 up -- so nothing on this setup's tool axis reaches it; see what the other side makes of it with --up z-",
+      "refs": [
+        "F9"
+      ],
+      "status": "unsupported",
+      "surface": "plane"
+    },
+    {
+      "checklist_row": "no row",
+      "code": "plane_downward",
+      "id": "F9",
+      "reason": "downward-facing planar face -- unreachable from above (undercut relative to the tool axis)",
+      "status": "unsupported",
+      "surface": "plane"
+    },
+    {
+      "checklist_row": "2.2",
+      "id": "F10",
+      "part": "feature F10_Profile ProfileBoss(z=20.0, extent=8.0\n    0.0 0.0\n    0.0 30.0\n    40.0 30.0\n    40.0 0.0\n)",
+      "status": "proposed",
+      "surface": "plane",
+      "why": "outer profile under top cap F3: vertical wall loop F1 F2 F10 F4, top at z=20.0, base at z=12.0, material inside the loop; stepped base: the profile stops at the highest base z=12.0, and F1 to z=0.0, F2 to z=0.0, F4 to z=0.0 run on below it; the base at z=12.0 is the head's own underside (the face under the walls faces down): the wall is traced from above, the underside is the other setup's"
+    },
+    {
+      "checklist_row": "2.3",
+      "id": "F11",
+      "part": "feature F11_Hole CylinderBore(dia=4.0, extent=20.0, x=10.0, y=15.0)",
+      "status": "proposed",
+      "surface": "cylinder",
+      "why": "cylindrical, axis +Z, full revolution, material outside (a bore), opens upward; bottom opens through -- a drillable through hole"
+    },
+    {
+      "checklist_row": "2.3",
+      "feature": "F13_Hole",
+      "id": "F12",
+      "part": "feature F13_Hole CylinderBore(dia=4.0, extent=20.0, x=32.0, y=15.0)",
+      "status": "proposed",
+      "surface": "cylinder",
+      "why": "a stretch of recognized hole F13_Hole (wall F13): the same axis and diameter, 4.0 of air between them, z=8.0 to z=12.0 -- one drill run cuts both, so it is proposed once"
+    },
+    {
+      "checklist_row": "2.3",
+      "feature": "F13_Hole",
+      "id": "F13",
+      "part": "feature F13_Hole CylinderBore(dia=4.0, extent=20.0, x=32.0, y=15.0)",
+      "status": "proposed",
+      "surface": "cylinder",
+      "why": "cylindrical, axis +Z, full revolution, material outside (a bore), opens upward; bottom opens through -- a drillable through hole; rim at z=8.0, 12.0 below the stock top z=20.0, with open air straight above it to the top -- proposed from the top, where a drill through the blank starts, extent 20.0 the whole way down; what the model has above the rim is another feature's to cut; wall F12 is the same hole, 4.0 of air between them, z=8.0 to z=12.0 -- one hole, drilled once from the top"
+    }
+  ],
+  "faces_total": 13,
+  "schema": "nacs-recognition-report",
+  "source": "split_hole.step",
+  "units": "mm",
+  "version": 1
+}

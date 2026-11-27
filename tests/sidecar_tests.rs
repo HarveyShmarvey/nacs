@@ -211,6 +211,20 @@ const FIXTURES: &[(&str, &[&str], &str, &str)] = &[
         "tests/fixtures/step_hole.report.golden.json",
         "tests/fixtures/step_hole.proposed.golden.part",
     ),
+    // A groove across a drilled hole: two wall faces on one axis with air
+    // between are one hole, proposed once, from either side.
+    (
+        "tests/fixtures/split_hole.step",
+        &[],
+        "tests/fixtures/split_hole.report.golden.json",
+        "tests/fixtures/split_hole.proposed.golden.part",
+    ),
+    (
+        "tests/fixtures/split_hole.step",
+        &["--up", "z-"],
+        "tests/fixtures/split_hole_back.report.golden.json",
+        "tests/fixtures/split_hole_back.proposed.golden.part",
+    ),
 ];
 
 /// The allowance (ROADMAP item 1, slice 11): `--allowance 1` grows a
@@ -2029,6 +2043,32 @@ fn test_a_hole_under_open_air_proposes_from_the_top() {
     assert!(gcode.contains("M30"));
     let err = program("dia=6.0, extent=6.0, z=6.0").err().expect("stated at its rim with the blank above it uncut, the drill's body is in material");
     assert!(err.to_string().contains("body"), "{err}");
+}
+
+/// A hole the model interrupts is one hole. The block's hole at x=32
+/// crosses a groove, so the model has two wall faces there; each side
+/// proposes it once, the whole way through, and the drill run the
+/// proposal suggests writes on the uncut blank. Reads the committed
+/// goldens; `test_sidecar_golden` ties them to the sidecar.
+#[test]
+fn test_a_hole_across_a_groove_proposes_once() {
+    for (golden, y) in [("split_hole", "15.0"), ("split_hole_back", "-15.0")] {
+        let proposed = fs::read_to_string(format!("tests/fixtures/{golden}.proposed.golden.part")).expect("failed to read proposed golden");
+        let holes: Vec<&str> = proposed.lines().filter(|l| l.starts_with("feature") && l.contains("x=32.0")).collect();
+        assert_eq!(holes.len(), 1, "{golden}: one hole on the split axis: {holes:?}");
+        assert!(holes[0].ends_with(&format!("CylinderBore(dia=4.0, extent=20.0, x=32.0, y={y})")), "{golden}: through the whole block: {holes:?}");
+        let report = fs::read_to_string(format!("tests/fixtures/{golden}.report.golden.json")).expect("failed to read report golden");
+        let faces = face_entries(&report);
+        assert_eq!(faces.iter().filter(|f| f.status == "proposed").count(), 5, "{golden}: both walls of the split hole are proposed faces: {report}");
+        let name = holes[0].split_whitespace().nth(1).unwrap();
+        let (stock_y, stock_z) = if y == "15.0" { ("0", "20") } else { ("-30", "0") };
+        let src = format!("units mm\nfeed 800\nplunge 300\nrapid_z 25\nclearance_z 30\nspindle 3000\n\
+                 stock Box(w=40, l=30, h=20, x=0, y={stock_y}, z={stock_z})\ntool T4 Drill(dia=4.0)\n{}\n\
+                 run Form(points=[{name}], tool=T4, cycle=Simple)\n", holes[0]);
+        let part = parse::parse(&src).expect("the drill program parses");
+        let (program, _) = gcode::program_with_moves(&part).expect("the split hole drills once through the blank");
+        assert!(program.contains("M30"), "{golden}: {program}");
+    }
 }
 
 /// ROADMAP item 1 slice 9: a boss whose top edges carry two legs at one

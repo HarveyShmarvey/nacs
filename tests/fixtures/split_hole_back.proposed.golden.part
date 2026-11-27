@@ -1,0 +1,40 @@
+# Proposed features recognized from split_hole.step by sidecar/import_step.py
+# (contract v1 -- see sidecar/CONTRACT.md). Review before use:
+# recognition proposes, it does not machine.
+# imported with --up z- (model z- is machine +Z) -- coordinates are post-rotation
+
+# F5: planar, normal +Z, topmost planar face (CHECKLIST row 1.1)
+feature F5_Top Plane(z=0.0)
+
+# F6: outer profile under top cap F5: vertical wall loop F1 F4 F6 F2, top at z=0.0, base at z=-8.0, material inside the loop; stepped base: the profile stops at the highest base z=-8.0, and F1 to z=-20.0, F2 to z=-20.0, F4 to z=-20.0 run on below it; the base at z=-8.0 is the head's own underside (the face under the walls faces down): the wall is traced from above, the underside is the other setup's (CHECKLIST row 2.2)
+# consume with: run Side(tool=..., surface=F6_Profile, comp=control)  [the feature carries its own z + extent]
+# the loop is wound CW: material inside, tool outside (the winding convention,
+# DECISIONS.md -> "Row-2.4 side selector")
+# comp=control is required on Contour runs: recognized boundaries carry rounded
+# corners tessellated to chords, and engine comp hard-errors on rounded-corner
+# offsets (DECISIONS.md -> "recognized contours propose comp=control")
+# the base is stepped: this profile stops at z=-8.0, the highest base; the walls F1 F2 F4 run on below it
+# and belong to whatever stands lower -- declare that by hand or accept its own proposal
+# the base at z=-8.0 is an overhang: the face under the walls faces down, so the
+# tool has air under it at the base; the underside itself is the other setup's
+feature F6_Profile ProfileBoss(z=0.0, extent=8.0
+    0.0 -30.0
+    0.0 0.0
+    40.0 0.0
+    40.0 -30.0
+)
+
+# F11: cylindrical, axis +Z, full revolution, material outside (a bore), opens upward; bottom opens through -- a drillable through hole (CHECKLIST row 2.3)
+# consume with: run Form(points=[F11_Hole], tool=..., cycle=Simple)  [the bore carries its own extent, measured down from the stock top]
+# through hole -- drill past extent=20.0 by the tip's point length for full-diameter breakthrough
+# or finish the wall with: run Side(tool=..., surface=F11_Hole, stepover=...)
+feature F11_Hole CylinderBore(dia=4.0, extent=20.0, x=10.0, y=-15.0)
+
+# F12: cylindrical, axis +Z, full revolution, material outside (a bore), opens upward; bottom opens through -- a drillable through hole; rim at z=-12.0, 12.0 below the stock top z=0.0, with open air straight above it to the top -- proposed from the top, where a drill through the blank starts, extent 20.0 the whole way down; what the model has above the rim is another feature's to cut; wall F13 is the same hole, 4.0 of air between them, z=-12.0 to z=-8.0 -- one hole, drilled once from the top (CHECKLIST row 2.3)
+# consume with: run Form(points=[F12_Hole], tool=..., cycle=Simple)  [the bore carries its own extent, measured down from the stock top]
+# through hole -- drill past extent=20.0 by the tip's point length for full-diameter breakthrough
+# or finish the wall with: run Side(tool=..., surface=F12_Hole, stepover=...)
+# the model interrupts this hole (walls F12 and F13, 4.0 of air between them, z=-12.0 to z=-8.0): drilled
+# through the uncut blank it is one plain hole; drilled after the gap is cut, the
+# drill breaks out and starts again on the far side
+feature F12_Hole CylinderBore(dia=4.0, extent=20.0, x=32.0, y=-15.0)
