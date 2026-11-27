@@ -2072,6 +2072,29 @@ fn test_a_hole_under_open_air_proposes_from_the_top() {
     assert!(gcode.contains("M30"));
     let err = program("dia=6.0, extent=6.0, z=6.0").err().expect("stated at its rim with the blank above it uncut, the drill's body is in material");
     assert!(err.to_string().contains("body"), "{err}");
+
+    // ROADMAP item 9: the counterbore's floor, a ring round the hole's
+    // mouth, is the bore's flat floor and one of its faces, not a refused
+    // pocket floor. The hole is drilled and the bore cleared over it.
+    let faces = face_entries(&report);
+    assert_eq!(faces[12].status, "proposed", "F13, the ring: {report}");
+    assert!(report.contains("flat floor F13 -- a milled bore, with a smaller hole on the same axis opening in the floor (a counterbore)"), "{report}");
+    let src = format!("units mm
+feed 800
+plunge 300
+rapid_z 15
+clearance_z 25
+spindle 3000
+             stock Box(w=60, l=40, h=10, x=0, y=0, z=10)
+tool T6 Drill(dia=6.0)
+tool T4 Endmill(dia=4.0)
+{proposed}
+             run Form(points=[F12_Hole], tool=T6, cycle=Simple)
+run Clear(tool=T4, profile=F11_Bore, stepover=2.0)
+");
+    let part = parse::parse(&src).expect("the hole and the counterbore over it parse together");
+    let (gcode, _) = gcode::program_with_moves(&part).expect("drilled, then the counterbore cleared over the hole");
+    assert!(gcode.contains("F11_Bore"), "{gcode}");
 }
 
 /// A hole the model interrupts is one hole. The block's hole at x=32

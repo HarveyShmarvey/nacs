@@ -68,6 +68,28 @@ fn test_the_schedule_runs_the_shop_order_with_the_projects_own_tools_and_the_res
     assert!(text.contains("\n# not scheduled: Top lies at the blank's top: nothing to cut until the blank carries an allowance above it\n"), "{text}");
 }
 
+/// A drilled hole deeper than five diameters pecks, a diameter a peck; one
+/// at five diameters or under is a single plunge, on its own line.
+#[test]
+fn test_a_deep_hole_pecks() {
+    let src = format!("{HEADER}{TOOLS}        feature Deep CylinderBore(dia=6.0, extent=30.5, x=30, y=30)
+        feature Plain CylinderBore(dia=6.0, extent=30.0, x=60, y=30)
+");
+    let (_, s) = schedule_of(&src);
+    assert_eq!(
+        s.lines,
+        vec!["run Form(points=[Plain], tool=T2, cycle=Simple)", "run Form(points=[Deep], tool=T2, cycle=Peck, peck_increment=6)"],
+        "notes: {:?}",
+        s.notes
+    );
+    let full = format!("{src}
+{}", schedule::render(&s));
+    let p = parse::parse(&full).unwrap_or_else(|e| panic!("the scheduled project must parse: {e}
+{full}"));
+    let g = gcode::program(&p).unwrap_or_else(|e| panic!("the scheduled project must emit: {e}"));
+    assert!(g.contains("Z-6.000") && g.contains("Z-12.000"), "the pecks step down a diameter at a time: {g}");
+}
+
 #[test]
 fn test_a_feature_a_run_already_names_is_left_alone() {
     let src = format!(
