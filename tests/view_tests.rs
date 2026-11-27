@@ -6849,6 +6849,20 @@ fn test_the_import_command_is_judged_before_it_runs() {
     let (_, args) = import_command(&sidecar, &step, &dir, &turned).unwrap();
     assert_eq!(&args[4..], ["--up", "z-", "--origin", "mid,mid,max", "--given", &front_s, "--blank", "Box(w=90, l=50, h=12, x=-45, y=-25, z=0)"]);
     assert!(view::ImportSetup { up: Some("x+".into()), given: front_s.clone(), ..Default::default() }.given_args(&dir).unwrap_err().contains("quarter turn"));
+    // The earlier program's zero, from its import's report, goes to the
+    // sidecar on its flag's own word: a point that opens with a minus sign
+    // (-0 at a blank's middle) would be read as a flag standing alone. The
+    // same for an origin typed with a negative first number.
+    let zeroed = std::env::temp_dir().join(format!("nacs_given_origin_{}.cam", std::process::id()));
+    std::fs::create_dir_all(&zeroed).unwrap();
+    std::fs::copy(front.join("main.part"), zeroed.join("main.part")).unwrap();
+    std::fs::write(zeroed.join("report.json"), "{\n  \"origin_at\": [-0.0, 0.0, 36.0]\n}\n").unwrap();
+    let zeroed_s = zeroed.to_string_lossy().to_string();
+    let after = view::ImportSetup { given: zeroed_s.clone(), ..Default::default() }.given_args(&dir).unwrap();
+    assert_eq!(after.last().unwrap(), "--given-origin=-0,0,36", "{after:?}");
+    assert!(!after.iter().any(|a| a.starts_with('-') && !a.starts_with("--")), "no word reads as a short flag: {after:?}");
+    std::fs::remove_dir_all(&zeroed).ok();
+    assert_eq!(view::ImportSetup { origin: "-5,0,max".into(), given: front_s.clone(), ..Default::default() }.args().unwrap(), ["--origin=-5,0,max"]);
     assert!(view::ImportSetup { given: "nowhere.cam".into(), ..Default::default() }.given_args(&dir).unwrap_err().contains("no such project"));
     assert!(view::ImportSetup { given: std::fs::canonicalize("stock_profile.cam").unwrap().to_string_lossy().to_string(), ..Default::default() }.given_args(&dir).unwrap_err().contains("Profile over"));
     // A relative path is found against the project's directory, as the
