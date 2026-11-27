@@ -1115,10 +1115,16 @@ fn judge_standing(p: &Part, s_name: &str, s: &Feature, c_name: &str, c: &Feature
             crate::gcode::f(c_lo)
         ));
     }
-    if so.hi > c_hi + Z_AGREE {
+    // A boss taller than the cavity it stands in is a post through the
+    // cavity's mouth: the cavity's island from its floor to its top, and
+    // above that the island of whatever cuts down to the mouth around it.
+    // Something has to: with nothing declared there the post's upper part
+    // would stand in uncut material, which is a wall, not a post.
+    if so.hi > c_hi + Z_AGREE && !column_declared_removed_above(p, &so, c_name, c_hi) {
         return Standing::Refused(format!(
-            "'{s_name}' stands to z {} inside '{c_name}', whose top is z {} — a boss taller than the cavity it stands in is a rim that cavity runs into, which has no word yet",
+            "'{s_name}' stands to z {} inside '{c_name}', whose top is z {} — a boss taller than the cavity it stands in needs the material round it above the cavity declared removed; face or pocket down to z {} around it by name, or shorten the boss",
             crate::gcode::f(so.hi),
+            crate::gcode::f(c_hi),
             crate::gcode::f(c_hi)
         ));
     }
@@ -1146,6 +1152,23 @@ fn column_declared_removed(p: &Part, so: &Occupancy, host: &str, c_hi: f64) -> b
             None => true,
         };
         covers && lo <= so.hi + Z_AGREE && hi >= c_hi - Z_AGREE
+    })
+}
+
+/// The same question the other way up: round a boss taller than its cavity,
+/// some other declaration cuts from the boss's top or above down to the
+/// cavity's mouth. (A level faced round a post, then a pocket round its foot.)
+fn column_declared_removed_above(p: &Part, so: &Occupancy, host: &str, c_hi: f64) -> bool {
+    p.features.iter().any(|(name, f)| {
+        if name == host {
+            return false;
+        }
+        let Some((outline, lo, hi)) = cut_span(p, f) else { return false };
+        let covers = match &outline {
+            Some(o) => plan_nesting(&so.outline, o) == Nesting::Inside,
+            None => true,
+        };
+        covers && (lo - c_hi).abs() <= Z_AGREE && hi >= so.hi - Z_AGREE
     })
 }
 
